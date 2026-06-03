@@ -35,7 +35,7 @@ export default async function DashboardLayout({
         usuarioNombre={gymUsuario.nombre}
         usuarioRol={gymUsuario.rol}
       />
-      <main className="flex-1 overflow-y-auto bg-zinc-50">
+      <main className="flex-1 overflow-y-auto bg-background">
         <div className="max-w-7xl mx-auto px-6 py-8">{children}</div>
       </main>
     </div>

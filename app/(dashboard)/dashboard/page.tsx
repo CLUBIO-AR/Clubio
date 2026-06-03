@@ -74,12 +74,15 @@ export default async function DashboardPage() {
           className="absolute -top-20 -right-20 w-80 h-80 rounded-full opacity-20 blur-3xl pointer-events-none"
           style={{ background: "oklch(0.88 0.22 158)" }}
         />
-        <p
-          className="text-xs uppercase tracking-[0.2em] mb-2"
-          style={{ color: "oklch(0.88 0.22 158)", fontFamily: "var(--font-barlow-condensed)" }}
-        >
-          ▶ GESTIÓN / INICIO
-        </p>
+        {/* Clubio badge */}
+        <div className="flex items-center gap-2 mb-4">
+          <span
+            className="text-xs uppercase tracking-[0.2em]"
+            style={{ color: "oklch(0.88 0.22 158)", fontFamily: "var(--font-barlow-condensed)" }}
+          >
+            ▶ CLUBIO / GESTIÓN
+          </span>
+        </div>
         <h1
           className="text-5xl leading-none text-white mb-1"
           style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900 }}
@@ -101,7 +104,7 @@ export default async function DashboardPage() {
           className="text-sm uppercase tracking-widest"
           style={{ color: "oklch(0.5 0.015 245)", fontFamily: "var(--font-barlow-condensed)" }}
         >
-          Centro de gestión — {mes}
+          Centro de gestión Clubio — {mes}
         </p>
       </div>
 

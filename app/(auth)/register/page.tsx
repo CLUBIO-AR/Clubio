@@ -66,11 +66,14 @@ export default function RegisterPage() {
 
       <div className="relative w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-5" style={{ background: "oklch(0.88 0.22 158 / 0.15)", border: "1px solid oklch(0.88 0.22 158 / 0.4)", boxShadow: "0 0 30px oklch(0.88 0.22 158 / 0.2)" }}>
-            <Zap className="w-7 h-7" style={{ color: "oklch(0.88 0.22 158)" }} />
+          <div className="flex items-center gap-2.5 mb-5">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "oklch(0.88 0.22 158)", boxShadow: "0 0 24px oklch(0.88 0.22 158 / 0.4)" }}>
+              <Zap className="w-5 h-5" style={{ color: "oklch(0.07 0.018 245)" }} />
+            </div>
+            <span className="text-3xl text-white tracking-widest" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900 }}>CLUBIO</span>
           </div>
-          <h1 className="text-4xl text-white tracking-wider" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 800 }}>
-            REGISTRÁ TU GYM
+          <h1 className="text-xl text-white tracking-wider" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 700 }}>
+            REGISTRÁ TU GIMNASIO
           </h1>
           <p className="text-sm mt-1" style={{ color: "oklch(0.55 0.015 245)" }}>Creá tu cuenta y empezá a gestionar</p>
         </div>

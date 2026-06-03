@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dumbbell, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 interface RegisterForm {
   nombre: string;
@@ -29,7 +34,6 @@ export default function RegisterPage() {
     setForm((prev) => ({
       ...prev,
       [name]: value,
-      // Auto-generar slug desde el nombre
       ...(name === "nombre"
         ? { slug: value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") }
         : {}),
@@ -55,8 +59,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // El usuario fue creado en el servidor; iniciar sesión en el cliente
-    const { createClient } = await import("@/lib/supabase/client");
     const supabase = createClient();
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: form.email_contacto,
@@ -74,110 +76,115 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-8">
-      <div className="w-full max-w-md space-y-8 p-8 bg-white rounded-xl shadow">
-        <div>
-          <h1 className="text-2xl font-bold text-center">Registrá tu gimnasio</h1>
-          <p className="text-center text-sm text-gray-500 mt-1">
-            Creá tu cuenta y empezá a gestionar tus alumnos
-          </p>
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f1f2320_1px,transparent_1px),linear-gradient(to_bottom,#1f1f2320_1px,transparent_1px)] bg-[size:48px_48px]" />
+
+      <div className="relative w-full max-w-sm">
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center mb-4 shadow-lg shadow-indigo-500/25">
+            <Dumbbell className="w-6 h-6 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-white">Registrá tu gym</h1>
+          <p className="text-zinc-400 text-sm mt-1">Creá tu cuenta y empezá a gestionar</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nombre del gimnasio
-            </label>
-            <input
-              name="nombre"
-              type="text"
-              required
-              value={form.nombre}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-              placeholder="GYM Atlas"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Slug (URL)
-            </label>
-            <div className="flex items-center">
-              <span className="px-3 py-2 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md text-sm text-gray-500">
-                app.com/
-              </span>
-              <input
-                name="slug"
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-zinc-300 text-sm">Nombre del gimnasio</Label>
+              <Input
+                name="nombre"
                 type="text"
                 required
-                value={form.slug}
+                value={form.nombre}
                 onChange={handleChange}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-2 focus:ring-black"
-                placeholder="gym-atlas"
+                placeholder="GYM Atlas"
+                className="bg-zinc-800 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus:border-indigo-500"
               />
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tu nombre
-            </label>
-            <input
-              name="nombre_admin"
-              type="text"
-              required
-              value={form.nombre_admin}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-              placeholder="Juan Pérez"
-            />
-          </div>
+            <div className="space-y-1.5">
+              <Label className="text-zinc-300 text-sm">Slug (URL)</Label>
+              <div className="flex items-center">
+                <span className="px-3 h-9 flex items-center bg-zinc-800 border border-r-0 border-zinc-700 rounded-l-md text-xs text-zinc-500">
+                  app.com/
+                </span>
+                <Input
+                  name="slug"
+                  type="text"
+                  required
+                  value={form.slug}
+                  onChange={handleChange}
+                  placeholder="gym-atlas"
+                  className="bg-zinc-800 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus:border-indigo-500 rounded-l-none"
+                />
+              </div>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <input
-              name="email_contacto"
-              type="email"
-              required
-              value={form.email_contacto}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-              placeholder="admin@migimnasio.com"
-            />
-          </div>
+            <div className="space-y-1.5">
+              <Label className="text-zinc-300 text-sm">Tu nombre</Label>
+              <Input
+                name="nombre_admin"
+                type="text"
+                required
+                value={form.nombre_admin}
+                onChange={handleChange}
+                placeholder="Juan Pérez"
+                className="bg-zinc-800 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus:border-indigo-500"
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Contraseña
-            </label>
-            <input
-              name="password"
-              type="password"
-              required
-              minLength={8}
-              value={form.password}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-            />
-          </div>
+            <div className="space-y-1.5">
+              <Label className="text-zinc-300 text-sm">Email</Label>
+              <Input
+                name="email_contacto"
+                type="email"
+                required
+                value={form.email_contacto}
+                onChange={handleChange}
+                placeholder="admin@migimnasio.com"
+                className="bg-zinc-800 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus:border-indigo-500"
+              />
+            </div>
 
-          {error && (
-            <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</p>
-          )}
+            <div className="space-y-1.5">
+              <Label className="text-zinc-300 text-sm">Contraseña</Label>
+              <Input
+                name="password"
+                type="password"
+                required
+                minLength={8}
+                value={form.password}
+                onChange={handleChange}
+                className="bg-zinc-800 border-zinc-700 text-zinc-100 focus:border-indigo-500"
+              />
+            </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Registrando..." : "Crear cuenta"}
-          </Button>
-        </form>
+            {error && (
+              <div className="px-3 py-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                {error}
+              </div>
+            )}
 
-        <p className="text-center text-sm text-gray-500">
+            <Button
+              type="submit"
+              className="w-full bg-indigo-600 hover:bg-indigo-500 text-white h-10 font-medium mt-2"
+              disabled={loading}
+            >
+              {loading ? (
+                <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Creando cuenta...</>
+              ) : (
+                "Crear cuenta"
+              )}
+            </Button>
+          </form>
+        </div>
+
+        <p className="text-center text-sm text-zinc-500 mt-6">
           ¿Ya tenés cuenta?{" "}
-          <a href="/login" className="text-black font-medium underline">
+          <Link href="/login" className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">
             Iniciar sesión
-          </a>
+          </Link>
         </p>
       </div>
     </div>

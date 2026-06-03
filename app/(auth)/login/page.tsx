@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Zap } from "lucide-react";
 import Link from "next/link";
+import { T } from "@/lib/theme";
 
 function LoginForm() {
   const router = useRouter();
@@ -29,148 +30,75 @@ function LoginForm() {
   }
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{ background: "oklch(0.07 0.018 245)" }}
-    >
-      {/* Grid background */}
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: T.bgDeep }}>
+      {/* Subtle grid */}
       <div
-        className="absolute inset-0 opacity-20"
+        className="absolute inset-0 opacity-10"
         style={{
-          backgroundImage:
-            "linear-gradient(oklch(0.88 0.22 158 / 0.15) 1px, transparent 1px), linear-gradient(90deg, oklch(0.88 0.22 158 / 0.15) 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
+          backgroundImage: `linear-gradient(${T.accent}25 1px, transparent 1px), linear-gradient(90deg, ${T.accent}25 1px, transparent 1px)`,
+          backgroundSize: "64px 64px",
         }}
       />
-      {/* Glow orb */}
-      <div
-        className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full opacity-10 blur-3xl pointer-events-none"
-        style={{ background: "oklch(0.88 0.22 158)" }}
-      />
+      {/* Soft glow */}
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-64 rounded-full blur-3xl pointer-events-none" style={{ background: `${T.accent}12` }} />
 
       <div className="relative w-full max-w-sm">
-        {/* Logo / Branding */}
+        {/* Clubio brand */}
         <div className="flex flex-col items-center mb-10">
-          <div className="flex items-center gap-2.5 mb-6">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{
-                background: "oklch(0.88 0.22 158)",
-                boxShadow: "0 0 24px oklch(0.88 0.22 158 / 0.4)",
-              }}
-            >
-              <Zap className="w-5 h-5" style={{ color: "oklch(0.07 0.018 245)" }} />
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: T.accent, boxShadow: T.accentGlow }}>
+              <Zap className="w-5 h-5" style={{ color: T.bgDeep }} />
             </div>
-            <span
-              className="text-3xl text-white tracking-widest"
-              style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900 }}
-            >
+            <span className="text-3xl tracking-[0.15em]" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>
               CLUBIO
             </span>
           </div>
-          <h1
-            className="text-xl text-white tracking-wider"
-            style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 700 }}
-          >
+          <h2 className="text-lg tracking-widest" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 700, color: T.textMuted }}>
             BIENVENIDO
-          </h1>
-          <p className="text-sm mt-1" style={{ color: "oklch(0.55 0.015 245)" }}>
+          </h2>
+          <p className="text-sm mt-1 text-center" style={{ color: T.textDim }}>
             Accedé al panel de gestión de tu gimnasio
           </p>
         </div>
 
         {/* Card */}
-        <div
-          className="rounded-2xl p-7 space-y-5"
-          style={{
-            background: "oklch(0.1 0.018 245)",
-            border: "1px solid oklch(0.2 0.018 245)",
-          }}
-        >
+        <div className="rounded-2xl p-7 space-y-5" style={{ background: T.card, border: `1px solid ${T.border}` }}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label
-                htmlFor="email"
-                className="text-sm font-semibold uppercase tracking-widest"
-                style={{ color: "oklch(0.65 0.015 245)", fontFamily: "var(--font-barlow-condensed)" }}
-              >
+              <Label className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.textMuted, fontFamily: "var(--font-barlow-condensed)" }}>
                 Email
               </Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@migimnasio.com"
-                style={{
-                  background: "oklch(0.14 0.018 245)",
-                  border: "1px solid oklch(0.22 0.018 245)",
-                  color: "white",
-                }}
-                className="placeholder:opacity-30 focus:border-[oklch(0.88_0.22_158)]"
-              />
+              <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@migimnasio.com"
+                style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text }}
+                className="placeholder:opacity-25" />
             </div>
 
             <div className="space-y-1.5">
-              <Label
-                htmlFor="password"
-                className="text-sm font-semibold uppercase tracking-widest"
-                style={{ color: "oklch(0.65 0.015 245)", fontFamily: "var(--font-barlow-condensed)" }}
-              >
+              <Label className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.textMuted, fontFamily: "var(--font-barlow-condensed)" }}>
                 Contraseña
               </Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                style={{
-                  background: "oklch(0.14 0.018 245)",
-                  border: "1px solid oklch(0.22 0.018 245)",
-                  color: "white",
-                }}
-                className="focus:border-[oklch(0.88_0.22_158)]"
-              />
+              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+                style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text }} />
             </div>
 
             {error && (
-              <div
-                className="px-4 py-3 rounded-lg text-sm font-medium"
-                style={{
-                  background: "oklch(0.65 0.22 27 / 0.1)",
-                  border: "1px solid oklch(0.65 0.22 27 / 0.3)",
-                  color: "oklch(0.75 0.2 27)",
-                }}
-              >
+              <div className="px-4 py-3 rounded-lg text-sm" style={{ background: `${T.danger}12`, border: `1px solid ${T.danger}30`, color: T.danger }}>
                 {error}
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full h-11 rounded-lg font-extrabold uppercase tracking-widest text-sm transition-all mt-2 flex items-center justify-center gap-2 disabled:opacity-60"
-              style={{
-                fontFamily: "var(--font-barlow-condensed)",
-                background: "oklch(0.88 0.22 158)",
-                color: "oklch(0.07 0.018 245)",
-                boxShadow: "0 0 20px oklch(0.88 0.22 158 / 0.3)",
-              }}
+            <button type="submit" disabled={loading}
+              className="w-full h-11 rounded-lg font-bold uppercase tracking-widest text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
+              style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accent, color: T.bgDeep, boxShadow: T.accentGlow }}
             >
               {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Ingresando...</> : "Ingresar"}
             </button>
           </form>
         </div>
 
-        <p className="text-center text-sm mt-6" style={{ color: "oklch(0.45 0.015 245)" }}>
+        <p className="text-center text-sm mt-6" style={{ color: T.textDim }}>
           ¿No tenés cuenta?{" "}
-          <Link
-            href="/register"
-            className="font-semibold transition-opacity hover:opacity-80"
-            style={{ color: "oklch(0.88 0.22 158)" }}
-          >
+          <Link href="/register" className="font-semibold transition-opacity hover:opacity-75" style={{ color: T.accent }}>
             Registrá tu gym
           </Link>
         </p>

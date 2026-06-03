@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/aplicar-recargos",
+      "schedule": "1 0 * * *"
+    },
+    {
+      "path": "/api/cron/enviar-avisos",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/generar-cuotas",
+      "schedule": "0 8 1 * *"
+    }
+  ]
+}

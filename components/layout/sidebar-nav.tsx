@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   LayoutDashboard,
@@ -9,13 +9,10 @@ import {
   DollarSign,
   Settings,
   LogOut,
-  Dumbbell,
-  ChevronRight,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Inicio", icon: LayoutDashboard, exact: true },
@@ -35,7 +32,7 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
   const pathname = usePathname();
   const router = useRouter();
 
-  const initials = usuarioNombre
+  const initials = gymNombre
     .split(" ")
     .map((n) => n[0])
     .join("")
@@ -50,22 +47,43 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
   }
 
   return (
-    <aside className="w-60 flex flex-col bg-zinc-900 border-r border-zinc-800 shrink-0">
-      {/* Logo / Gym name */}
-      <div className="px-5 py-5 border-b border-zinc-800">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
-            <Dumbbell className="w-4 h-4 text-white" />
+    <aside
+      className="w-64 flex flex-col shrink-0 border-r"
+      style={{ background: "oklch(0.07 0.018 245)", borderColor: "oklch(0.15 0.018 245)" }}
+    >
+      {/* Logo */}
+      <div className="px-5 py-5 border-b" style={{ borderColor: "oklch(0.15 0.018 245)" }}>
+        <div className="flex items-center gap-3">
+          <div
+            className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 font-extrabold text-sm"
+            style={{
+              background: "oklch(0.88 0.22 158)",
+              color: "oklch(0.07 0.018 245)",
+              fontFamily: "var(--font-barlow-condensed)",
+              letterSpacing: "0.05em",
+            }}
+          >
+            {initials}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-white truncate">{gymNombre}</p>
-            <p className="text-xs text-zinc-500">Panel admin</p>
+            <p
+              className="font-extrabold uppercase truncate text-white tracking-wider text-sm"
+              style={{ fontFamily: "var(--font-barlow-condensed)" }}
+            >
+              {gymNombre}
+            </p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <Zap className="w-2.5 h-2.5" style={{ color: "oklch(0.88 0.22 158)" }} />
+              <span className="text-xs" style={{ color: "oklch(0.88 0.22 158)" }}>
+                Panel activo
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Nav items */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+      {/* Nav */}
+      <nav className="flex-1 px-3 py-4 space-y-0.5">
         {NAV_ITEMS.map(({ href, label, icon: Icon, exact }) => {
           const active = exact ? pathname === href : pathname.startsWith(href);
           return (
@@ -73,36 +91,56 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
               key={href}
               href={href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group",
-                active
-                  ? "bg-indigo-600 text-white"
-                  : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold uppercase tracking-wider transition-all duration-150 relative group",
               )}
+              style={{
+                fontFamily: "var(--font-barlow-condensed)",
+                letterSpacing: "0.08em",
+                background: active ? "oklch(0.88 0.22 158 / 0.12)" : "transparent",
+                color: active ? "oklch(0.88 0.22 158)" : "oklch(0.62 0.015 245)",
+                borderLeft: active ? "3px solid oklch(0.88 0.22 158)" : "3px solid transparent",
+              }}
             >
-              <Icon className={cn("w-4 h-4 shrink-0", active ? "text-white" : "text-zinc-500 group-hover:text-zinc-300")} />
-              <span className="flex-1">{label}</span>
-              {active && <ChevronRight className="w-3.5 h-3.5 text-indigo-300" />}
+              <Icon
+                className="w-4 h-4 shrink-0"
+                style={{ color: active ? "oklch(0.88 0.22 158)" : "oklch(0.45 0.015 245)" }}
+              />
+              {label}
             </Link>
           );
         })}
       </nav>
 
       {/* User footer */}
-      <div className="px-3 py-3 border-t border-zinc-800">
-        <div className="flex items-center gap-3 px-2 py-2 rounded-lg">
-          <Avatar className="w-8 h-8 shrink-0">
-            <AvatarFallback className="bg-indigo-700 text-white text-xs font-semibold">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
+      <div className="p-3 border-t" style={{ borderColor: "oklch(0.15 0.018 245)" }}>
+        {/* User info */}
+        <div
+          className="flex items-center gap-3 px-3 py-2 rounded-lg mb-1"
+          style={{ background: "oklch(0.12 0.018 245)" }}
+        >
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
+            style={{
+              background: "oklch(0.88 0.22 158 / 0.2)",
+              color: "oklch(0.88 0.22 158)",
+              fontFamily: "var(--font-barlow-condensed)",
+            }}
+          >
+            {usuarioNombre.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+          </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-zinc-200 truncate">{usuarioNombre}</p>
-            <p className="text-xs text-zinc-500 capitalize">{usuarioRol}</p>
+            <p className="text-sm font-semibold text-white truncate">{usuarioNombre}</p>
+            <p className="text-xs capitalize" style={{ color: "oklch(0.55 0.015 245)" }}>
+              {usuarioRol}
+            </p>
           </div>
           <button
             onClick={handleLogout}
             title="Cerrar sesión"
-            className="text-zinc-600 hover:text-zinc-300 transition-colors p-1 rounded"
+            className="transition-colors p-1 rounded"
+            style={{ color: "oklch(0.45 0.015 245)" }}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "oklch(0.88 0.22 158)")}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "oklch(0.45 0.015 245)")}
           >
             <LogOut className="w-4 h-4" />
           </button>

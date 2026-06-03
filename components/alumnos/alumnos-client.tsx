@@ -4,43 +4,26 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Plus,
-  Search,
-  MoreHorizontal,
-  Eye,
-  UserX,
-  UserCheck,
-  Loader2,
-  Users,
-} from "lucide-react";
+import { Plus, Search, MoreHorizontal, Eye, UserX, UserCheck, Loader2, Users } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import type { Alumno } from "@/lib/alumnos";
+import { Button } from "@/components/ui/button";
+
+const NEON = "oklch(0.88 0.22 158)";
+const BG = "oklch(0.1 0.018 245)";
+const CARD = "oklch(0.13 0.018 245)";
+const BORDER = "oklch(0.2 0.018 245)";
 
 interface AlumnosClientProps {
   alumnos: Partial<Alumno>[];
@@ -91,54 +74,65 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault }: Alumnos
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Alumnos</h1>
-          <p className="text-zinc-500 text-sm mt-0.5">
+          <h1
+            className="text-4xl text-white leading-none"
+            style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900 }}
+          >
+            ALUMNOS
+          </h1>
+          <p className="text-sm mt-1" style={{ color: "oklch(0.5 0.015 245)" }}>
             {alumnos.length} alumno{alumnos.length !== 1 ? "s" : ""} encontrado{alumnos.length !== 1 ? "s" : ""}
           </p>
         </div>
         <Link
           href="/dashboard/alumnos/nuevo"
-          className={buttonVariants({ className: "bg-indigo-600 hover:bg-indigo-500 text-white gap-2" })}
+          className={buttonVariants({ className: "gap-2 font-bold uppercase tracking-widest text-sm" })}
+          style={{
+            fontFamily: "var(--font-barlow-condensed)",
+            background: NEON,
+            color: "oklch(0.07 0.018 245)",
+            boxShadow: `0 0 20px ${NEON}40`,
+            border: "none",
+          }}
         >
-          <Plus className="w-4 h-4" />
-          Nuevo alumno
+          <Plus className="w-4 h-4" /> Nuevo alumno
         </Link>
       </div>
 
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
-        {/* Search */}
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "oklch(0.45 0.015 245)" }} />
           <Input
             placeholder="Buscar por nombre o DNI..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && applyFilters(search, activo)}
-            className="pl-9 bg-white border-zinc-200 focus:border-indigo-400"
+            className="pl-9 placeholder:opacity-30"
+            style={{ background: CARD, border: `1px solid ${BORDER}`, color: "white" }}
           />
         </div>
-        <Button
-          variant="outline"
-          size="sm"
+        <button
           onClick={() => applyFilters(search, activo)}
           disabled={isPending}
-          className="border-zinc-200 text-zinc-600"
+          className="h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-all"
+          style={{ fontFamily: "var(--font-barlow-condensed)", background: CARD, border: `1px solid ${BORDER}`, color: NEON }}
         >
           {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Buscar"}
-        </Button>
+        </button>
 
-        {/* Status tabs */}
-        <div className="flex items-center gap-1 bg-white border border-zinc-200 rounded-lg p-1">
+        <div className="flex items-center gap-0.5 rounded-lg p-1" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
           {FILTER_TABS.map((tab) => (
             <button
               key={tab.value}
               onClick={() => { setActivo(tab.value); applyFilters(search, tab.value); }}
-              className={`px-3 py-1 text-sm rounded-md font-medium transition-all ${
-                activo === tab.value
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "text-zinc-500 hover:text-zinc-800"
-              }`}
+              className="px-3 py-1.5 text-xs rounded-md font-bold uppercase tracking-widest transition-all"
+              style={{
+                fontFamily: "var(--font-barlow-condensed)",
+                background: activo === tab.value ? NEON : "transparent",
+                color: activo === tab.value ? "oklch(0.07 0.018 245)" : "oklch(0.5 0.015 245)",
+                boxShadow: activo === tab.value ? `0 0 12px ${NEON}50` : "none",
+              }}
             >
               {tab.label}
             </button>
@@ -150,91 +144,87 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault }: Alumnos
       {alumnos.length === 0 ? (
         <EmptyState search={search} />
       ) : (
-        <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden shadow-sm">
+        <div className="rounded-xl overflow-hidden" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
           <Table>
             <TableHeader>
-              <TableRow className="bg-zinc-50 border-zinc-200">
-                <TableHead className="font-semibold text-zinc-700">Alumno</TableHead>
-                <TableHead className="font-semibold text-zinc-700">DNI</TableHead>
-                <TableHead className="font-semibold text-zinc-700">Contacto</TableHead>
-                <TableHead className="font-semibold text-zinc-700">Alta</TableHead>
-                <TableHead className="font-semibold text-zinc-700">Estado</TableHead>
-                <TableHead className="font-semibold text-zinc-700">Cuota</TableHead>
-                <TableHead className="w-12" />
+              <TableRow style={{ background: BG, borderColor: BORDER }}>
+                {["Alumno", "DNI", "Contacto", "Alta", "Estado", "Cuota", ""].map((h) => (
+                  <TableHead
+                    key={h}
+                    className="text-xs uppercase tracking-widest font-bold"
+                    style={{ color: "oklch(0.45 0.015 245)", fontFamily: "var(--font-barlow-condensed)", borderColor: BORDER }}
+                  >
+                    {h}
+                  </TableHead>
+                ))}
               </TableRow>
             </TableHeader>
             <TableBody>
               {alumnos.map((alumno) => (
                 <TableRow
                   key={alumno.id}
-                  className="hover:bg-zinc-50/50 transition-colors border-zinc-100"
+                  className="transition-colors cursor-pointer"
+                  style={{ borderColor: BORDER }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "oklch(0.15 0.018 245)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                 >
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
-                        <span className="text-xs font-semibold text-indigo-700">
-                          {(alumno.nombre?.[0] ?? "")}{(alumno.apellido?.[0] ?? "")}
-                        </span>
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold"
+                        style={{
+                          background: `${NEON}20`,
+                          border: `1px solid ${NEON}30`,
+                          color: NEON,
+                          fontFamily: "var(--font-barlow-condensed)",
+                        }}
+                      >
+                        {(alumno.nombre?.[0] ?? "")}{(alumno.apellido?.[0] ?? "")}
                       </div>
-                      <div>
-                        <p className="font-medium text-zinc-900 text-sm">
-                          {alumno.apellido}, {alumno.nombre}
-                        </p>
-                      </div>
+                      <p className="font-semibold text-white text-sm">
+                        {alumno.apellido}, {alumno.nombre}
+                      </p>
                     </div>
                   </TableCell>
-                  <TableCell className="text-zinc-600 text-sm font-mono">{alumno.dni}</TableCell>
-                  <TableCell className="text-zinc-500 text-sm">
-                    {alumno.email ?? alumno.telefono ?? <span className="text-zinc-300">—</span>}
+                  <TableCell className="font-mono text-sm" style={{ color: "oklch(0.65 0.015 245)" }}>{alumno.dni}</TableCell>
+                  <TableCell className="text-sm" style={{ color: "oklch(0.55 0.015 245)" }}>
+                    {alumno.email ?? alumno.telefono ?? <span style={{ color: "oklch(0.3 0.015 245)" }}>—</span>}
                   </TableCell>
-                  <TableCell className="text-zinc-500 text-sm">
-                    {alumno.fecha_alta
-                      ? new Date(alumno.fecha_alta).toLocaleDateString("es-AR")
-                      : "—"}
+                  <TableCell className="text-sm" style={{ color: "oklch(0.55 0.015 245)" }}>
+                    {alumno.fecha_alta ? new Date(alumno.fecha_alta).toLocaleDateString("es-AR") : "—"}
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant={alumno.activo ? "default" : "secondary"}
-                      className={
-                        alumno.activo
-                          ? "bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                          : "bg-zinc-100 text-zinc-500 border-zinc-200"
-                      }
+                    <span
+                      className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider"
+                      style={{
+                        fontFamily: "var(--font-barlow-condensed)",
+                        background: alumno.activo ? `${NEON}15` : "oklch(0.3 0.015 245 / 0.3)",
+                        color: alumno.activo ? NEON : "oklch(0.45 0.015 245)",
+                        border: `1px solid ${alumno.activo ? `${NEON}30` : "oklch(0.25 0.015 245)"}`,
+                      }}
                     >
                       {alumno.activo ? "Activo" : "Inactivo"}
-                    </Badge>
+                    </span>
                   </TableCell>
-                  <TableCell className="text-zinc-600 text-sm">
-                    {alumno.monto_cuota_personalizado
-                      ? `$${alumno.monto_cuota_personalizado.toLocaleString("es-AR")}`
-                      : <span className="text-zinc-300">Default</span>}
+                  <TableCell className="text-sm font-mono" style={{ color: alumno.monto_cuota_personalizado ? NEON : "oklch(0.35 0.015 245)" }}>
+                    {alumno.monto_cuota_personalizado ? `$${alumno.monto_cuota_personalizado.toLocaleString("es-AR")}` : "Default"}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger>
-                        <Button variant="ghost" size="icon" className="w-8 h-8 text-zinc-400 hover:text-zinc-700">
+                        <Button variant="ghost" size="icon" className="w-8 h-8" style={{ color: "oklch(0.4 0.015 245)" }}>
                           <MoreHorizontal className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-44">
+                      <DropdownMenuContent align="end" className="w-44" style={{ background: "oklch(0.14 0.018 245)", border: `1px solid ${BORDER}` }}>
                         <DropdownMenuItem onClick={() => router.push(`/dashboard/alumnos/${alumno.id}`)}>
                           <Eye className="w-3.5 h-3.5" /> Ver detalle
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleToggleActivo(alumno.id!, alumno.activo ?? true)}
-                          className="flex items-center gap-2"
-                        >
-                          {alumno.activo ? (
-                            <><UserX className="w-3.5 h-3.5" /> Dar de baja</>
-                          ) : (
-                            <><UserCheck className="w-3.5 h-3.5" /> Reactivar</>
-                          )}
+                        <DropdownMenuItem onClick={() => handleToggleActivo(alumno.id!, alumno.activo ?? true)}>
+                          {alumno.activo ? <><UserX className="w-3.5 h-3.5" /> Dar de baja</> : <><UserCheck className="w-3.5 h-3.5" /> Reactivar</>}
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-red-600 focus:text-red-600 flex items-center gap-2"
-                          onClick={() => setDeleteId(alumno.id!)}
-                        >
+                        <DropdownMenuSeparator style={{ background: BORDER }} />
+                        <DropdownMenuItem variant="destructive" onClick={() => setDeleteId(alumno.id!)}>
                           Eliminar
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -247,25 +237,17 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault }: Alumnos
         </div>
       )}
 
-      {/* Delete confirm dialog */}
       <Dialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent style={{ background: CARD, border: `1px solid ${BORDER}` }}>
           <DialogHeader>
-            <DialogTitle>¿Eliminar alumno?</DialogTitle>
-            <DialogDescription>
-              Esta acción es un soft delete. El alumno no se borrará de la base de datos
-              pero quedará inaccesible.
+            <DialogTitle className="text-white">¿Eliminar alumno?</DialogTitle>
+            <DialogDescription style={{ color: "oklch(0.5 0.015 245)" }}>
+              El alumno quedará inaccesible (soft delete).
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setDeleteId(null)}>
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={actionLoading}
-              onClick={() => deleteId && handleDelete(deleteId)}
-            >
+            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancelar</Button>
+            <Button variant="destructive" disabled={actionLoading} onClick={() => deleteId && handleDelete(deleteId)}>
               {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Eliminar"}
             </Button>
           </DialogFooter>
@@ -277,15 +259,15 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault }: Alumnos
 
 function EmptyState({ search }: { search: string }) {
   return (
-    <div className="bg-white rounded-xl border border-zinc-200 shadow-sm py-16 flex flex-col items-center gap-3 text-center">
-      <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center">
-        <Users className="w-6 h-6 text-zinc-400" />
+    <div className="rounded-xl py-20 flex flex-col items-center gap-4 text-center" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
+      <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ background: `${NEON}10`, border: `1px solid ${NEON}20` }}>
+        <Users className="w-7 h-7" style={{ color: NEON }} />
       </div>
       <div>
-        <p className="font-medium text-zinc-700">
-          {search ? `Sin resultados para "${search}"` : "Todavía no hay alumnos"}
+        <p className="font-bold text-white text-lg" style={{ fontFamily: "var(--font-barlow-condensed)", textTransform: "uppercase" }}>
+          {search ? `SIN RESULTADOS PARA "${search}"` : "TODAVÍA NO HAY ALUMNOS"}
         </p>
-        <p className="text-sm text-zinc-400 mt-0.5">
+        <p className="text-sm mt-1" style={{ color: "oklch(0.45 0.015 245)" }}>
           {search ? "Probá con otro término" : "Creá el primero con el botón de arriba"}
         </p>
       </div>

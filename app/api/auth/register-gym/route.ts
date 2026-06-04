@@ -60,7 +60,6 @@ export async function POST(request: Request) {
     .single();
 
   if (gymError || !gym) {
-    // Rollback: eliminar usuario creado
     await supabase.auth.admin.deleteUser(authData.user.id);
     return NextResponse.json(
       { error: "Error al crear el gimnasio" },
@@ -68,7 +67,7 @@ export async function POST(request: Request) {
     );
   }
 
-  // Crear perfil del usuario admin
+  // Crear perfil del usuario owner
   const { error: userError } = await supabase
     .from("gym_usuarios")
     .insert({ id: authData.user.id, gym_id: gym.id, nombre: nombre_admin, rol: "owner" });
@@ -82,10 +81,14 @@ export async function POST(request: Request) {
     );
   }
 
-  // Crear gym_config con defaults
-  await supabase.from("gym_config").insert({ gym_id: gym.id });
+  // Crear gym_config con defaults (email_activo: true por defecto)
+  await supabase.from("gym_config").insert({
+    gym_id: gym.id,
+    email_activo: true,
+    whatsapp_activo: false,
+  });
 
-  // Crear licencia starter con 30 días de prueba
+  // Crear licencia basic con 30 días de trial (NO setup fee)
   const fechaInicio = new Date().toISOString().split("T")[0];
   const fechaVencimiento = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
     .toISOString()
@@ -93,9 +96,11 @@ export async function POST(request: Request) {
 
   await supabase.from("licencias").insert({
     gym_id: gym.id,
-    plan: "starter",
+    plan: "basic",
     fecha_inicio: fechaInicio,
     fecha_vencimiento: fechaVencimiento,
+    es_trial: true,
+    trial_hasta: fechaVencimiento,
   });
 
   // Crear sucursal principal

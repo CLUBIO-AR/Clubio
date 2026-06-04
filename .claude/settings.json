@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(New-Item -ItemType Directory \"c:\\\\Git\\\\Clubio\\\\Clubio\\\\__tests__\\\\unit\\\\lib\" -Force)",
+      "PowerShell(New-Item -ItemType Directory \"c:\\\\Git\\\\Clubio\\\\Clubio\\\\__tests__\\\\integration\\\\api\" -Force)",
+      "PowerShell(New-Item -ItemType Directory \"c:\\\\Git\\\\Clubio\\\\Clubio\\\\__tests__\\\\integration\\\\crons\" -Force)",
+      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\nodejs;\" + $env:PATH; cd \"c:\\\\Git\\\\Clubio\\\\Clubio\"; npm test 2>&1)",
+      "PowerShell(New-Item -ItemType Directory \"c:\\\\Git\\\\Clubio\\\\Clubio\\\\app\\\\api\\\\cron\\\\workers\\\\generar-cuotas-gym\" -Force)",
+      "PowerShell(New-Item -ItemType Directory \"c:\\\\Git\\\\Clubio\\\\Clubio\\\\app\\\\api\\\\cron\\\\workers\\\\aplicar-recargos-gym\" -Force)",
+      "PowerShell(New-Item -ItemType Directory \"c:\\\\Git\\\\Clubio\\\\Clubio\\\\lib\\\\notifications\\\\channels\" -Force)",
+      "PowerShell(New-Item -ItemType Directory \"c:\\\\Git\\\\Clubio\\\\Clubio\\\\lib\\\\notifications\\\\templates\" -Force)",
+      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\nodejs;\" + $env:PATH; cd \"c:\\\\Git\\\\Clubio\\\\Clubio\"; npm install jose 2>&1 | Select-Object -Last 3)",
+      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\nodejs;\" + $env:PATH; cd \"c:\\\\Git\\\\Clubio\\\\Clubio\"; npm test 2>&1 | Select-Object -Last 25)",
+      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\nodejs;\" + $env:PATH; cd \"c:\\\\Git\\\\Clubio\\\\Clubio\"; npm test 2>&1 | Select-Object -Last 10)",
+      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\nodejs;\" + $env:PATH; cd \"c:\\\\Git\\\\Clubio\\\\Clubio\"; npx tsc --noEmit 2>&1; npm run build 2>&1 | Select-Object -Last 15)",
+      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\nodejs;\" + $env:PATH; cd \"c:\\\\Git\\\\Clubio\\\\Clubio\"; npx tsc --noEmit 2>&1)",
+      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\nodejs;\" + $env:PATH; cd \"c:\\\\Git\\\\Clubio\\\\Clubio\"; npm run build 2>&1 | Select-Object -Last 20)",
+      "Bash(grep -v \"//.*starter\\\\|//.*pro\")",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}

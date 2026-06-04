@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { aplicarRecargosGym } from "@/lib/cuotas";
 
+// DISPATCHER: lanza un worker por gym en paralelo.
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
   if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -11,22 +11,42 @@ export async function GET(request: Request) {
   const supabase = createAdminClient();
   const hoy = new Date().toISOString().split("T")[0];
 
-  // Gyms activos con licencia vigente
-  const { data: licencias } = await supabase
+  const { data: licencias, error } = await supabase
     .from("licencias")
     .select("gym_id")
     .eq("activa", true)
     .gte("fecha_vencimiento", hoy);
 
+  if (error) {
+    console.error("[cron:aplicar-recargos:dispatcher] Error:", error);
+    return NextResponse.json({ error: "db_error" }, { status: 500 });
+  }
+
   if (!licencias?.length) {
-    return NextResponse.json({ ok: true, gyms: 0 });
+    return NextResponse.json({ dispatched: 0, succeeded: 0, failed: 0 });
   }
 
-  for (const { gym_id } of licencias) {
-    await aplicarRecargosGym(supabase, gym_id);
-  }
+  const workerUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/cron/workers/aplicar-recargos-gym`;
 
-  console.log(`[cron/aplicar-recargos] ${hoy} → ${licencias.length} gyms procesados`);
+  const results = await Promise.allSettled(
+    licencias.map(({ gym_id }) =>
+      fetch(workerUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.CRON_SECRET}`,
+        },
+        body: JSON.stringify({ gym_id }),
+      })
+    )
+  );
 
-  return NextResponse.json({ ok: true, gyms: licencias.length, fecha: hoy });
+  const succeeded = results.filter((r) => r.status === "fulfilled").length;
+  const failed    = results.filter((r) => r.status === "rejected").length;
+
+  console.log(
+    `[cron:aplicar-recargos:dispatcher] dispatched=${licencias.length} ok=${succeeded} fail=${failed}`
+  );
+
+  return NextResponse.json({ dispatched: licencias.length, succeeded, failed });
 }

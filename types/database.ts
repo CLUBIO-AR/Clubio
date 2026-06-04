@@ -57,7 +57,7 @@ export type Database = {
         Row: {
           id: string;
           gym_id: string;
-          plan: "starter" | "pro" | "multi";
+          plan: "basic" | "plus" | "multi";
           fecha_inicio: string;
           fecha_vencimiento: string;
           activa: boolean;
@@ -66,16 +66,21 @@ export type Database = {
           feature_clases: boolean;
           feature_reportes: boolean;
           feature_branding: boolean;
+          feature_whatsapp: boolean;
+          feature_cobros: boolean;
+          feature_avisos: boolean;
           max_admins: number;
           precio_pagado: number | null;
           moneda: string;
+          es_trial: boolean;
+          trial_hasta: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
           gym_id: string;
-          plan?: "starter" | "pro" | "multi";
+          plan?: "basic" | "plus" | "multi";
           fecha_inicio: string;
           fecha_vencimiento: string;
           activa?: boolean;
@@ -84,12 +89,17 @@ export type Database = {
           feature_clases?: boolean;
           feature_reportes?: boolean;
           feature_branding?: boolean;
+          feature_whatsapp?: boolean;
+          feature_cobros?: boolean;
+          feature_avisos?: boolean;
           max_admins?: number;
           precio_pagado?: number | null;
           moneda?: string;
+          es_trial?: boolean;
+          trial_hasta?: string | null;
         };
         Update: {
-          plan?: "starter" | "pro" | "multi";
+          plan?: "basic" | "plus" | "multi";
           fecha_inicio?: string;
           fecha_vencimiento?: string;
           activa?: boolean;
@@ -98,9 +108,14 @@ export type Database = {
           feature_clases?: boolean;
           feature_reportes?: boolean;
           feature_branding?: boolean;
+          feature_whatsapp?: boolean;
+          feature_cobros?: boolean;
+          feature_avisos?: boolean;
           max_admins?: number;
           precio_pagado?: number | null;
           moneda?: string;
+          es_trial?: boolean;
+          trial_hasta?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -204,8 +219,12 @@ export type Database = {
           dias_aviso_antes: number[];
           aviso_post_vencimiento_dias: number;
           max_avisos_post: number;
+          email_activo: boolean;
           email_remitente_nombre: string | null;
           email_remitente_address: string | null;
+          whatsapp_activo: boolean;
+          whatsapp_phone_number_id: string | null;
+          whatsapp_access_token: string | null;
           color_primario: string;
           color_secundario: string;
           created_at: string;
@@ -226,8 +245,12 @@ export type Database = {
           dias_aviso_antes?: number[];
           aviso_post_vencimiento_dias?: number;
           max_avisos_post?: number;
+          email_activo?: boolean;
           email_remitente_nombre?: string | null;
           email_remitente_address?: string | null;
+          whatsapp_activo?: boolean;
+          whatsapp_phone_number_id?: string | null;
+          whatsapp_access_token?: string | null;
           color_primario?: string;
           color_secundario?: string;
         };
@@ -244,8 +267,12 @@ export type Database = {
           dias_aviso_antes?: number[];
           aviso_post_vencimiento_dias?: number;
           max_avisos_post?: number;
+          email_activo?: boolean;
           email_remitente_nombre?: string | null;
           email_remitente_address?: string | null;
+          whatsapp_activo?: boolean;
+          whatsapp_phone_number_id?: string | null;
+          whatsapp_access_token?: string | null;
           color_primario?: string;
           color_secundario?: string;
           updated_at?: string;
@@ -554,7 +581,7 @@ export type Database = {
       };
     };
     Enums: {
-      plan_tipo: "starter" | "pro" | "multi";
+      plan_tipo: "basic" | "plus" | "multi";
       cuota_estado: "pendiente" | "vencida" | "pagada" | "pagada_parcial" | "condonada";
     };
     CompositeTypes: Record<string, never>;

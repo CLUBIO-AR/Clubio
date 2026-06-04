@@ -74,7 +74,8 @@ CREATE INDEX IF NOT EXISTS idx_notif_cuota_canal
 -- 6. Trigger updated_at para tablas que faltaban
 -- =============================================
 
-CREATE TRIGGER IF NOT EXISTS trg_sucursal_config
+DROP TRIGGER IF EXISTS trg_sucursal_config ON sucursal_config;
+CREATE TRIGGER trg_sucursal_config
   BEFORE UPDATE ON sucursal_config
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
@@ -82,5 +83,8 @@ CREATE TRIGGER IF NOT EXISTS trg_sucursal_config
 -- 7. Policy RLS faltante para sucursal_config
 -- =============================================
 
-CREATE POLICY IF NOT EXISTS "gym_isolation" ON sucursal_config
-  USING (gym_id = get_user_gym_id());
+DO $$ BEGIN
+  CREATE POLICY "gym_isolation" ON sucursal_config
+    USING (gym_id = get_user_gym_id());
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;

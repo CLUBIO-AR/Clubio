@@ -3,28 +3,31 @@
 -- Ejecutar en Supabase SQL Editor
 -- =============================================
 
--- 1. Renombrar enum plan_tipo: starter/pro/multi → basic/plus/multi
+-- 1. Reemplazar enum plan_tipo: starter/pro/multi → basic/plus/multi
 --
--- Estrategia: convertir la columna a TEXT, actualizar los valores,
--- agregar los nuevos valores al enum, y volver a castear.
--- Esto evita el error "unsafe use of new enum value" de PostgreSQL.
+-- ALTER TYPE ADD VALUE no se puede usar en la misma transacción.
+-- Solución: crear un nuevo enum con los valores correctos y hacer el swap.
 
--- Paso 1a: liberar la columna del enum para poder actualizar los valores
-ALTER TABLE licencias ALTER COLUMN plan TYPE TEXT;
+-- Paso 1a: crear el enum correcto
+CREATE TYPE plan_tipo_v2 AS ENUM ('basic', 'plus', 'multi');
 
--- Paso 1b: renombrar los valores viejos
+-- Paso 1b: soltar el DEFAULT y liberar la columna del enum viejo
+ALTER TABLE licencias
+  ALTER COLUMN plan DROP DEFAULT,
+  ALTER COLUMN plan TYPE TEXT;
+
+-- Paso 1c: corregir los datos (starter→basic, pro→plus)
 UPDATE licencias SET plan = 'basic' WHERE plan = 'starter';
 UPDATE licencias SET plan = 'plus'  WHERE plan = 'pro';
 
--- Paso 1c: agregar los nuevos valores al enum
-ALTER TYPE plan_tipo ADD VALUE IF NOT EXISTS 'basic';
-ALTER TYPE plan_tipo ADD VALUE IF NOT EXISTS 'plus';
+-- Paso 1d: eliminar el enum viejo y renombrar el nuevo
+DROP TYPE plan_tipo;
+ALTER TYPE plan_tipo_v2 RENAME TO plan_tipo;
 
--- Paso 1d: volver a tipar la columna como enum (ya con 'basic' y 'plus' disponibles)
-ALTER TABLE licencias ALTER COLUMN plan TYPE plan_tipo USING plan::plan_tipo;
-
--- Nota: los valores 'starter' y 'pro' quedan en el enum como zombie
--- (PostgreSQL no permite DROP VALUE). El código nunca los usará.
+-- Paso 1e: restaurar la columna con el enum correcto y nuevo DEFAULT
+ALTER TABLE licencias
+  ALTER COLUMN plan TYPE plan_tipo USING plan::plan_tipo,
+  ALTER COLUMN plan SET DEFAULT 'basic';
 
 -- =============================================
 -- 2. Agregar columnas faltantes en gym_config

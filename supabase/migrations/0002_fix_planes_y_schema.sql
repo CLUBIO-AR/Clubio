@@ -4,20 +4,27 @@
 -- =============================================
 
 -- 1. Renombrar enum plan_tipo: starter/pro/multi → basic/plus/multi
---    PostgreSQL no permite ALTER ENUM RENAME VALUE directamente en todas las versiones,
---    así que creamos un nuevo enum y reemplazamos.
+--
+-- Estrategia: convertir la columna a TEXT, actualizar los valores,
+-- agregar los nuevos valores al enum, y volver a castear.
+-- Esto evita el error "unsafe use of new enum value" de PostgreSQL.
 
--- Agregar nuevos valores al enum existente
-ALTER TYPE plan_tipo ADD VALUE IF NOT EXISTS 'basic';
-ALTER TYPE plan_tipo ADD VALUE IF NOT EXISTS 'plus';
+-- Paso 1a: liberar la columna del enum para poder actualizar los valores
+ALTER TABLE licencias ALTER COLUMN plan TYPE TEXT;
 
--- Actualizar registros existentes antes de eliminar los valores viejos
+-- Paso 1b: renombrar los valores viejos
 UPDATE licencias SET plan = 'basic' WHERE plan = 'starter';
 UPDATE licencias SET plan = 'plus'  WHERE plan = 'pro';
 
--- Nota: PostgreSQL no permite DROP VALUE de un enum.
--- Los valores 'starter' y 'pro' quedan en el enum pero no deben usarse.
--- El código solo usará 'basic', 'plus', 'multi'.
+-- Paso 1c: agregar los nuevos valores al enum
+ALTER TYPE plan_tipo ADD VALUE IF NOT EXISTS 'basic';
+ALTER TYPE plan_tipo ADD VALUE IF NOT EXISTS 'plus';
+
+-- Paso 1d: volver a tipar la columna como enum (ya con 'basic' y 'plus' disponibles)
+ALTER TABLE licencias ALTER COLUMN plan TYPE plan_tipo USING plan::plan_tipo;
+
+-- Nota: los valores 'starter' y 'pro' quedan en el enum como zombie
+-- (PostgreSQL no permite DROP VALUE). El código nunca los usará.
 
 -- =============================================
 -- 2. Agregar columnas faltantes en gym_config

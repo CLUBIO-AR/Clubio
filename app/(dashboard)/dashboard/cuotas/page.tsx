@@ -7,7 +7,7 @@ import { CuotasClient } from "@/components/cuotas/cuotas-client";
 export default async function CuotasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mes?: string; anio?: string; estado?: string; search?: string; alumno?: string }>;
+  searchParams: Promise<{ mes?: string; anio?: string; estado?: string; search?: string; alumno?: string; actividad?: string }>;
 }) {
   const sp = await searchParams;
   const ctx = await getGymContext();
@@ -15,17 +15,21 @@ export default async function CuotasPage({
 
   const supabase = await createClient();
   const now = new Date();
-  const mes    = sp.mes  ? Number(sp.mes)  : now.getMonth() + 1;
-  const anio   = sp.anio ? Number(sp.anio) : now.getFullYear();
-  const estado = (sp.estado as CuotaEstado | undefined) ?? undefined;
-  const search = sp.search ?? "";
+  const mes        = sp.mes  ? Number(sp.mes)  : now.getMonth() + 1;
+  const anio       = sp.anio ? Number(sp.anio) : now.getFullYear();
+  const estado     = (sp.estado as CuotaEstado | undefined) ?? undefined;
+  const search     = sp.search ?? "";
+  const actividadId = sp.actividad ?? "";
 
-  const { data: cuotas = [] } = await getCuotas(supabase, ctx.gymId, {
-    mes, anio, estado, search, alumnoId: sp.alumno,
-  });
+  const [cuotasRes, actividadesRes] = await Promise.all([
+    getCuotas(supabase, ctx.gymId, { mes, anio, estado, search, alumnoId: sp.alumno, actividadId: actividadId || undefined }),
+    supabase.from("actividades").select("id, nombre, color").eq("gym_id", ctx.gymId).order("nombre"),
+  ]);
 
-  type Row = NonNullable<typeof cuotas>[0] & { alumnos?: { nombre: string; apellido: string; dni: string } | null };
-  let rows = (cuotas ?? []) as Row[];
+  const actividades = actividadesRes.data ?? [];
+
+  type Row = NonNullable<typeof cuotasRes.data>[0] & { alumnos?: { nombre: string; apellido: string; dni: string } | null };
+  let rows = (cuotasRes.data ?? []) as Row[];
   if (search.trim()) {
     const term = search.toLowerCase();
     rows = rows.filter((c) => {
@@ -47,6 +51,8 @@ export default async function CuotasPage({
       anio={anio}
       estadoDefault={sp.estado ?? "todos"}
       searchDefault={search}
+      actividadDefault={actividadId}
+      actividades={actividades}
       stats={{ total, pagadas, vencidas, pendientes, totalCobrado }}
     />
   );

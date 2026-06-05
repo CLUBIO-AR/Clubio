@@ -9,7 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Search, MoreHorizontal, Eye, CheckCircle, XCircle, ChevronLeft, ChevronRight, Loader2, Receipt } from "lucide-react";
+import { NuevaCuotaModal } from "@/components/cuotas/nueva-cuota-modal";
+import { Search, MoreHorizontal, Eye, CheckCircle, XCircle, ChevronLeft, ChevronRight, Loader2, Receipt, Plus } from "lucide-react";
 import { T } from "@/lib/theme";
 
 const MESES_LARGO = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
@@ -33,10 +34,13 @@ const TABS = [
 interface Stats { total: number; pagadas: number; vencidas: number; pendientes: number; totalCobrado: number; }
 
 interface CuotasClientProps {
+  actividades: { id: string; nombre: string; color: string }[];
+  actividadDefault: string;
   cuotas: Array<{
     id: string; mes: number; anio: number; monto_base: number; monto_recargo: number;
     monto_total: number; estado: string; fecha_vencimiento: string; fecha_pago?: string | null;
     recargo_nivel?: number | null; metodo_pago?: string | null;
+    alumno_id?: string | null;
     actividad_id?: string | null;
     actividades?: { nombre: string; color: string } | null;
     alumnos?: { nombre: string; apellido: string; dni: string } | null;
@@ -48,24 +52,28 @@ interface CuotasClientProps {
   stats: Stats;
 }
 
-export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, stats }: CuotasClientProps) {
+export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, actividadDefault, actividades, stats }: CuotasClientProps) {
   const router = useRouter();
-  const [search, setSearch]   = useState(searchDefault);
-  const [estado, setEstado]   = useState(estadoDefault);
-  const [curMes, setCurMes]   = useState(mes);
+  const [search, setSearch]       = useState(searchDefault);
+  const [estado, setEstado]       = useState(estadoDefault);
+  const [actividad, setActividad] = useState(actividadDefault);
+  const [curMes, setCurMes]       = useState(mes);
   const [curAnio, setCurAnio] = useState(anio);
   const [isPending, startTransition] = useTransition();
   const [page, setPage] = useState(1);
+  const [modalAlumno, setModalAlumno] = useState<{ id: string; nombre: string } | null>(null);
 
   const totalPages = Math.max(1, Math.ceil(cuotas.length / PAGE_SIZE));
   const paginadas  = cuotas.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  function navigate(newMes: number, newAnio: number, newEstado: string, newSearch: string) {
+  function navigate(newMes: number, newAnio: number, newEstado: string, newSearch: string, newActividad?: string) {
+    const act = newActividad ?? actividad;
     const p = new URLSearchParams();
     p.set("mes", String(newMes));
     p.set("anio", String(newAnio));
     if (newEstado !== "todos") p.set("estado", newEstado);
     if (newSearch) p.set("search", newSearch);
+    if (act) p.set("actividad", act);
     setPage(1);
     startTransition(() => router.push(`/dashboard/cuotas?${p.toString()}`));
   }
@@ -154,6 +162,21 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
             </button>
           ))}
         </div>
+
+        {/* Actividad filter */}
+        {actividades.length > 0 && (
+          <select
+            value={actividad}
+            onChange={(e) => { setActividad(e.target.value); navigate(curMes, curAnio, estado, search, e.target.value); }}
+            className="h-9 px-3 rounded-lg text-xs font-bold uppercase tracking-wider"
+            style={{ fontFamily: "var(--font-barlow-condensed)", background: actividad ? T.accentBg : T.card, border: `1px solid ${actividad ? T.accentBorder : T.border}`, color: actividad ? T.accent : T.textMuted }}
+          >
+            <option value="">Todas las actividades</option>
+            {actividades.map((a) => (
+              <option key={a.id} value={a.id}>{a.nombre}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* Table */}
@@ -238,6 +261,11 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
                               <CheckCircle className="w-3.5 h-3.5" /> Registrar pago
                             </DropdownMenuItem>
                           )}
+                          {c.alumno_id && c.alumnos && (
+                            <DropdownMenuItem onClick={() => setModalAlumno({ id: c.alumno_id!, nombre: `${c.alumnos!.apellido}, ${c.alumnos!.nombre}` })}>
+                              <Plus className="w-3.5 h-3.5" /> Nueva cuota especial
+                            </DropdownMenuItem>
+                          )}
                           {c.estado !== "pagada" && c.estado !== "condonada" && (
                             <>
                               <DropdownMenuSeparator style={{ background: T.border }} />
@@ -284,6 +312,16 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
           </div>
         </div>
       )}
+
+      <NuevaCuotaModal
+        open={!!modalAlumno}
+        onClose={() => setModalAlumno(null)}
+        alumnoId={modalAlumno?.id}
+        alumnoNombre={modalAlumno?.nombre}
+        mesDefault={curMes}
+        anioDefault={curAnio}
+        onCreated={() => router.refresh()}
+      />
     </div>
   );
 }

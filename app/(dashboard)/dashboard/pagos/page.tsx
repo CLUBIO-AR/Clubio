@@ -28,7 +28,7 @@ export default async function PagosPage({
     (() => {
       let q = supabase
         .from("pagos")
-        .select("id, monto, metodo, created_at, alumnos(nombre, apellido, dni), cuotas(mes, anio, tipo, descripcion)")
+        .select("id, monto, metodo, created_at, alumnos(nombre, apellido, dni), cuotas(mes, anio, tipo, descripcion, actividades(nombre, color))")
         .eq("gym_id", ctx.gymId)
         .gte("created_at", `${desde}T00:00:00`)
         .lte("created_at", `${hasta}T23:59:59`)

@@ -20,7 +20,7 @@ type Pago = {
   metodo: string;
   created_at: string;
   alumnos: { nombre: string; apellido: string; dni?: string } | null;
-  cuotas: { mes: number; anio: number; tipo: string; descripcion: string | null } | null;
+  cuotas: { mes: number; anio: number; tipo: string; descripcion: string | null; actividades: { nombre: string; color: string } | null } | null;
 };
 
 interface Props {
@@ -160,7 +160,7 @@ export function PagosClient({ pagos, desde, hasta, metodo }: Props) {
           className="flex items-center gap-1.5 h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-opacity hover:opacity-80 ml-auto"
           style={{ fontFamily: "var(--font-barlow-condensed)", background: `${T.accent}15`, color: T.accent, border: `1px solid ${T.accentBorder}` }}
         >
-          <Download className="w-3.5 h-3.5" /> Exportar CSV
+          <Download className="w-3.5 h-3.5" /> Exportar XLSX
         </button>
       </div>
 
@@ -177,10 +177,11 @@ export function PagosClient({ pagos, desde, hasta, metodo }: Props) {
       {/* Tabla */}
       <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${T.border}` }}>
         <div className="px-5 py-3 grid gap-4 border-b"
-          style={{ background: T.bgDeep, borderColor: T.borderSub, gridTemplateColumns: "minmax(0,2fr) minmax(0,1.5fr) 130px 110px" }}>
+          style={{ background: T.bgDeep, borderColor: T.borderSub, gridTemplateColumns: "minmax(0,2fr) minmax(0,1.2fr) minmax(0,1fr) 130px 110px" }}>
           {[
             { label: "Alumno", cls: "" },
             { label: "Período", cls: "" },
+            { label: "Actividad", cls: "" },
             { label: "Método", cls: "" },
             { label: "Monto", cls: "text-right" },
           ].map(({ label, cls }) => (
@@ -208,9 +209,11 @@ export function PagosClient({ pagos, desde, hasta, metodo }: Props) {
             ? cuota.descripcion.length > 28 ? cuota.descripcion.slice(0, 28) + "…" : cuota.descripcion
             : `${MESES[cuota.mes]} ${cuota.anio}`;
 
+          const actividad = cuota?.actividades ?? null;
+
           return (
             <div key={p.id} className="px-5 py-3 grid gap-4 items-center border-b last:border-b-0"
-              style={{ borderColor: T.borderSub, background: T.card, gridTemplateColumns: "minmax(0,2fr) minmax(0,1.5fr) 130px 110px" }}>
+              style={{ borderColor: T.borderSub, background: T.card, gridTemplateColumns: "minmax(0,2fr) minmax(0,1.2fr) minmax(0,1fr) 130px 110px" }}>
               <div className="min-w-0">
                 <p className="text-sm font-semibold truncate" style={{ color: T.text }}>
                   {alumno ? `${alumno.apellido}, ${alumno.nombre}` : "—"}
@@ -223,6 +226,16 @@ export function PagosClient({ pagos, desde, hasta, metodo }: Props) {
                 <p className="text-sm truncate" style={{ color: T.text }}>{periodo}</p>
                 {cuota?.tipo !== "mensual" && cuota?.tipo && (
                   <p className="text-xs capitalize" style={{ color: T.textDim }}>{cuota.tipo.replace("_", " ")}</p>
+                )}
+              </div>
+              <div className="min-w-0">
+                {actividad ? (
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full shrink-0" style={{ background: actividad.color }} />
+                    <span className="text-xs truncate" style={{ color: T.text }}>{actividad.nombre}</span>
+                  </div>
+                ) : (
+                  <span className="text-xs" style={{ color: T.textDim }}>General</span>
                 )}
               </div>
               <div>

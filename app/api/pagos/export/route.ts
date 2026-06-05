@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireGymContext } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
+import * as XLSX from "xlsx";
+
+const MESES = ["", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
 export async function GET(request: Request) {
   const ctx = await requireGymContext().catch(() => null);
@@ -15,7 +18,7 @@ export async function GET(request: Request) {
   const supabase = await createClient();
   let q = supabase
     .from("pagos")
-    .select("id, monto, metodo, created_at, alumnos(nombre, apellido, dni), cuotas(mes, anio, tipo, descripcion)")
+    .select("id, monto, metodo, created_at, alumnos(nombre, apellido, dni), cuotas(mes, anio, tipo, descripcion, actividades(nombre))")
     .eq("gym_id", ctx.gymId)
     .order("created_at", { ascending: false });
 
@@ -26,11 +29,8 @@ export async function GET(request: Request) {
   const { data, error } = await q;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const MESES = ["", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-
   let rows = data ?? [];
 
-  // Filtro por nombre/DNI si viene del cliente
   if (search.trim()) {
     const term = search.trim().toLowerCase();
     rows = rows.filter((p) => {
@@ -40,34 +40,42 @@ export async function GET(request: Request) {
     });
   }
 
-  // Generar CSV con BOM UTF-8 para Excel
-  const header = ["Apellido", "Nombre", "DNI", "Período", "Tipo", "Método", "Monto", "Fecha de pago"];
-  const lines = rows.map((p) => {
-    const a = p.alumnos as { nombre: string; apellido: string; dni: string } | null;
-    const c = p.cuotas as { mes: number; anio: number; tipo: string; descripcion: string | null } | null;
-    const periodo = !c ? "" : c.tipo !== "mensual" && c.descripcion ? c.descripcion : `${MESES[c.mes]} ${c.anio}`;
-    const tipo    = c?.tipo?.replace(/_/g, " ") ?? "";
-    const fecha   = new Date(p.created_at).toLocaleDateString("es-AR");
+  const sheetData = [
+    ["Apellido", "Nombre", "DNI", "Período", "Tipo", "Actividad", "Método", "Monto", "Fecha de pago"],
+    ...rows.map((p) => {
+      const a = p.alumnos as { nombre: string; apellido: string; dni: string } | null;
+      const c = p.cuotas as { mes: number; anio: number; tipo: string; descripcion: string | null; actividades: { nombre: string } | null } | null;
+      const periodo = !c ? "" : c.tipo !== "mensual" && c.descripcion ? c.descripcion : `${MESES[c.mes]} ${c.anio}`;
+      const actividad = c?.actividades?.nombre ?? "";
+      return [
+        a?.apellido ?? "",
+        a?.nombre   ?? "",
+        a?.dni      ?? "",
+        periodo,
+        c?.tipo?.replace(/_/g, " ") ?? "",
+        actividad,
+        p.metodo,
+        p.monto,
+        new Date(p.created_at).toLocaleDateString("es-AR"),
+      ];
+    }),
+  ];
 
-    return [
-      a?.apellido ?? "",
-      a?.nombre   ?? "",
-      a?.dni      ?? "",
-      periodo,
-      tipo,
-      p.metodo,
-      p.monto.toString().replace(".", ","),
-      fecha,
-    ].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",");
-  });
+  const ws = XLSX.utils.aoa_to_sheet(sheetData);
 
-  const csv = "﻿" + [header.join(","), ...lines].join("\n");
+  // Ancho de columnas
+  ws["!cols"] = [16, 16, 12, 18, 14, 18, 14, 10, 14].map((w) => ({ wch: w }));
 
-  const filename = `pagos_${desde || "inicio"}_${hasta || "hoy"}.csv`;
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Pagos");
 
-  return new NextResponse(csv, {
+  const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+
+  const filename = `pagos_${desde || "inicio"}_${hasta || "hoy"}.xlsx`;
+
+  return new NextResponse(buf, {
     headers: {
-      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "Content-Disposition": `attachment; filename="${filename}"`,
     },
   });

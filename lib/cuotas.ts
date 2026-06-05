@@ -36,10 +36,7 @@ export const CuotaEspecialSchema = z.object({
   monto_base:        z.number().positive(),
   fecha_vencimiento: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato YYYY-MM-DD"),
   notas:             z.string().nullable().optional(),
-}).refine(
-  (d) => d.tipo === "mensual" || !!d.descripcion?.trim(),
-  { message: "Descripción requerida para cuotas no mensuales", path: ["descripcion"] }
-);
+});
 
 export type CuotaEspecial = z.infer<typeof CuotaEspecialSchema>;
 
@@ -68,7 +65,7 @@ export type CuotaUpdate = z.infer<typeof CuotaUpdateSchema>;
 export async function getCuotas(
   supabase: SupabaseClient<Database>,
   gymId: string,
-  opts: { mes?: number; anio?: number; estado?: CuotaEstado; search?: string; alumnoId?: string } = {}
+  opts: { mes?: number; anio?: number; estado?: CuotaEstado; search?: string; alumnoId?: string; actividadId?: string } = {}
 ) {
   let query = supabase
     .from("cuotas")
@@ -85,10 +82,11 @@ export async function getCuotas(
     .eq("gym_id", gymId)
     .order("fecha_vencimiento", { ascending: true });
 
-  if (opts.mes)      query = query.eq("mes", opts.mes);
-  if (opts.anio)     query = query.eq("anio", opts.anio);
-  if (opts.estado)   query = query.eq("estado", opts.estado);
-  if (opts.alumnoId) query = query.eq("alumno_id", opts.alumnoId);
+  if (opts.mes)          query = query.eq("mes", opts.mes);
+  if (opts.anio)         query = query.eq("anio", opts.anio);
+  if (opts.estado)       query = query.eq("estado", opts.estado);
+  if (opts.alumnoId)     query = query.eq("alumno_id", opts.alumnoId);
+  if (opts.actividadId)  query = query.eq("actividad_id", opts.actividadId);
 
   if (opts.search?.trim()) {
     // Filtrar por nombre/dni requiere hacerlo en el cliente ya que es un join

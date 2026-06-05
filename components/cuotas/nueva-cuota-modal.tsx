@@ -106,17 +106,14 @@ export function NuevaCuotaModal({ open, onClose, alumnoId, alumnoNombre, mesDefa
             </select>
           </div>
 
-          {/* Descripción (obligatoria si no es mensual) */}
+          {/* Descripción */}
           <div>
-            <label style={labelStyle}>
-              Descripción {form.tipo !== "mensual" && <span style={{ color: T.danger }}>*</span>}
-            </label>
+            <label style={labelStyle}>Descripción</label>
             <input
               type="text"
               value={form.descripcion}
               onChange={(e) => set("descripcion", e.target.value)}
-              required={form.tipo !== "mensual"}
-              placeholder={form.tipo === "mensual" ? "Opcional" : "Ej: Clase spinning 10/06, Torneo julio…"}
+              placeholder="Opcional"
               style={inp}
             />
           </div>

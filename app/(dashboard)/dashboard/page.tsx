@@ -11,14 +11,19 @@ export default async function DashboardPage() {
   const now = new Date();
   const mesInicio = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
+  const mesActual  = now.getMonth() + 1;
+  const anioActual = now.getFullYear();
+
   const [alumnosRes, cuotasVencidasRes, cobrosRes, pendientesRes] = await Promise.all([
     supabase.from("alumnos").select("id", { count: "exact", head: true }).eq("gym_id", gymId).eq("activo", true).is("deleted_at", null),
-    supabase.from("cuotas").select("id", { count: "exact", head: true }).eq("gym_id", gymId).eq("estado", "vencida"),
-    supabase.from("cuotas").select("monto_total").eq("gym_id", gymId).eq("estado", "pagada").gte("fecha_pago", mesInicio),
-    supabase.from("cuotas").select("id", { count: "exact", head: true }).eq("gym_id", gymId).eq("estado", "pendiente"),
+    supabase.from("cuotas").select("id", { count: "exact", head: true })
+      .eq("gym_id", gymId).eq("estado", "vencida").eq("mes", mesActual).eq("anio", anioActual),
+    supabase.from("pagos").select("monto").eq("gym_id", gymId).gte("created_at", mesInicio),
+    supabase.from("cuotas").select("id", { count: "exact", head: true })
+      .eq("gym_id", gymId).eq("estado", "pendiente").eq("mes", mesActual).eq("anio", anioActual),
   ]);
 
-  const totalCobros = cobrosRes.data?.reduce((acc, c) => acc + (c.monto_total ?? 0), 0) ?? 0;
+  const totalCobros = cobrosRes.data?.reduce((acc, p) => acc + p.monto, 0) ?? 0;
   const mes = now.toLocaleDateString("es-AR", { month: "long", year: "numeric" });
 
   const stats = [

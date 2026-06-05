@@ -19,11 +19,15 @@ export type CreatePreferenceArgs = {
   notificationUrl: string;
 };
 
+function isLocalhost(url: string) {
+  return url.includes("localhost") || url.includes("127.0.0.1");
+}
+
 export async function createMpPreference(args: CreatePreferenceArgs) {
   const client = getMpClient(args.accessToken);
   const preference = new Preference(client);
 
-  const concepto = `Cuota ${MESES[args.mes]} ${args.anio} — ${args.alumnoNombre}`;
+  const concepto = `Cuota ${MESES[args.mes]} ${args.anio} - ${args.alumnoNombre}`;
 
   const result = await preference.create({
     body: {
@@ -37,10 +41,11 @@ export async function createMpPreference(args: CreatePreferenceArgs) {
         },
       ],
       external_reference: args.cuotaId,
-      notification_url: args.notificationUrl,
+      // MP rechaza notification_url de localhost — solo se envía en producción
+      ...(isLocalhost(args.notificationUrl) ? {} : { notification_url: args.notificationUrl }),
       back_urls: args.backUrls,
       auto_return: "approved",
-      statement_descriptor: "CLUBIO GYM",
+      statement_descriptor: "CLUBIO",
       metadata: { gym_id: args.gymId, cuota_id: args.cuotaId },
     },
   });

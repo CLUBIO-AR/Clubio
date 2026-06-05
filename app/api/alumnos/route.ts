@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getApiGymId } from "@/lib/supabase/api-auth";
 import { getAlumnos, createAlumno, AlumnoInsertSchema } from "@/lib/alumnos";
+import { generarCuotaAlta } from "@/lib/cuotas";
 
 export async function GET(request: Request) {
   const gymId = await getApiGymId();
@@ -36,6 +37,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Ya existe un alumno con ese DNI" }, { status: 409 });
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Generar cuota inicial si la config del gym lo permite (best-effort)
+  if (data?.id) {
+    generarCuotaAlta(data.id, gymId).catch((err) =>
+      console.error(`[api:alumnos:post] generarCuotaAlta alumno=${data.id} error:`, err)
+    );
   }
 
   return NextResponse.json(data, { status: 201 });

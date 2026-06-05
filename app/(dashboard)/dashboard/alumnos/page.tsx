@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getGymContext } from "@/lib/supabase/auth";
-import { getAlumnos } from "@/lib/alumnos";
+import { getAlumnosConCuotaMes } from "@/lib/alumnos";
 import { AlumnosClient } from "@/components/alumnos/alumnos-client";
 
 export default async function AlumnosPage({
@@ -16,16 +16,22 @@ export default async function AlumnosPage({
   const activoFilter =
     sp.activo === "true" ? true : sp.activo === "false" ? false : undefined;
 
-  const { data: alumnos = [] } = await getAlumnos(supabase, ctx.gymId, {
-    search: sp.search,
-    activo: activoFilter,
-  });
+  const now = new Date();
+  const mes = now.getMonth() + 1;
+  const anio = now.getFullYear();
+
+  const { data: alumnos = [] } = await getAlumnosConCuotaMes(
+    supabase, ctx.gymId, mes, anio,
+    { search: sp.search, activo: activoFilter }
+  );
 
   return (
     <AlumnosClient
       alumnos={alumnos ?? []}
       searchDefault={sp.search ?? ""}
       activoDefault={sp.activo ?? "todos"}
+      mesActual={mes}
+      anioActual={anio}
     />
   );
 }

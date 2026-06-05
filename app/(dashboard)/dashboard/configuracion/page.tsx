@@ -7,6 +7,8 @@ import { ConfigNotificaciones } from "@/components/configuracion/config-notifica
 import { ConfigMercadoPago } from "@/components/configuracion/config-mercadopago";
 import { ConfigActividades } from "@/components/configuracion/config-actividades";
 import { T } from "@/lib/theme";
+import Link from "next/link";
+import { Activity, ChevronRight } from "lucide-react";
 
 export default async function ConfiguracionPage() {
   const ctx = await requireGymContext();
@@ -42,6 +44,9 @@ export default async function ConfiguracionPage() {
         montoBaseDefecto={config?.monto_base_defecto ?? null}
         diaVencimientoMensual={config?.dia_vencimiento_mensual ?? 10}
         diasGracia={config?.dias_gracia ?? 0}
+        generarCuotaAlAlta={config?.generar_cuota_al_alta ?? true}
+        cuotaAltaProporcional={config?.cuota_alta_proporcional ?? false}
+        diasMinimosCuotaAlta={config?.dias_minimos_para_cuota_alta ?? 15}
       />
 
       <ConfigRecargos
@@ -66,6 +71,30 @@ export default async function ConfiguracionPage() {
       />
 
       <ConfigActividades actividades={actividades} />
+
+      {(ctx.rol === "owner" || ctx.rol === "admin") && (
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.12em] mb-3" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+            — Avanzado
+          </p>
+          <Link
+            href="/dashboard/configuracion/crons"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl transition-opacity hover:opacity-75"
+            style={{ background: T.card, border: `1px solid ${T.border}` }}
+          >
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${T.accent}15`, border: `1px solid ${T.accent}30` }}>
+              <Activity className="w-4 h-4" style={{ color: T.accent }} />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
+                MONITOREO DE CRONS
+              </p>
+              <p className="text-xs" style={{ color: T.textDim }}>Estado de tareas automáticas</p>
+            </div>
+            <ChevronRight className="w-4 h-4 shrink-0" style={{ color: T.textDim }} />
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

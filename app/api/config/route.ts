@@ -44,6 +44,10 @@ const PatchSchema = z.object({
   // Config: MercadoPago
   mp_access_token: z.string().nullable().optional(),
   mp_public_key: z.string().nullable().optional(),
+  // Config: cuota al alta
+  generar_cuota_al_alta: z.boolean().optional(),
+  cuota_alta_proporcional: z.boolean().optional(),
+  dias_minimos_para_cuota_alta: z.number().int().min(0).max(31).optional(),
 });
 
 export async function PATCH(request: Request) {
@@ -92,6 +96,9 @@ export async function PATCH(request: Request) {
     email_remitente_address: string | null;
     mp_access_token: string | null;
     mp_public_key: string | null;
+    generar_cuota_al_alta: boolean;
+    cuota_alta_proporcional: boolean;
+    dias_minimos_para_cuota_alta: number;
   }>;
 
   const configUpsert: ConfigUpsert = { gym_id: ctx.gymId };
@@ -101,6 +108,7 @@ export async function PATCH(request: Request) {
     "email_activo", "dias_aviso_antes", "aviso_post_vencimiento_dias", "max_avisos_post",
     "email_remitente_nombre", "email_remitente_address",
     "mp_access_token", "mp_public_key",
+    "generar_cuota_al_alta", "cuota_alta_proporcional", "dias_minimos_para_cuota_alta",
   ] as const;
 
   for (const key of configKeys) {

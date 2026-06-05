@@ -48,6 +48,34 @@ export async function getAlumnos(
   return query;
 }
 
+export async function getAlumnosConCuotaMes(
+  supabase: SupabaseClient<Database>,
+  gymId: string,
+  mes: number,
+  anio: number,
+  opts: { search?: string; activo?: boolean } = {}
+) {
+  let query = supabase
+    .from("alumnos")
+    .select("id, nombre, apellido, dni, email, telefono, activo, fecha_alta, cuotas!left(id, estado, monto_total, mes, anio)")
+    .eq("gym_id", gymId)
+    .is("deleted_at", null)
+    .eq("cuotas.mes", mes)
+    .eq("cuotas.anio", anio)
+    .order("apellido", { ascending: true });
+
+  if (opts.activo !== undefined) {
+    query = query.eq("activo", opts.activo);
+  }
+
+  if (opts.search?.trim()) {
+    const term = opts.search.trim();
+    query = query.or(`nombre.ilike.%${term}%,apellido.ilike.%${term}%,dni.ilike.%${term}%`);
+  }
+
+  return query;
+}
+
 export async function getAlumnoById(
   supabase: SupabaseClient<Database>,
   gymId: string,

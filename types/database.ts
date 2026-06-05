@@ -226,6 +226,9 @@ export type Database = {
           whatsapp_activo: boolean;
           whatsapp_phone_number_id: string | null;
           whatsapp_access_token: string | null;
+          generar_cuota_al_alta: boolean;
+          cuota_alta_proporcional: boolean;
+          dias_minimos_para_cuota_alta: number;
           color_primario: string;
           color_secundario: string;
           created_at: string;
@@ -253,6 +256,9 @@ export type Database = {
           whatsapp_activo?: boolean;
           whatsapp_phone_number_id?: string | null;
           whatsapp_access_token?: string | null;
+          generar_cuota_al_alta?: boolean;
+          cuota_alta_proporcional?: boolean;
+          dias_minimos_para_cuota_alta?: number;
           color_primario?: string;
           color_secundario?: string;
         };
@@ -276,6 +282,9 @@ export type Database = {
           whatsapp_activo?: boolean;
           whatsapp_phone_number_id?: string | null;
           whatsapp_access_token?: string | null;
+          generar_cuota_al_alta?: boolean;
+          cuota_alta_proporcional?: boolean;
+          dias_minimos_para_cuota_alta?: number;
           color_primario?: string;
           color_secundario?: string;
           updated_at?: string;
@@ -511,6 +520,8 @@ export type Database = {
           ultimo_aviso_en: string | null;
           pago_token: string | null;
           pago_token_expira: string | null;
+          tipo: string;
+          descripcion: string | null;
           notas: string | null;
           created_at: string;
           updated_at: string;
@@ -522,6 +533,8 @@ export type Database = {
           actividad_id?: string | null;
           mes: number;
           anio: number;
+          tipo?: string;
+          descripcion?: string | null;
           monto_base: number;
           monto_recargo?: number;
           estado?: "pendiente" | "vencida" | "pagada" | "pagada_parcial" | "condonada";
@@ -541,6 +554,8 @@ export type Database = {
         };
         Update: {
           actividad_id?: string | null;
+          tipo?: string;
+          descripcion?: string | null;
           monto_base?: number;
           monto_recargo?: number;
           estado?: "pendiente" | "vencida" | "pagada" | "pagada_parcial" | "condonada";
@@ -572,6 +587,13 @@ export type Database = {
             columns: ["alumno_id"];
             isOneToOne: false;
             referencedRelation: "alumnos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cuotas_actividad_id_fkey";
+            columns: ["actividad_id"];
+            isOneToOne: false;
+            referencedRelation: "actividades";
             referencedColumns: ["id"];
           }
         ];
@@ -678,6 +700,47 @@ export type Database = {
             columns: ["alumno_id"];
             isOneToOne: false;
             referencedRelation: "alumnos";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      cron_logs: {
+        Row: {
+          id: string;
+          gym_id: string | null;
+          tipo: string;
+          es_dispatcher: boolean;
+          gyms_total: number | null;
+          gyms_ok: number | null;
+          gyms_error: number | null;
+          items_creados: number | null;
+          items_saltados: number | null;
+          items_error: number | null;
+          duracion_ms: number | null;
+          error_detalle: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id?: string | null;
+          tipo: string;
+          es_dispatcher?: boolean;
+          gyms_total?: number | null;
+          gyms_ok?: number | null;
+          gyms_error?: number | null;
+          items_creados?: number | null;
+          items_saltados?: number | null;
+          items_error?: number | null;
+          duracion_ms?: number | null;
+          error_detalle?: string | null;
+        };
+        Update: Record<string, never>;
+        Relationships: [
+          {
+            foreignKeyName: "cron_logs_gym_id_fkey";
+            columns: ["gym_id"];
+            isOneToOne: false;
+            referencedRelation: "gyms";
             referencedColumns: ["id"];
           }
         ];

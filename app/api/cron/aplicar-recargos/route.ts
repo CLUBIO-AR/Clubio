@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logCron } from "@/lib/cron-logger";
 
 // DISPATCHER: lanza un worker por gym en paralelo.
 export async function GET(request: Request) {
@@ -8,6 +9,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const startTime = Date.now();
   const supabase = createAdminClient();
   const hoy = new Date().toISOString().split("T")[0];
 
@@ -23,6 +25,7 @@ export async function GET(request: Request) {
   }
 
   if (!licencias?.length) {
+    await logCron({ tipo: "aplicar_recargos", esDispatcher: true, gymsTotal: 0, gymsOk: 0, gymsError: 0, duracionMs: Date.now() - startTime });
     return NextResponse.json({ dispatched: 0, succeeded: 0, failed: 0 });
   }
 
@@ -44,9 +47,8 @@ export async function GET(request: Request) {
   const succeeded = results.filter((r) => r.status === "fulfilled").length;
   const failed    = results.filter((r) => r.status === "rejected").length;
 
-  console.log(
-    `[cron:aplicar-recargos:dispatcher] dispatched=${licencias.length} ok=${succeeded} fail=${failed}`
-  );
+  console.log(`[cron:aplicar-recargos:dispatcher] dispatched=${licencias.length} ok=${succeeded} fail=${failed}`);
+  await logCron({ tipo: "aplicar_recargos", esDispatcher: true, gymsTotal: licencias.length, gymsOk: succeeded, gymsError: failed, duracionMs: Date.now() - startTime });
 
   return NextResponse.json({ dispatched: licencias.length, succeeded, failed });
 }

@@ -35,6 +35,8 @@ interface CuotasClientProps {
     id: string; mes: number; anio: number; monto_base: number; monto_recargo: number;
     monto_total: number; estado: string; fecha_vencimiento: string; fecha_pago?: string | null;
     recargo_nivel?: number | null; metodo_pago?: string | null;
+    actividad_id?: string | null;
+    actividades?: { nombre: string; color: string } | null;
     alumnos?: { nombre: string; apellido: string; dni: string } | null;
   }>;
   mes: number;
@@ -152,7 +154,7 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
           <Table>
             <TableHeader>
               <TableRow style={{ background: T.bg, borderColor: T.border }}>
-                {["Alumno", "DNI", "Período", "Monto", "Vencimiento", "Estado", ""].map((h) => (
+                {["Alumno", "DNI", "Período", "Actividad", "Monto", "Vencimiento", "Estado", ""].map((h) => (
                   <TableHead key={h} className="text-xs uppercase tracking-widest font-bold"
                     style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)", borderColor: T.border }}>
                     {h}
@@ -181,6 +183,18 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
                     <TableCell className="font-mono text-sm" style={{ color: T.textMuted }}>{a?.dni}</TableCell>
                     <TableCell className="font-bold text-sm" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
                       {MESES_LARGO[c.mes]?.slice(0, 3).toUpperCase()} {c.anio}
+                    </TableCell>
+                    <TableCell>
+                      {c.actividades ? (
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 rounded-full shrink-0" style={{ background: (c.actividades as { nombre: string; color: string }).color }} />
+                          <span className="text-xs font-medium" style={{ color: T.text }}>
+                            {(c.actividades as { nombre: string; color: string }).nombre}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs" style={{ color: T.textDim }}>General</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <div>

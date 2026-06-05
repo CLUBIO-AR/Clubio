@@ -4,8 +4,8 @@ import { DollarSign, CreditCard, TrendingUp } from "lucide-react";
 import { T } from "@/lib/theme";
 
 const METODO_LABEL: Record<string, string> = {
-  mercadopago: "MercadoPago",
-  efectivo:    "Efectivo",
+  mercadopago:   "MercadoPago",
+  efectivo:      "Efectivo",
   transferencia: "Transferencia",
 };
 const MESES = ["", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
@@ -19,7 +19,7 @@ export default async function PagosPage() {
   const [pagosRes, pagosMesRes] = await Promise.all([
     supabase
       .from("pagos")
-      .select("id, monto, metodo, mp_payment_id, created_at, alumnos(nombre, apellido), cuotas(mes, anio)")
+      .select("id, monto, metodo, created_at, alumnos(nombre, apellido), cuotas(mes, anio, tipo, descripcion)")
       .eq("gym_id", ctx.gymId)
       .order("created_at", { ascending: false })
       .limit(100),
@@ -72,9 +72,18 @@ export default async function PagosPage() {
       {/* Tabla */}
       <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${T.border}` }}>
         {/* Header */}
-        <div className="px-5 py-3 grid grid-cols-[1fr_auto_auto_auto] gap-4 border-b" style={{ background: T.bgDeep, borderColor: T.borderSub }}>
-          {["Alumno / Cuota", "Método", "Fecha", "Monto"].map((h) => (
-            <p key={h} className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>{h}</p>
+        <div className="px-5 py-3 grid gap-4 border-b"
+          style={{ background: T.bgDeep, borderColor: T.borderSub, gridTemplateColumns: "minmax(0,2fr) minmax(0,1.5fr) 130px 110px" }}>
+          {[
+            { label: "Alumno",  cls: "" },
+            { label: "Período", cls: "" },
+            { label: "Método",  cls: "" },
+            { label: "Monto",   cls: "text-right" },
+          ].map(({ label, cls }) => (
+            <p key={label} className={`text-xs font-bold uppercase tracking-[0.12em] ${cls}`}
+              style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+              {label}
+            </p>
           ))}
         </div>
 
@@ -87,35 +96,54 @@ export default async function PagosPage() {
 
         {pagos.map((p) => {
           const alumno = p.alumnos as { nombre: string; apellido: string } | null;
-          const cuota = p.cuotas as { mes: number; anio: number } | null;
-          const fecha = new Date(p.created_at).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit" });
+          const cuota = p.cuotas as { mes: number; anio: number; tipo: string; descripcion: string | null } | null;
           const metodoColor = p.metodo === "mercadopago" ? T.accent : p.metodo === "efectivo" ? T.lime : T.blue;
+
+          // Período: para mensual mostrar mes/año, para especiales mostrar descripción
+          const periodo = !cuota
+            ? "—"
+            : cuota.tipo !== "mensual" && cuota.descripcion
+            ? cuota.descripcion.length > 28 ? cuota.descripcion.slice(0, 28) + "…" : cuota.descripcion
+            : `${MESES[cuota.mes]} ${cuota.anio}`;
+
+          const periodoSub = cuota?.tipo !== "mensual" && cuota?.tipo
+            ? cuota.tipo.replace("_", " ")
+            : null;
+
           return (
             <div
               key={p.id}
-              className="px-5 py-3 grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center border-b last:border-b-0"
-              style={{ borderColor: T.borderSub, background: T.card }}
+              className="px-5 py-3 grid gap-4 items-center border-b last:border-b-0"
+              style={{ borderColor: T.borderSub, background: T.card, gridTemplateColumns: "minmax(0,2fr) minmax(0,1.5fr) 130px 110px" }}
             >
-              {/* Alumno + cuota */}
-              <div>
-                <p className="text-sm font-semibold" style={{ color: T.text }}>
+              {/* Alumno */}
+              <div className="min-w-0">
+                <p className="text-sm font-semibold truncate" style={{ color: T.text }}>
                   {alumno ? `${alumno.apellido}, ${alumno.nombre}` : "—"}
                 </p>
-                {cuota && (
-                  <p className="text-xs" style={{ color: T.textDim }}>
-                    {MESES[cuota.mes]} {cuota.anio}
-                  </p>
+                <p className="text-xs" style={{ color: T.textDim }}>
+                  {new Date(p.created_at).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit" })}
+                </p>
+              </div>
+
+              {/* Período */}
+              <div className="min-w-0">
+                <p className="text-sm truncate" style={{ color: T.text }}>{periodo}</p>
+                {periodoSub && (
+                  <p className="text-xs capitalize" style={{ color: T.textDim }}>{periodoSub}</p>
                 )}
               </div>
-              {/* Método */}
-              <span
-                className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider"
-                style={{ fontFamily: "var(--font-barlow-condensed)", background: `${metodoColor}15`, color: metodoColor, border: `1px solid ${metodoColor}30` }}
-              >
-                {METODO_LABEL[p.metodo] ?? p.metodo}
-              </span>
-              {/* Fecha */}
-              <p className="text-xs font-mono" style={{ color: T.textDim }}>{fecha}</p>
+
+              {/* Método badge */}
+              <div>
+                <span
+                  className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider whitespace-nowrap"
+                  style={{ fontFamily: "var(--font-barlow-condensed)", background: `${metodoColor}15`, color: metodoColor, border: `1px solid ${metodoColor}30` }}
+                >
+                  {METODO_LABEL[p.metodo] ?? p.metodo}
+                </span>
+              </div>
+
               {/* Monto */}
               <p className="text-sm font-bold font-mono text-right" style={{ color: T.text }}>
                 ${p.monto.toLocaleString("es-AR")}

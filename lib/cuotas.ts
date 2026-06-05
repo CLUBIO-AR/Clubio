@@ -1,6 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { z } from "zod";
+
+export type CuotaTipo = "mensual" | "clase_suelta" | "evento" | "inscripcion" | "personalizada";
 
 export type Cuota = Database["public"]["Tables"]["cuotas"]["Row"];
 export type CuotaEstado = Cuota["estado"];
@@ -23,6 +26,22 @@ export const CuotaManualSchema = z.object({
   fecha_vencimiento: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato YYYY-MM-DD"),
   notas:            z.string().nullable().optional(),
 });
+
+export const CuotaEspecialSchema = z.object({
+  alumno_id:         z.string().uuid(),
+  tipo:              z.enum(["mensual", "clase_suelta", "evento", "inscripcion", "personalizada"]),
+  descripcion:       z.string().nullable().optional(),
+  mes:               z.number().int().min(1).max(12),
+  anio:              z.number().int().min(2020).max(2099),
+  monto_base:        z.number().positive(),
+  fecha_vencimiento: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato YYYY-MM-DD"),
+  notas:             z.string().nullable().optional(),
+}).refine(
+  (d) => d.tipo === "mensual" || !!d.descripcion?.trim(),
+  { message: "Descripción requerida para cuotas no mensuales", path: ["descripcion"] }
+);
+
+export type CuotaEspecial = z.infer<typeof CuotaEspecialSchema>;
 
 export const CuotaUpdateSchema = z.discriminatedUnion("accion", [
   z.object({
@@ -59,6 +78,8 @@ export async function getCuotas(
       estado, fecha_vencimiento, fecha_pago,
       metodo_pago, pagado_por, avisos_enviados,
       recargo_nivel, notas, created_at,
+      actividad_id,
+      actividades(nombre, color),
       alumnos!alumno_id(nombre, apellido, dni, email)
     `)
     .eq("gym_id", gymId)
@@ -165,6 +186,81 @@ export async function condonarCuota(
     .update({ estado: "condonada", notas: notas ?? null })
     .eq("id", cuotaId)
     .eq("gym_id", gymId);
+}
+
+// --- Generación automática de cuota al alta de alumno ---
+
+export async function generarCuotaAlta(
+  alumnoId: string,
+  gymId: string
+): Promise<{ generada: boolean; motivo: string }> {
+  const supabase = createAdminClient();
+
+  const { data: config } = await supabase
+    .from("gym_config")
+    .select("generar_cuota_al_alta, cuota_alta_proporcional, dias_minimos_para_cuota_alta, monto_base_defecto, dia_vencimiento_mensual")
+    .eq("gym_id", gymId)
+    .single();
+
+  if (!config?.generar_cuota_al_alta) {
+    return { generada: false, motivo: "config_desactivada" };
+  }
+
+  const hoy = new Date();
+  const ultimoDia = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate();
+  const diasRestantes = ultimoDia - hoy.getDate() + 1;
+  const mes = hoy.getMonth() + 1;
+  const anio = hoy.getFullYear();
+  const minDias = config.dias_minimos_para_cuota_alta ?? 15;
+
+  if (diasRestantes < minDias) {
+    return { generada: false, motivo: `dias_insuficientes: quedan ${diasRestantes} días, mínimo ${minDias}` };
+  }
+
+  const { data: alumno } = await supabase
+    .from("alumnos")
+    .select("monto_cuota_personalizado")
+    .eq("id", alumnoId)
+    .single();
+
+  const montoBase = alumno?.monto_cuota_personalizado ?? config.monto_base_defecto ?? 0;
+  if (!montoBase) {
+    return { generada: false, motivo: "monto_cero" };
+  }
+
+  let montoFinal = montoBase;
+  let descripcion = `Cuota ${mes}/${anio}`;
+
+  if (config.cuota_alta_proporcional) {
+    montoFinal = Math.round((montoBase / ultimoDia) * diasRestantes);
+    descripcion = `Cuota proporcional ${mes}/${anio} (${diasRestantes}/${ultimoDia} días)`;
+  }
+
+  const diaVto = config.dia_vencimiento_mensual ?? 10;
+  const fechaVtoDate = new Date(anio, mes - 1, diaVto);
+  if (fechaVtoDate < hoy) {
+    fechaVtoDate.setTime(hoy.getTime() + 5 * 86_400_000);
+  }
+  const fechaVto = fechaVtoDate.toISOString().split("T")[0];
+
+  const { error } = await supabase.from("cuotas").insert({
+    gym_id: gymId,
+    alumno_id: alumnoId,
+    mes,
+    anio,
+    tipo: "mensual",
+    descripcion,
+    monto_base: montoFinal,
+    fecha_vencimiento: fechaVto,
+    estado: "pendiente",
+  });
+
+  if (error?.code === "23505") {
+    return { generada: false, motivo: "ya_existe" };
+  }
+  if (error) throw error;
+
+  return { generada: true, motivo: descripcion };
 }
 
 // --- Helpers usados por los crons ---

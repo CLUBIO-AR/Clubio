@@ -17,9 +17,9 @@ const labelStyle: React.CSSProperties = {
 const inp: React.CSSProperties = { background: T.inputBg, border: `1px solid ${T.border}`, color: T.text };
 
 interface Sucursal { id: string; nombre: string; }
-interface AlumnoFormProps { sucursales: Sucursal[]; mode: "create" | "edit"; alumno?: Partial<Alumno>; }
+interface AlumnoFormProps { sucursales: Sucursal[]; mode: "create" | "edit"; alumno?: Partial<Alumno>; onCreated?: (id: string) => void; }
 
-export function AlumnoForm({ sucursales, mode, alumno }: AlumnoFormProps) {
+export function AlumnoForm({ sucursales, mode, alumno, onCreated }: AlumnoFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -55,7 +55,11 @@ export function AlumnoForm({ sucursales, mode, alumno }: AlumnoFormProps) {
     if (!res.ok) { setError(data.error ?? "Error al guardar"); setLoading(false); return; }
 
     if (mode === "create") {
-      router.push(`/dashboard/alumnos/${data.id}`);
+      if (onCreated) {
+        onCreated(data.id);
+      } else {
+        router.push(`/dashboard/alumnos/${data.id}`);
+      }
     } else {
       // Para edición: refrescar datos del server component sin navegar
       setSaved(true);

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { SignJWT } from "jose";
+import { logCron } from "@/lib/cron-logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendNotification } from "@/lib/notifications";
 import type { GymNotificationConfig } from "@/lib/notifications";
@@ -20,6 +21,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
 
   const { gym_id } = parsed.data;
+  const startTime = Date.now();
   const admin = createAdminClient();
 
   // Config del gym
@@ -57,7 +59,10 @@ export async function POST(request: Request) {
       `and(estado.eq.vencida,fecha_vencimiento.gte.${new Date(hoy.getTime() - 7 * 86400000).toISOString().split("T")[0]})`
     );
 
-  if (!cuotas?.length) return NextResponse.json({ ok: true, enviados: 0 });
+  if (!cuotas?.length) {
+    await logCron({ tipo: "enviar_avisos", gymId: gym_id, itemsCreados: 0, duracionMs: Date.now() - startTime });
+    return NextResponse.json({ ok: true, enviados: 0 });
+  }
 
   const notifConfig: GymNotificationConfig = {
     email_activo: gymConfig.email_activo ?? true,
@@ -121,5 +126,6 @@ export async function POST(request: Request) {
     }
   }
 
+  await logCron({ tipo: "enviar_avisos", gymId: gym_id, itemsCreados: enviados, duracionMs: Date.now() - startTime });
   return NextResponse.json({ ok: true, enviados });
 }

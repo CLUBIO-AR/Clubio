@@ -1,26 +1,17 @@
-import { AlumnoForm } from "@/components/alumnos/alumno-form";
+import { NuevoAlumnoFlow } from "@/components/alumnos/nuevo-alumno-flow";
+import { requireGymContext } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 
 export default async function NuevoAlumnoPage() {
+  const ctx = await requireGymContext();
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
 
-  const { data: gymUsuario } = await supabase
-    .from("gym_usuarios")
-    .select("gym_id")
-    .eq("id", user.id)
-    .single();
-  if (!gymUsuario) return null;
-
-  const { data: sucursales } = await supabase
-    .from("sucursales")
-    .select("id, nombre")
-    .eq("gym_id", gymUsuario.gym_id)
-    .eq("activa", true)
-    .order("nombre");
+  const [sucursalesRes, actividadesRes] = await Promise.all([
+    supabase.from("sucursales").select("id, nombre").eq("gym_id", ctx.gymId).eq("activa", true).order("nombre"),
+    supabase.from("actividades").select("id, nombre, monto_base, color").eq("gym_id", ctx.gymId).eq("activa", true).is("deleted_at", null).order("nombre"),
+  ]);
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -37,9 +28,9 @@ export default async function NuevoAlumnoPage() {
         </div>
       </div>
 
-      <AlumnoForm
-        sucursales={sucursales ?? []}
-        mode="create"
+      <NuevoAlumnoFlow
+        sucursales={sucursalesRes.data ?? []}
+        actividadesDisponibles={actividadesRes.data ?? []}
       />
     </div>
   );

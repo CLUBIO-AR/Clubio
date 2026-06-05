@@ -9,23 +9,54 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button";
+import { NuevaCuotaModal } from "@/components/cuotas/nueva-cuota-modal";
 import { Plus, Search, MoreHorizontal, Eye, UserX, UserCheck, Loader2, Users } from "lucide-react";
-import type { Alumno } from "@/lib/alumnos";
 import { T } from "@/lib/theme";
 
-interface AlumnosClientProps {
-  alumnos: Partial<Alumno>[];
-  searchDefault: string;
-  activoDefault: string;
+type CuotaResumen = { id: string; estado: string; monto_total: number | null; mes: number; anio: number };
+
+interface AlumnoRow {
+  id?: string;
+  nombre?: string;
+  apellido?: string;
+  dni?: string;
+  email?: string | null;
+  telefono?: string | null;
+  activo?: boolean;
+  fecha_alta?: string;
+  cuotas?: CuotaResumen[] | null;
 }
 
-export function AlumnosClient({ alumnos, searchDefault, activoDefault }: AlumnosClientProps) {
+interface AlumnosClientProps {
+  alumnos: AlumnoRow[];
+  searchDefault: string;
+  activoDefault: string;
+  mesActual: number;
+  anioActual: number;
+}
+
+const CUOTA_CONFIG: Record<string, { label: string; bg: string; color: string; border: string }> = {
+  pagada:   { label: "Pagada",    bg: T.accentBg,          color: T.accent,   border: T.accentBorder },
+  pendiente:{ label: "Pendiente", bg: `${T.warning}15`,    color: T.warning,  border: `${T.warning}40` },
+  vencida:  { label: "Vencida",   bg: `${T.danger}15`,     color: T.danger,   border: `${T.danger}40` },
+  condonada:{ label: "Condonada", bg: `${T.textDim}12`,    color: T.textDim,  border: T.borderSub },
+};
+
+function cuotaEstadoPeor(cuotas: CuotaResumen[]): string {
+  if (cuotas.some((c) => c.estado === "vencida"))   return "vencida";
+  if (cuotas.some((c) => c.estado === "pendiente")) return "pendiente";
+  if (cuotas.some((c) => c.estado === "pagada"))    return "pagada";
+  return "condonada";
+}
+
+export function AlumnosClient({ alumnos, searchDefault, activoDefault, mesActual, anioActual }: AlumnosClientProps) {
   const router = useRouter();
   const [search, setSearch] = useState(searchDefault);
   const [activo, setActivo] = useState(activoDefault);
   const [isPending, startTransition] = useTransition();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [modalAlumno, setModalAlumno] = useState<{ id: string; nombre: string } | null>(null);
 
   function applyFilters(newSearch: string, newActivo: string) {
     const params = new URLSearchParams();
@@ -120,7 +151,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault }: Alumnos
           <Table>
             <TableHeader>
               <TableRow style={{ background: T.bg, borderColor: T.border }}>
-                {["Alumno", "DNI", "Contacto", "Alta", "Estado", "Cuota", ""].map((h) => (
+                {["Alumno", "DNI", "Contacto", "Alta", "Estado", "Cuota actual", ""].map((h) => (
                   <TableHead key={h} className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)", borderColor: T.border }}>
                     {h}
                   </TableHead>
@@ -128,72 +159,106 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault }: Alumnos
               </TableRow>
             </TableHeader>
             <TableBody>
-              {alumnos.map((alumno) => (
-                <TableRow
-                  key={alumno.id}
-                  className="transition-colors cursor-pointer"
-                  style={{ borderColor: T.borderSub }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = T.cardHover)}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                >
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold"
-                        style={{ background: T.accentBg, border: `1px solid ${T.accentBorder}`, color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
-                        {(alumno.nombre?.[0] ?? "")}{(alumno.apellido?.[0] ?? "")}
+              {alumnos.map((alumno) => {
+                const cuotas = (alumno.cuotas ?? []) as CuotaResumen[];
+                const estado = cuotas.length > 0 ? cuotaEstadoPeor(cuotas) : null;
+                const cuotaStyle = estado ? CUOTA_CONFIG[estado] : null;
+
+                return (
+                  <TableRow
+                    key={alumno.id}
+                    className="transition-colors cursor-pointer"
+                    style={{ borderColor: T.borderSub }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = T.cardHover)}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                  >
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold"
+                          style={{ background: T.accentBg, border: `1px solid ${T.accentBorder}`, color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
+                          {(alumno.nombre?.[0] ?? "")}{(alumno.apellido?.[0] ?? "")}
+                        </div>
+                        <p className="font-semibold text-sm" style={{ color: T.text }}>{alumno.apellido}, {alumno.nombre}</p>
                       </div>
-                      <p className="font-semibold text-sm" style={{ color: T.text }}>{alumno.apellido}, {alumno.nombre}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-mono text-sm" style={{ color: T.textMuted }}>{alumno.dni}</TableCell>
-                  <TableCell className="text-sm" style={{ color: T.textDim }}>
-                    {alumno.email ?? alumno.telefono ?? <span style={{ color: T.textDim, opacity: 0.4 }}>—</span>}
-                  </TableCell>
-                  <TableCell className="text-sm" style={{ color: T.textDim }}>
-                    {alumno.fecha_alta ? new Date(alumno.fecha_alta).toLocaleDateString("es-AR") : "—"}
-                  </TableCell>
-                  <TableCell>
-                    <span className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider"
-                      style={{
-                        fontFamily: "var(--font-barlow-condensed)",
-                        background: alumno.activo ? T.accentBg : `${T.textDim}15`,
-                        color:      alumno.activo ? T.accent   : T.textDim,
-                        border:     `1px solid ${alumno.activo ? T.accentBorder : T.borderSub}`,
-                      }}>
-                      {alumno.activo ? "Activo" : "Inactivo"}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-sm font-mono" style={{ color: alumno.monto_cuota_personalizado ? T.accent : T.textDim, opacity: alumno.monto_cuota_personalizado ? 1 : 0.5 }}>
-                    {alumno.monto_cuota_personalizado ? `$${alumno.monto_cuota_personalizado.toLocaleString("es-AR")}` : "Default"}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger>
-                        <Button variant="ghost" size="icon" className="w-8 h-8" style={{ color: T.textDim }}>
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-44" style={{ background: T.card, border: `1px solid ${T.border}` }}>
-                        <DropdownMenuItem onClick={() => router.push(`/dashboard/alumnos/${alumno.id}`)}>
-                          <Eye className="w-3.5 h-3.5" /> Ver detalle
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleToggleActivo(alumno.id!, alumno.activo ?? true)}>
-                          {alumno.activo ? <><UserX className="w-3.5 h-3.5" /> Dar de baja</> : <><UserCheck className="w-3.5 h-3.5" /> Reactivar</>}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator style={{ background: T.border }} />
-                        <DropdownMenuItem variant="destructive" onClick={() => setDeleteId(alumno.id!)}>
-                          Eliminar
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                    <TableCell className="font-mono text-sm" style={{ color: T.textMuted }}>{alumno.dni}</TableCell>
+                    <TableCell className="text-sm" style={{ color: T.textDim }}>
+                      {alumno.email ?? alumno.telefono ?? <span style={{ color: T.textDim, opacity: 0.4 }}>—</span>}
+                    </TableCell>
+                    <TableCell className="text-sm" style={{ color: T.textDim }}>
+                      {alumno.fecha_alta ? new Date(alumno.fecha_alta).toLocaleDateString("es-AR") : "—"}
+                    </TableCell>
+                    <TableCell>
+                      <span className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider"
+                        style={{
+                          fontFamily: "var(--font-barlow-condensed)",
+                          background: alumno.activo ? T.accentBg : `${T.textDim}15`,
+                          color:      alumno.activo ? T.accent   : T.textDim,
+                          border:     `1px solid ${alumno.activo ? T.accentBorder : T.borderSub}`,
+                        }}>
+                        {alumno.activo ? "Activo" : "Inactivo"}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {cuotaStyle ? (
+                        <span className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider"
+                          style={{ fontFamily: "var(--font-barlow-condensed)", background: cuotaStyle.bg, color: cuotaStyle.color, border: `1px solid ${cuotaStyle.border}` }}>
+                          {cuotaStyle.label}
+                        </span>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setModalAlumno({ id: alumno.id!, nombre: `${alumno.apellido}, ${alumno.nombre}` });
+                          }}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider transition-colors hover:opacity-80"
+                          style={{ fontFamily: "var(--font-barlow-condensed)", background: `${T.textDim}12`, color: T.textDim, border: `1px solid ${T.borderSub}` }}
+                        >
+                          <Plus className="w-3 h-3" /> Generar
+                        </button>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger>
+                          <Button variant="ghost" size="icon" className="w-8 h-8" style={{ color: T.textDim }}>
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+                          <DropdownMenuItem onClick={() => router.push(`/dashboard/alumnos/${alumno.id}`)}>
+                            <Eye className="w-3.5 h-3.5" /> Ver detalle
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleToggleActivo(alumno.id!, alumno.activo ?? true)}>
+                            {alumno.activo ? <><UserX className="w-3.5 h-3.5" /> Dar de baja</> : <><UserCheck className="w-3.5 h-3.5" /> Reactivar</>}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator style={{ background: T.border }} />
+                          <DropdownMenuItem variant="destructive" onClick={() => setDeleteId(alumno.id!)}>
+                            Eliminar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
       )}
 
+      {/* Modal nueva cuota */}
+      <NuevaCuotaModal
+        open={!!modalAlumno}
+        onClose={() => setModalAlumno(null)}
+        alumnoId={modalAlumno?.id}
+        alumnoNombre={modalAlumno?.nombre}
+        mesDefault={mesActual}
+        anioDefault={anioActual}
+        onCreated={() => router.refresh()}
+      />
+
+      {/* Delete confirm */}
       <Dialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <DialogContent style={{ background: T.card, border: `1px solid ${T.border}` }}>
           <DialogHeader>

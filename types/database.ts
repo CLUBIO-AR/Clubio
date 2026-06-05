@@ -209,6 +209,7 @@ export type Database = {
           gym_id: string;
           mp_access_token: string | null;
           mp_public_key: string | null;
+          mp_webhook_secret: string | null;
           monto_base_defecto: number | null;
           dia_vencimiento_mensual: number;
           dias_gracia: number;
@@ -235,6 +236,7 @@ export type Database = {
           gym_id: string;
           mp_access_token?: string | null;
           mp_public_key?: string | null;
+          mp_webhook_secret?: string | null;
           monto_base_defecto?: number | null;
           dia_vencimiento_mensual?: number;
           dias_gracia?: number;
@@ -257,6 +259,7 @@ export type Database = {
         Update: {
           mp_access_token?: string | null;
           mp_public_key?: string | null;
+          mp_webhook_secret?: string | null;
           monto_base_defecto?: number | null;
           dia_vencimiento_mensual?: number;
           dias_gracia?: number;
@@ -533,26 +536,38 @@ export type Database = {
         Row: {
           id: string;
           gym_id: string;
-          alumno_id: string;
+          alumno_id: string | null;
           cuota_id: string | null;
           tipo: string;
-          enviado_a: string;
-          estado: string;
+          enviado_a: string | null;
+          enviado: boolean;
+          estado: string | null;
+          canal: string;
+          provider_id: string | null;
+          error_detail: string | null;
           resend_id: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           gym_id: string;
-          alumno_id: string;
+          alumno_id?: string | null;
           cuota_id?: string | null;
           tipo: string;
-          enviado_a: string;
-          estado?: string;
+          enviado_a?: string | null;
+          enviado?: boolean;
+          estado?: string | null;
+          canal?: string;
+          provider_id?: string | null;
+          error_detail?: string | null;
           resend_id?: string | null;
         };
         Update: {
-          estado?: string;
+          enviado?: boolean;
+          estado?: string | null;
+          canal?: string;
+          provider_id?: string | null;
+          error_detail?: string | null;
           resend_id?: string | null;
         };
         Relationships: [

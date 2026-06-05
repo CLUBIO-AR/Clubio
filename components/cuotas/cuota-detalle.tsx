@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, User, Calendar, DollarSign, AlertTriangle, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Loader2, User, Calendar, DollarSign, AlertTriangle, CheckCircle, XCircle, Clock, Link2, Copy, Check } from "lucide-react";
 import { T } from "@/lib/theme";
 
 const MESES = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
@@ -51,6 +51,9 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
   const [notas, setNotas] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [linkLoading, setLinkLoading] = useState(false);
+  const [linkCopiado, setLinkCopiado] = useState(false);
+  const [linkUrl, setLinkUrl] = useState<string | null>(null);
 
   const canPay = cuota.estado === "pendiente" || cuota.estado === "vencida";
   const canCondonar = cuota.estado !== "pagada" && cuota.estado !== "condonada";
@@ -68,6 +71,22 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
     router.refresh();
     setAccion("none");
     setLoading(false);
+  }
+
+  async function handleGenerarLink() {
+    setLinkLoading(true);
+    const res = await fetch("/api/pagos/generar-link", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cuota_id: cuota.id }),
+    });
+    const data = await res.json();
+    setLinkLoading(false);
+    if (!res.ok) { setError(data.error); return; }
+    setLinkUrl(data.url);
+    await navigator.clipboard.writeText(data.url).catch(() => {});
+    setLinkCopiado(true);
+    setTimeout(() => setLinkCopiado(false), 3000);
   }
 
   async function handleCondonar() {
@@ -176,6 +195,13 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
               <CheckCircle className="w-4 h-4" /> Registrar pago
             </button>
           )}
+          {canPay && (
+            <button onClick={handleGenerarLink} disabled={linkLoading}
+              className="flex items-center gap-2 h-10 px-5 rounded-lg font-bold uppercase tracking-widest text-sm transition-all hover:opacity-90 disabled:opacity-50"
+              style={{ fontFamily: "var(--font-barlow-condensed)", background: T.card, color: T.text, border: `1px solid ${T.border}` }}>
+              {linkLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : linkCopiado ? <><Check className="w-4 h-4" style={{ color: T.accent }} /> Link copiado</> : <><Link2 className="w-4 h-4" /> Enviar link MP</>}
+            </button>
+          )}
           {canCondonar && (
             <button onClick={() => setAccion("condonar")}
               className="flex items-center gap-2 h-10 px-5 rounded-lg font-bold uppercase tracking-widest text-sm transition-all hover:opacity-80"
@@ -183,6 +209,17 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
               <XCircle className="w-4 h-4" /> Condonar cuota
             </button>
           )}
+        </div>
+      )}
+
+      {linkUrl && !linkCopiado && (
+        <div className="flex items-center gap-2 p-3 rounded-lg" style={{ background: T.accentBg, border: `1px solid ${T.accentBorder}` }}>
+          <Link2 className="w-4 h-4 shrink-0" style={{ color: T.accent }} />
+          <span className="text-xs font-mono truncate flex-1" style={{ color: T.accent }}>{linkUrl}</span>
+          <button onClick={() => { navigator.clipboard.writeText(linkUrl); setLinkCopiado(true); setTimeout(() => setLinkCopiado(false), 3000); }}
+            className="shrink-0 p-1 rounded hover:opacity-75">
+            <Copy className="w-3.5 h-3.5" style={{ color: T.accent }} />
+          </button>
         </div>
       )}
 

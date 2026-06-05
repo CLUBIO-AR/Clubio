@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireGymContext } from "@/lib/supabase/auth";
+import { getApiGymContext } from "@/lib/supabase/api-auth";
 import { z } from "zod";
 
 const Schema = z.object({
@@ -9,7 +9,7 @@ const Schema = z.object({
 // Trigger manual de crons — solo owner/admin.
 // Llama directamente al worker del gym autenticado.
 export async function POST(request: Request) {
-  const ctx = await requireGymContext().catch(() => null);
+  const ctx = await getApiGymContext();
   if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (ctx.rol !== "owner" && ctx.rol !== "admin") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

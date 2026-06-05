@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireGymContext } from "@/lib/supabase/auth";
+import { getApiGymContext } from "@/lib/supabase/api-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 
 const Schema = z.object({
@@ -8,7 +9,7 @@ const Schema = z.object({
 });
 
 export async function POST(request: Request) {
-  const ctx = await requireGymContext().catch(() => null);
+  const ctx = await getApiGymContext();
   if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (ctx.rol !== "owner" && ctx.rol !== "admin") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -18,7 +19,10 @@ export async function POST(request: Request) {
   const parsed = Schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
 
-  const toEmail = parsed.data.to ?? ctx.user.email;
+  // Obtener email del usuario si no se especificó destino
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const toEmail = parsed.data.to ?? user?.email;
   if (!toEmail) return NextResponse.json({ error: "No hay email de destino" }, { status: 400 });
 
   const admin = createAdminClient();

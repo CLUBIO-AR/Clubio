@@ -29,6 +29,8 @@ export async function createMpPreference(args: CreatePreferenceArgs) {
 
   const concepto = `Cuota ${MESES[args.mes]} ${args.anio} - ${args.alumnoNombre}`;
 
+  const local = isLocalhost(args.notificationUrl);
+
   const result = await preference.create({
     body: {
       items: [
@@ -41,10 +43,12 @@ export async function createMpPreference(args: CreatePreferenceArgs) {
         },
       ],
       external_reference: args.cuotaId,
-      // MP rechaza notification_url de localhost — solo se envía en producción
-      ...(isLocalhost(args.notificationUrl) ? {} : { notification_url: args.notificationUrl }),
-      back_urls: args.backUrls,
-      auto_return: "approved",
+      // En localhost MP rechaza notification_url y auto_return (requiere URLs públicas)
+      ...(local ? {} : {
+        notification_url: args.notificationUrl,
+        back_urls: args.backUrls,
+        auto_return: "approved" as const,
+      }),
       statement_descriptor: "CLUBIO",
       metadata: { gym_id: args.gymId, cuota_id: args.cuotaId },
     },

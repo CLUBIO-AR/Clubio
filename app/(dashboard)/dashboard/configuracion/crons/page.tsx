@@ -5,6 +5,7 @@ import { T } from "@/lib/theme";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { redirect } from "next/navigation";
+import { CronsActions } from "@/components/crons/crons-actions";
 
 const TIPO_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   generar_cuotas:   { label: "Generar cuotas",    icon: Zap,          color: T.accent  },
@@ -75,6 +76,9 @@ export default async function CronsPage() {
           <p className="text-sm mt-1" style={{ color: T.textDim }}>Estado de tareas automáticas de este gimnasio</p>
         </div>
       </div>
+
+      {/* Botones de ejecución manual */}
+      <CronsActions />
 
       {/* Última ejecución por tipo — datos del GYM PROPIO */}
       <div className="rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>

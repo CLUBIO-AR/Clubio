@@ -106,15 +106,15 @@ export async function POST(request: Request) {
 
     // Registrar en notificaciones_log
     for (const r of resultados) {
+      const destino = r.canal === "email" ? (alumno.email ?? "") : (alumno.telefono ?? "");
       await admin.from("notificaciones_log").insert({
         gym_id,
         alumno_id: cuota.alumno_id,
         cuota_id: cuota.id,
         tipo,
-        canal: r.canal,
-        enviado: r.ok,
-        provider_id: r.provider_id ?? null,
-        error_detail: r.ok ? null : "Error al enviar",
+        enviado_a: destino || r.canal,
+        estado: r.ok ? "enviado" : "error",
+        resend_id: r.provider_id ?? null,
       });
     }
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Zap, Bell, Mail, Loader2, CheckCircle, XCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { T } from "@/lib/theme";
+import { triggerCronAction, testEmailAction } from "@/app/actions/crons";
 
 type TriggerResult = {
   ok: boolean;
@@ -48,16 +49,19 @@ export function CronsActions() {
   const [testEmailResult, setTestEmailResult] = useState<TestEmailResult | null>(null);
   const [testEmailLoading, setTestEmailLoading] = useState(false);
 
-  async function trigger(tipo: string) {
+  async function trigger(tipo: "enviar_avisos" | "generar_cuotas") {
     setLoading(tipo);
     try {
-      const res = await fetch("/api/cron/trigger", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tipo }),
-      });
-      const data = await res.json();
-      setResults((prev) => ({ ...prev, [tipo]: { ok: res.ok, tipo, ...data } }));
+      const result = await triggerCronAction(tipo);
+      setResults((prev) => ({
+        ...prev,
+        [tipo]: {
+          ok: result.ok,
+          tipo,
+          resultado: result.ok ? result.data : undefined,
+          error: result.ok ? undefined : result.error,
+        },
+      }));
     } catch {
       setResults((prev) => ({ ...prev, [tipo]: { ok: false, tipo, error: "Error de red" } }));
     } finally {
@@ -69,13 +73,11 @@ export function CronsActions() {
     setTestEmailLoading(true);
     setTestEmailResult(null);
     try {
-      const res = await fetch("/api/cron/test-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(testEmail ? { to: testEmail } : {}),
+      const result = await testEmailAction(testEmail || undefined);
+      setTestEmailResult({
+        ok: result.ok,
+        ...(result.ok ? result.data : { error: result.error }),
       });
-      const data = await res.json();
-      setTestEmailResult({ ok: res.ok, ...data });
     } catch {
       setTestEmailResult({ ok: false, error: "Error de red" });
     } finally {

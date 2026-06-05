@@ -28,7 +28,6 @@ const TABS = [
   { value: "pendiente", label: "Pendientes" },
   { value: "vencida",   label: "Vencidas" },
   { value: "pagada",    label: "Pagadas" },
-  { value: "condonada", label: "Condonadas" },
 ];
 
 interface Stats { total: number; pagadas: number; vencidas: number; pendientes: number; totalCobrado: number; }

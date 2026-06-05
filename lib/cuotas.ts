@@ -3,6 +3,13 @@ import type { Database } from "@/types/database";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { z } from "zod";
 
+// Zod v4 uuid() usa RFC 4122 estricto (rechaza UUIDs sintéticos del seed).
+// Usamos regex leniente que solo valida el formato 8-4-4-4-12.
+const uuidLenient = z.string().regex(
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+  "ID de alumno inválido"
+);
+
 export type CuotaTipo = "mensual" | "clase_suelta" | "evento" | "inscripcion" | "personalizada";
 
 export type Cuota = Database["public"]["Tables"]["cuotas"]["Row"];
@@ -19,7 +26,7 @@ export type CuotaConAlumno = Cuota & {
 };
 
 export const CuotaManualSchema = z.object({
-  alumno_id:        z.string().uuid(),
+  alumno_id:        uuidLenient,
   mes:              z.number().int().min(1).max(12),
   anio:             z.number().int().min(2020).max(2099),
   monto_base:       z.number().positive(),

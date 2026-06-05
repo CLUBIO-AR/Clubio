@@ -1,29 +1,63 @@
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { createClient } from "./server";
+import { createAdminClient } from "./admin";
 import { redirect } from "next/navigation";
 
-// cache() deduplica llamadas idénticas dentro del mismo render tree.
-// getUser() y getGymContext() se ejecutan UNA sola vez por request,
-// sin importar cuántos componentes las llamen.
-
+// getSession() reads from cookie — no network call.
+// The proxy already called getUser() to verify the session before reaching here.
 export const getUser = cache(async () => {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  return user;
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.user ?? null;
 });
 
+// unstable_cache persists across navigations (5-minute TTL).
+// Runs outside request context so we use the admin client.
+const _getCachedGymCtx = (userId: string) =>
+  unstable_cache(
+    async (): Promise<{ gym_id: string; nombre: string; rol: string; gymNombre: string } | null> => {
+      const admin = createAdminClient();
+      const { data: gu } = await admin
+        .from("gym_usuarios")
+        .select("gym_id, nombre, rol")
+        .eq("id", userId)
+        .single();
+      if (!gu) return null;
+
+      const { data: gym } = await admin
+        .from("gyms")
+        .select("nombre")
+        .eq("id", gu.gym_id)
+        .single();
+
+      return {
+        gym_id: gu.gym_id,
+        nombre: gu.nombre,
+        rol: gu.rol,
+        gymNombre: gym?.nombre ?? "GYM",
+      };
+    },
+    ["gym-ctx", userId],
+    { revalidate: 300, tags: [`gym-ctx-${userId}`] }
+  )();
+
+// cache() deduplicates within the same render tree.
+// _getCachedGymCtx deduplicates across navigations.
 export const getGymContext = cache(async () => {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) return null;
 
-  const { data } = await supabase
-    .from("gym_usuarios")
-    .select("gym_id, nombre, rol")
-    .eq("id", user.id)
-    .single();
+  const data = await _getCachedGymCtx(user.id);
+  if (!data) return null;
 
-  return data ? { user, gymId: data.gym_id, nombre: data.nombre, rol: data.rol } : null;
+  return {
+    user,
+    gymId: data.gym_id,
+    nombre: data.nombre,
+    rol: data.rol,
+    gymNombre: data.gymNombre,
+  };
 });
 
 export async function requireGymContext() {

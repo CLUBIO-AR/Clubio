@@ -1,5 +1,4 @@
 import { requireGymContext } from "@/lib/supabase/auth";
-import { createClient } from "@/lib/supabase/server";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 
 export default async function DashboardLayout({
@@ -9,17 +8,10 @@ export default async function DashboardLayout({
 }) {
   const ctx = await requireGymContext();
 
-  const supabase = await createClient();
-  const { data: gym } = await supabase
-    .from("gyms")
-    .select("nombre, slug")
-    .eq("id", ctx.gymId)
-    .single();
-
   return (
     <div className="flex h-screen overflow-hidden">
       <SidebarNav
-        gymNombre={gym?.nombre ?? "GYM"}
+        gymNombre={ctx.gymNombre}
         usuarioNombre={ctx.nombre}
         usuarioRol={ctx.rol}
       />

@@ -4,12 +4,10 @@ import { createClient } from "./server";
 import { createAdminClient } from "./admin";
 import { redirect } from "next/navigation";
 
-// getSession() reads from cookie — no network call.
-// The proxy already called getUser() to verify the session before reaching here.
 export const getUser = cache(async () => {
   const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.user ?? null;
+  const { data: { user } } = await supabase.auth.getUser();
+  return user ?? null;
 });
 
 // unstable_cache persists across navigations (5-minute TTL).

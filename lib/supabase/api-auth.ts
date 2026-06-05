@@ -1,9 +1,7 @@
 import { createClient } from "./server";
 import { createAdminClient } from "./admin";
 
-// Usado en API routes: obtiene gymId sin getUser() (lento).
-// Usa getSession() + admin client para gym_usuarios.
-// El proxy ya verificó la sesión antes de llegar aquí.
+// Usado en API routes: obtiene gymId vía getUser() (valida con Supabase server).
 export async function getApiGymId(): Promise<string | null> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

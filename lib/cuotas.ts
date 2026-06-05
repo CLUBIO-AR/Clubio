@@ -35,7 +35,7 @@ export const CuotaManualSchema = z.object({
 });
 
 export const CuotaEspecialSchema = z.object({
-  alumno_id:         z.string().uuid(),
+  alumno_id:         uuidLenient,
   tipo:              z.enum(["mensual", "clase_suelta", "evento", "inscripcion", "personalizada"]),
   descripcion:       z.string().nullable().optional(),
   mes:               z.number().int().min(1).max(12),

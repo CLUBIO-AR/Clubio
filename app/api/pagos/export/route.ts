@@ -40,31 +40,37 @@ export async function GET(request: Request) {
     });
   }
 
+  const dataRows = rows.map((p) => {
+    const a = p.alumnos as { nombre: string; apellido: string; dni: string } | null;
+    const c = p.cuotas as { mes: number; anio: number; tipo: string; descripcion: string | null; actividades: { nombre: string } | null } | null;
+    const periodo = !c ? "" : c.tipo !== "mensual" && c.descripcion ? c.descripcion : `${MESES[c.mes]} ${c.anio}`;
+    const actividad = c?.actividades?.nombre ?? "";
+    return [
+      a?.apellido ?? "",
+      a?.nombre   ?? "",
+      a?.dni      ?? "",
+      periodo,
+      c?.tipo?.replace(/_/g, " ") ?? "",
+      actividad,
+      p.metodo,
+      p.monto,
+      new Date(p.created_at).toLocaleDateString("es-AR"),
+    ];
+  });
+
+  const totalMonto = rows.reduce((sum, p) => sum + p.monto, 0);
+
   const sheetData = [
     ["Apellido", "Nombre", "DNI", "Período", "Tipo", "Actividad", "Método", "Monto", "Fecha de pago"],
-    ...rows.map((p) => {
-      const a = p.alumnos as { nombre: string; apellido: string; dni: string } | null;
-      const c = p.cuotas as { mes: number; anio: number; tipo: string; descripcion: string | null; actividades: { nombre: string } | null } | null;
-      const periodo = !c ? "" : c.tipo !== "mensual" && c.descripcion ? c.descripcion : `${MESES[c.mes]} ${c.anio}`;
-      const actividad = c?.actividades?.nombre ?? "";
-      return [
-        a?.apellido ?? "",
-        a?.nombre   ?? "",
-        a?.dni      ?? "",
-        periodo,
-        c?.tipo?.replace(/_/g, " ") ?? "",
-        actividad,
-        p.metodo,
-        p.monto,
-        new Date(p.created_at).toLocaleDateString("es-AR"),
-      ];
-    }),
+    ...dataRows,
+    [],
+    ["", "", "", "", "", "", "TOTAL", totalMonto, `${rows.length} pagos`],
   ];
 
   const ws = XLSX.utils.aoa_to_sheet(sheetData);
 
   // Ancho de columnas
-  ws["!cols"] = [16, 16, 12, 18, 14, 18, 14, 10, 14].map((w) => ({ wch: w }));
+  ws["!cols"] = [16, 16, 12, 18, 14, 18, 14, 12, 14].map((w) => ({ wch: w }));
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Pagos");

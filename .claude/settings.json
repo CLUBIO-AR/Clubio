@@ -29,7 +29,13 @@
       "Bash(npx vitest *)",
       "Bash(node -e ' *)",
       "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(p.scripts\\)\")",
-      "Bash(node -e \"console.log\\(require\\('./node_modules/next/package.json'\\).version\\)\")"
+      "Bash(node -e \"console.log\\(require\\('./node_modules/next/package.json'\\).version\\)\")",
+      "Bash(npx vercel *)",
+      "Bash(node -e \"console.log\\(require\\('./package.json'\\).dependencies.next\\)\")",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d['dependencies'].get\\('next','?'\\)\\)\")",
+      "Bash(npm i *)",
+      "Bash(ls \"C:\\\\Users\\\\valen\\\\Downloads\" 2>/dev/null | grep -i spec || echo \"no spec file\")",
+      "Read(//c/Users/valen/Downloads/**)"
     ],
     "additionalDirectories": [
       "c:\\Git\\Clubio\\Clubio\\app\\pagar"

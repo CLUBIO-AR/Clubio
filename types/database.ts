@@ -395,11 +395,104 @@ export type Database = {
           }
         ];
       };
+      actividades: {
+        Row: {
+          id: string;
+          gym_id: string;
+          nombre: string;
+          monto_base: number;
+          recargo_1_dias: number | null;
+          recargo_1_porcentaje: number | null;
+          recargo_2_dias: number | null;
+          recargo_2_porcentaje: number | null;
+          color: string;
+          activa: boolean;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          nombre: string;
+          monto_base: number;
+          recargo_1_dias?: number | null;
+          recargo_1_porcentaje?: number | null;
+          recargo_2_dias?: number | null;
+          recargo_2_porcentaje?: number | null;
+          color?: string;
+          activa?: boolean;
+        };
+        Update: {
+          nombre?: string;
+          monto_base?: number;
+          recargo_1_dias?: number | null;
+          recargo_1_porcentaje?: number | null;
+          recargo_2_dias?: number | null;
+          recargo_2_porcentaje?: number | null;
+          color?: string;
+          activa?: boolean;
+          deleted_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "actividades_gym_id_fkey";
+            columns: ["gym_id"];
+            isOneToOne: false;
+            referencedRelation: "gyms";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      alumno_actividades: {
+        Row: {
+          id: string;
+          gym_id: string;
+          alumno_id: string;
+          actividad_id: string;
+          monto_personalizado: number | null;
+          activa: boolean;
+          fecha_inicio: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          alumno_id: string;
+          actividad_id: string;
+          monto_personalizado?: number | null;
+          activa?: boolean;
+          fecha_inicio?: string;
+        };
+        Update: {
+          monto_personalizado?: number | null;
+          activa?: boolean;
+          fecha_inicio?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "alumno_actividades_alumno_id_fkey";
+            columns: ["alumno_id"];
+            isOneToOne: false;
+            referencedRelation: "alumnos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "alumno_actividades_actividad_id_fkey";
+            columns: ["actividad_id"];
+            isOneToOne: false;
+            referencedRelation: "actividades";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       cuotas: {
         Row: {
           id: string;
           gym_id: string;
           alumno_id: string;
+          actividad_id: string | null;
           mes: number;
           anio: number;
           monto_base: number;
@@ -426,6 +519,7 @@ export type Database = {
           id?: string;
           gym_id: string;
           alumno_id: string;
+          actividad_id?: string | null;
           mes: number;
           anio: number;
           monto_base: number;
@@ -446,6 +540,7 @@ export type Database = {
           notas?: string | null;
         };
         Update: {
+          actividad_id?: string | null;
           monto_base?: number;
           monto_recargo?: number;
           estado?: "pendiente" | "vencida" | "pagada" | "pagada_parcial" | "condonada";

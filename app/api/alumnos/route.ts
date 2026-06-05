@@ -1,27 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import {
-  getAlumnos,
-  createAlumno,
-  AlumnoInsertSchema,
-} from "@/lib/alumnos";
-
-async function getGymId(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data } = await supabase
-    .from("gym_usuarios")
-    .select("gym_id")
-    .eq("id", user.id)
-    .single();
-  return data?.gym_id ?? null;
-}
+import { getApiGymId } from "@/lib/supabase/api-auth";
+import { getAlumnos, createAlumno, AlumnoInsertSchema } from "@/lib/alumnos";
 
 export async function GET(request: Request) {
-  const supabase = await createClient();
-  const gymId = await getGymId(supabase);
+  const gymId = await getApiGymId();
   if (!gymId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const supabase = await createClient();
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search") ?? undefined;
   const activoParam = searchParams.get("activo");
@@ -34,10 +20,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const gymId = await getGymId(supabase);
+  const gymId = await getApiGymId();
   if (!gymId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const supabase = await createClient();
   const body = await request.json();
   const parsed = AlumnoInsertSchema.safeParse(body);
   if (!parsed.success) {

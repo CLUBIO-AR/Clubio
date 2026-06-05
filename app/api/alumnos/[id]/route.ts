@@ -1,32 +1,17 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import {
-  getAlumnoById,
-  updateAlumno,
-  softDeleteAlumno,
-  AlumnoUpdateSchema,
-} from "@/lib/alumnos";
-
-async function getGymId(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data } = await supabase
-    .from("gym_usuarios")
-    .select("gym_id")
-    .eq("id", user.id)
-    .single();
-  return data?.gym_id ?? null;
-}
+import { getApiGymId } from "@/lib/supabase/api-auth";
+import { getAlumnoById, updateAlumno, softDeleteAlumno, AlumnoUpdateSchema } from "@/lib/alumnos";
 
 export async function GET(
   _: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = await createClient();
-  const gymId = await getGymId(supabase);
+  const gymId = await getApiGymId();
   if (!gymId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const supabase = await createClient();
   const { data, error } = await getAlumnoById(supabase, gymId, id);
   if (error || !data) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
 
@@ -38,10 +23,10 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = await createClient();
-  const gymId = await getGymId(supabase);
+  const gymId = await getApiGymId();
   if (!gymId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const supabase = await createClient();
   const body = await request.json();
   const parsed = AlumnoUpdateSchema.safeParse(body);
   if (!parsed.success) {
@@ -59,10 +44,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = await createClient();
-  const gymId = await getGymId(supabase);
+  const gymId = await getApiGymId();
   if (!gymId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const supabase = await createClient();
   const { error } = await softDeleteAlumno(supabase, gymId, id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

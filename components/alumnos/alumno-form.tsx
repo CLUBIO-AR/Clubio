@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Loader2, Check } from "lucide-react";
 import type { Alumno } from "@/lib/alumnos";
 import { T } from "@/lib/theme";
 
@@ -22,7 +22,9 @@ interface AlumnoFormProps { sucursales: Sucursal[]; mode: "create" | "edit"; alu
 export function AlumnoForm({ sucursales, mode, alumno }: AlumnoFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
   const [form, setForm] = useState({
     nombre: alumno?.nombre ?? "", apellido: alumno?.apellido ?? "", dni: alumno?.dni ?? "",
     email: alumno?.email ?? "", telefono: alumno?.telefono ?? "",
@@ -51,8 +53,16 @@ export function AlumnoForm({ sucursales, mode, alumno }: AlumnoFormProps) {
     const res = await fetch(url, { method: mode === "create" ? "POST" : "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     const data = await res.json();
     if (!res.ok) { setError(data.error ?? "Error al guardar"); setLoading(false); return; }
-    router.push(mode === "create" ? `/dashboard/alumnos/${data.id}` : `/dashboard/alumnos/${alumno?.id}`);
-    router.refresh();
+
+    if (mode === "create") {
+      router.push(`/dashboard/alumnos/${data.id}`);
+    } else {
+      // Para edición: refrescar datos del server component sin navegar
+      setSaved(true);
+      startTransition(() => router.refresh());
+      setTimeout(() => setSaved(false), 2500);
+    }
+    setLoading(false);
   }
 
   const SectionTitle = ({ children }: { children: string }) => (
@@ -107,7 +117,7 @@ export function AlumnoForm({ sucursales, mode, alumno }: AlumnoFormProps) {
           className="h-10 px-6 rounded-lg font-bold uppercase tracking-widest text-sm transition-all flex items-center gap-2 disabled:opacity-50 hover:opacity-90"
           style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accent, color: T.bgDeep, boxShadow: T.accentGlow }}
         >
-          {loading ? <><Loader2 className="w-4 h-4 animate-spin" />Guardando...</> : mode === "create" ? "Crear alumno" : "Guardar cambios"}
+          {loading ? <><Loader2 className="w-4 h-4 animate-spin" />Guardando...</> : saved ? <><Check className="w-4 h-4" />Guardado</> : mode === "create" ? "Crear alumno" : "Guardar cambios"}
         </button>
         <button type="button" onClick={() => router.back()} className="h-10 px-4 rounded-lg font-medium text-sm transition-all hover:opacity-75" style={{ color: T.textMuted }}>
           Cancelar

@@ -5,19 +5,22 @@ import { ConfigCuotas } from "@/components/configuracion/config-cuotas";
 import { ConfigRecargos } from "@/components/configuracion/config-recargos";
 import { ConfigNotificaciones } from "@/components/configuracion/config-notificaciones";
 import { ConfigMercadoPago } from "@/components/configuracion/config-mercadopago";
+import { ConfigActividades } from "@/components/configuracion/config-actividades";
 import { T } from "@/lib/theme";
 
 export default async function ConfiguracionPage() {
   const ctx = await requireGymContext();
   const supabase = await createClient();
 
-  const [gymRes, configRes] = await Promise.all([
+  const [gymRes, configRes, actividadesRes] = await Promise.all([
     supabase.from("gyms").select("id, nombre, email_contacto, telefono, direccion").eq("id", ctx.gymId).single(),
     supabase.from("gym_config").select("*").eq("gym_id", ctx.gymId).maybeSingle(),
+    supabase.from("actividades").select("*").eq("gym_id", ctx.gymId).is("deleted_at", null).order("nombre"),
   ]);
 
   const gym = gymRes.data;
   const config = configRes.data;
+  const actividades = actividadesRes.data ?? [];
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -61,6 +64,8 @@ export default async function ConfiguracionPage() {
         mpAccessToken={config?.mp_access_token ?? ""}
         mpPublicKey={config?.mp_public_key ?? ""}
       />
+
+      <ConfigActividades actividades={actividades} />
     </div>
   );
 }

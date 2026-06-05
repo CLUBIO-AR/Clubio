@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { requireGymContext } from "@/lib/supabase/auth";
 import { getAlumnoById } from "@/lib/alumnos";
 import { AlumnoForm } from "@/components/alumnos/alumno-form";
+import { AlumnoActividades } from "@/components/alumnos/alumno-actividades";
 import { ChevronLeft, Calendar, Phone, Mail, FileText } from "lucide-react";
 import Link from "next/link";
 import { T } from "@/lib/theme";
@@ -17,17 +19,18 @@ const MESES = ["", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep"
 
 export default async function AlumnoDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const ctx = await (await import("@/lib/supabase/auth")).getGymContext();
-  if (!ctx) return null;
+  const ctx = await requireGymContext();
 
   const supabase = await createClient();
 
   const { data: alumno } = await getAlumnoById(supabase, ctx.gymId, id);
   if (!alumno) notFound();
 
-  const [sucursalesRes, cuotasRes] = await Promise.all([
+  const [sucursalesRes, cuotasRes, inscripcionesRes, actividadesRes] = await Promise.all([
     supabase.from("sucursales").select("id, nombre").eq("gym_id", ctx.gymId).eq("activa", true).order("nombre"),
-    supabase.from("cuotas").select("id, mes, anio, monto_total, estado, fecha_vencimiento").eq("alumno_id", id).order("anio", { ascending: false }).order("mes", { ascending: false }).limit(6),
+    supabase.from("cuotas").select("id, mes, anio, monto_total, estado, fecha_vencimiento, actividad_id, actividades(nombre, color)").eq("alumno_id", id).order("anio", { ascending: false }).order("mes", { ascending: false }).limit(6),
+    supabase.from("alumno_actividades").select("id, actividad_id, monto_personalizado, activa, actividades(id, nombre, monto_base, color)").eq("alumno_id", id).eq("gym_id", ctx.gymId),
+    supabase.from("actividades").select("id, nombre, monto_base, color").eq("gym_id", ctx.gymId).eq("activa", true).is("deleted_at", null).order("nombre"),
   ]);
 
   const INFO_ITEMS = [
@@ -107,6 +110,13 @@ export default async function AlumnoDetailPage({ params }: { params: Promise<{ i
           </div>
         </div>
       )}
+
+      {/* Actividades */}
+      <AlumnoActividades
+        alumnoId={id}
+        inscripciones={(inscripcionesRes.data ?? []) as Parameters<typeof AlumnoActividades>[0]["inscripciones"]}
+        actividadesDisponibles={actividadesRes.data ?? []}
+      />
 
       {/* Editar */}
       <div className="rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>

@@ -175,46 +175,66 @@ export async function generarCuotasMes(
   mes: number,
   anio: number
 ) {
-  // Obtener config del gym
-  const { data: config } = await supabase
-    .from("gym_config")
-    .select("monto_base_defecto, dia_vencimiento_mensual")
-    .eq("gym_id", gymId)
-    .single();
+  const [configRes, alumnosRes] = await Promise.all([
+    supabase.from("gym_config")
+      .select("monto_base_defecto, dia_vencimiento_mensual")
+      .eq("gym_id", gymId).single(),
+    supabase.from("alumnos")
+      .select("id, monto_cuota_personalizado")
+      .eq("gym_id", gymId).eq("activo", true).is("deleted_at", null),
+  ]);
 
-  if (!config) return { creadas: 0, error: "Sin configuración" };
+  if (!configRes.data) return { creadas: 0, error: "Sin configuración" };
+  const config = configRes.data;
+  const alumnos = alumnosRes.data ?? [];
+  if (!alumnos.length) return { creadas: 0, error: null };
 
   const diaVto = config.dia_vencimiento_mensual ?? 10;
   const fechaVto = `${anio}-${String(mes).padStart(2, "0")}-${String(diaVto).padStart(2, "0")}`;
 
-  // Alumnos activos
-  const { data: alumnos } = await supabase
-    .from("alumnos")
-    .select("id, monto_cuota_personalizado")
-    .eq("gym_id", gymId)
-    .eq("activo", true)
-    .is("deleted_at", null);
-
-  if (!alumnos?.length) return { creadas: 0, error: null };
-
   let creadas = 0;
 
   for (const alumno of alumnos) {
-    const monto = alumno.monto_cuota_personalizado ?? config.monto_base_defecto;
-    if (!monto) continue;
+    // Obtener actividades activas del alumno
+    const { data: inscripciones } = await supabase
+      .from("alumno_actividades")
+      .select("actividad_id, monto_personalizado, actividades(monto_base)")
+      .eq("alumno_id", alumno.id)
+      .eq("gym_id", gymId)
+      .eq("activa", true);
 
-    // Idempotente: la constraint UNIQUE(alumno_id, mes, anio) evita duplicados
-    const { error } = await supabase.from("cuotas").insert({
-      gym_id: gymId,
-      alumno_id: alumno.id,
-      mes,
-      anio,
-      monto_base: monto,
-      fecha_vencimiento: fechaVto,
-    });
+    if (inscripciones && inscripciones.length > 0) {
+      // Generar una cuota por cada actividad
+      for (const ins of inscripciones) {
+        const actividadData = ins.actividades as { monto_base: number } | null;
+        const monto = ins.monto_personalizado ?? actividadData?.monto_base ?? 0;
+        if (!monto) continue;
 
-    // error code 23505 = duplicate → ya existe, ignorar
-    if (!error || error.code === "23505") {
+        const { error } = await supabase.from("cuotas").insert({
+          gym_id: gymId,
+          alumno_id: alumno.id,
+          actividad_id: ins.actividad_id,
+          mes,
+          anio,
+          monto_base: monto,
+          fecha_vencimiento: fechaVto,
+        });
+        if (!error) creadas++;
+        // 23505 = ya existe (idempotente), ignorar
+      }
+    } else {
+      // Flujo legacy: cuota única sin actividad
+      const monto = alumno.monto_cuota_personalizado ?? config.monto_base_defecto;
+      if (!monto) continue;
+
+      const { error } = await supabase.from("cuotas").insert({
+        gym_id: gymId,
+        alumno_id: alumno.id,
+        mes,
+        anio,
+        monto_base: monto,
+        fecha_vencimiento: fechaVto,
+      });
       if (!error) creadas++;
     }
   }

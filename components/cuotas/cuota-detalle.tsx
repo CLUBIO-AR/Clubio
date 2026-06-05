@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, User, Calendar, DollarSign, AlertTriangle, CheckCircle, XCircle, Clock, Link2, Copy, Check } from "lucide-react";
+import { Loader2, User, Calendar, DollarSign, AlertTriangle, CheckCircle, XCircle, Clock, Link2, Copy, Check, RefreshCw } from "lucide-react";
 import { T } from "@/lib/theme";
 
 const MESES = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
@@ -54,6 +54,8 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
   const [linkLoading, setLinkLoading] = useState(false);
   const [linkCopiado, setLinkCopiado] = useState(false);
   const [linkUrl, setLinkUrl] = useState<string | null>(null);
+  const [verificarLoading, setVerificarLoading] = useState(false);
+  const [verificarInput, setVerificarInput] = useState("");
 
   const canPay = cuota.estado === "pendiente" || cuota.estado === "vencida";
   const canCondonar = cuota.estado !== "pagada" && cuota.estado !== "condonada";
@@ -71,6 +73,21 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
     router.refresh();
     setAccion("none");
     setLoading(false);
+  }
+
+  async function handleVerificarPago() {
+    if (!verificarInput.trim()) return;
+    setVerificarLoading(true);
+    setError(null);
+    const res = await fetch("/api/pagos/verificar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cuota_id: cuota.id, mp_payment_id: verificarInput.trim() }),
+    });
+    const data = await res.json();
+    setVerificarLoading(false);
+    if (!res.ok) { setError(data.error); return; }
+    router.refresh();
   }
 
   async function handleGenerarLink() {
@@ -209,6 +226,26 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
               <XCircle className="w-4 h-4" /> Condonar cuota
             </button>
           )}
+        </div>
+      )}
+
+      {canPay && (
+        <div className="flex items-center gap-2">
+          <Input
+            value={verificarInput}
+            onChange={(e) => setVerificarInput(e.target.value)}
+            placeholder="ID de pago MP (ej: 161820837213)"
+            style={{ ...inp, fontSize: "0.8rem", height: "2.2rem" }}
+            className="placeholder:opacity-25 flex-1"
+          />
+          <button
+            onClick={handleVerificarPago}
+            disabled={verificarLoading || !verificarInput.trim()}
+            className="flex items-center gap-1.5 h-9 px-4 rounded-lg font-bold uppercase tracking-widest text-xs transition-all hover:opacity-90 disabled:opacity-40 shrink-0"
+            style={{ fontFamily: "var(--font-barlow-condensed)", background: T.card, color: T.textMuted, border: `1px solid ${T.border}` }}>
+            {verificarLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            Verificar MP
+          </button>
         </div>
       )}
 

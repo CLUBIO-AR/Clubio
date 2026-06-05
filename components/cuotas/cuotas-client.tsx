@@ -201,10 +201,11 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
-                        <DropdownMenuTrigger>
-                          <Button variant="ghost" size="icon" className="w-8 h-8" style={{ color: T.textDim }}>
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
+                        <DropdownMenuTrigger
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:opacity-75 transition-opacity outline-none"
+                          style={{ color: T.textDim }}
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48" style={{ background: T.card, border: `1px solid ${T.border}` }}>
                           <DropdownMenuItem onClick={() => router.push(`/dashboard/cuotas/${c.id}`)}>

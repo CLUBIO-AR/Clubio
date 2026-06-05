@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCuotaById, marcarPagadaManual, condonarCuota, CuotaUpdateSchema } from "@/lib/cuotas";
 
@@ -47,12 +48,17 @@ export async function PATCH(
       update.metodo_pago, update.pagado_por, ctx.userId, update.notas
     );
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    revalidatePath("/dashboard/cuotas", "layout");
+    revalidatePath("/dashboard/alumnos", "layout");
+    revalidatePath("/dashboard", "page");
     return NextResponse.json({ ok: true });
   }
 
   if (update.accion === "condonar") {
     const { error } = await condonarCuota(supabase, ctx.gymId, id, update.notas);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    revalidatePath("/dashboard/cuotas", "layout");
+    revalidatePath("/dashboard/alumnos", "layout");
     return NextResponse.json({ ok: true });
   }
 
@@ -67,6 +73,7 @@ export async function PATCH(
       .eq("id", id)
       .eq("gym_id", ctx.gymId);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    revalidatePath("/dashboard/cuotas", "layout");
     return NextResponse.json({ ok: true });
   }
 

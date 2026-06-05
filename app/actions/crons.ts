@@ -80,5 +80,13 @@ export async function testEmailAction(
     return { ok: false, error: error?.message ?? "Error desconocido de Resend" };
   }
 
+  await admin.from("notificaciones_log").insert({
+    gym_id: ctx.gymId,
+    tipo: "test",
+    enviado_a: destination,
+    estado: "enviado",
+    resend_id: emailData.id,
+  });
+
   return { ok: true, data: { message_id: emailData.id, to: destination, from } };
 }

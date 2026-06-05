@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getMpPayment } from "@/lib/mercadopago";
@@ -74,5 +75,8 @@ export async function POST(request: Request) {
     metodo_pago: "mercadopago",
   }).eq("id", cuota_id);
 
+  revalidatePath("/dashboard/cuotas", "layout");
+  revalidatePath("/dashboard/alumnos", "layout");
+  revalidatePath("/dashboard", "page");
   return NextResponse.json({ ok: true, monto });
 }

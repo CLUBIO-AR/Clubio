@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+
+const PAGE_SIZE = 25;
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -53,6 +55,10 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
   const [curMes, setCurMes]   = useState(mes);
   const [curAnio, setCurAnio] = useState(anio);
   const [isPending, startTransition] = useTransition();
+  const [page, setPage] = useState(1);
+
+  const totalPages = Math.max(1, Math.ceil(cuotas.length / PAGE_SIZE));
+  const paginadas  = cuotas.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   function navigate(newMes: number, newAnio: number, newEstado: string, newSearch: string) {
     const p = new URLSearchParams();
@@ -60,6 +66,7 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
     p.set("anio", String(newAnio));
     if (newEstado !== "todos") p.set("estado", newEstado);
     if (newSearch) p.set("search", newSearch);
+    setPage(1);
     startTransition(() => router.push(`/dashboard/cuotas?${p.toString()}`));
   }
 
@@ -91,6 +98,7 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
         <div>
           <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>CUOTAS</h1>
           <p className="text-sm mt-1" style={{ color: T.textDim }}>{cuotas.length} cuota{cuotas.length !== 1 ? "s" : ""} en vista</p>
+          {totalPages > 1 && <p className="text-xs" style={{ color: T.textDim }}>Página {page} de {totalPages}</p>}
         </div>
         {/* Mes selector */}
         <div className="flex items-center gap-2">
@@ -163,7 +171,7 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
               </TableRow>
             </TableHeader>
             <TableBody>
-              {cuotas.map((c) => {
+              {paginadas.map((c) => {
                 const est = ESTADO_CONFIG[c.estado] ?? ESTADO_CONFIG.pendiente;
                 const a = c.alumnos;
                 const vencida = new Date(c.fecha_vencimiento) < new Date() && c.estado === "vencida";
@@ -246,6 +254,34 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
               })}
             </TableBody>
           </Table>
+        </div>
+      )}
+
+      {/* Paginación */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-1">
+          <p className="text-xs" style={{ color: T.textDim }}>
+            {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, cuotas.length)} de {cuotas.length}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="w-8 h-8 rounded-lg flex items-center justify-center disabled:opacity-30 hover:opacity-70 transition-opacity"
+              style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text }}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-xs px-3 font-mono" style={{ color: T.textDim }}>{page} / {totalPages}</span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="w-8 h-8 rounded-lg flex items-center justify-center disabled:opacity-30 hover:opacity-70 transition-opacity"
+              style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text }}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
     </div>

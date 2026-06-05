@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
+
+const PAGE_SIZE = 25;
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -10,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button";
 import { NuevaCuotaModal } from "@/components/cuotas/nueva-cuota-modal";
-import { Plus, Search, MoreHorizontal, Eye, UserX, UserCheck, Loader2, Users } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Eye, UserX, UserCheck, Loader2, Users, Receipt, ChevronLeft, ChevronRight } from "lucide-react";
 import { T } from "@/lib/theme";
 
 type CuotaResumen = { id: string; estado: string; monto_total: number | null; mes: number; anio: number };
@@ -57,11 +59,19 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, mesActual
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [modalAlumno, setModalAlumno] = useState<{ id: string; nombre: string } | null>(null);
+  const [page, setPage] = useState(1);
+
+  const totalPages = Math.max(1, Math.ceil(alumnos.length / PAGE_SIZE));
+  const paginados  = useMemo(
+    () => alumnos.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [alumnos, page]
+  );
 
   function applyFilters(newSearch: string, newActivo: string) {
     const params = new URLSearchParams();
     if (newSearch) params.set("search", newSearch);
     if (newActivo !== "todos") params.set("activo", newActivo);
+    setPage(1);
     startTransition(() => router.push(`/dashboard/alumnos?${params.toString()}`));
   }
 
@@ -95,6 +105,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, mesActual
           <h1 className="text-4xl text-white leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900 }}>ALUMNOS</h1>
           <p className="text-sm mt-1" style={{ color: T.textDim }}>
             {alumnos.length} alumno{alumnos.length !== 1 ? "s" : ""} encontrado{alumnos.length !== 1 ? "s" : ""}
+            {totalPages > 1 && ` · página ${page} de ${totalPages}`}
           </p>
         </div>
         <Link
@@ -159,7 +170,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, mesActual
               </TableRow>
             </TableHeader>
             <TableBody>
-              {alumnos.map((alumno) => {
+              {paginados.map((alumno) => {
                 const cuotas = (alumno.cuotas ?? []) as CuotaResumen[];
                 const estado = cuotas.length > 0 ? cuotaEstadoPeor(cuotas) : null;
                 const cuotaStyle = estado ? CUOTA_CONFIG[estado] : null;
@@ -200,23 +211,31 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, mesActual
                       </span>
                     </TableCell>
                     <TableCell>
-                      {cuotaStyle ? (
-                        <span className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider"
-                          style={{ fontFamily: "var(--font-barlow-condensed)", background: cuotaStyle.bg, color: cuotaStyle.color, border: `1px solid ${cuotaStyle.border}` }}>
-                          {cuotaStyle.label}
-                        </span>
-                      ) : (
+                      <div className="flex items-center gap-1.5">
+                        {cuotaStyle ? (
+                          <span className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider"
+                            style={{ fontFamily: "var(--font-barlow-condensed)", background: cuotaStyle.bg, color: cuotaStyle.color, border: `1px solid ${cuotaStyle.border}` }}>
+                            {cuotaStyle.label}
+                          </span>
+                        ) : (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setModalAlumno({ id: alumno.id!, nombre: `${alumno.apellido}, ${alumno.nombre}` }); }}
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider transition-colors hover:opacity-80"
+                            style={{ fontFamily: "var(--font-barlow-condensed)", background: `${T.textDim}12`, color: T.textDim, border: `1px solid ${T.borderSub}` }}
+                          >
+                            <Plus className="w-3 h-3" /> Generar
+                          </button>
+                        )}
+                        {/* Botón + para cuota especial siempre visible */}
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setModalAlumno({ id: alumno.id!, nombre: `${alumno.apellido}, ${alumno.nombre}` });
-                          }}
-                          className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider transition-colors hover:opacity-80"
-                          style={{ fontFamily: "var(--font-barlow-condensed)", background: `${T.textDim}12`, color: T.textDim, border: `1px solid ${T.borderSub}` }}
+                          title="Nueva cuota especial"
+                          onClick={(e) => { e.stopPropagation(); setModalAlumno({ id: alumno.id!, nombre: `${alumno.apellido}, ${alumno.nombre}` }); }}
+                          className="w-6 h-6 rounded flex items-center justify-center opacity-40 hover:opacity-100 transition-opacity"
+                          style={{ color: T.accent }}
                         >
-                          <Plus className="w-3 h-3" /> Generar
+                          <Plus className="w-3.5 h-3.5" />
                         </button>
-                      )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -225,9 +244,12 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, mesActual
                             <MoreHorizontal className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-44" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+                        <DropdownMenuContent align="end" className="w-48" style={{ background: T.card, border: `1px solid ${T.border}` }}>
                           <DropdownMenuItem onClick={() => router.push(`/dashboard/alumnos/${alumno.id}`)}>
                             <Eye className="w-3.5 h-3.5" /> Ver detalle
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setModalAlumno({ id: alumno.id!, nombre: `${alumno.apellido}, ${alumno.nombre}` })}>
+                            <Receipt className="w-3.5 h-3.5" /> Nueva cuota especial
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleToggleActivo(alumno.id!, alumno.activo ?? true)}>
                             {alumno.activo ? <><UserX className="w-3.5 h-3.5" /> Dar de baja</> : <><UserCheck className="w-3.5 h-3.5" /> Reactivar</>}
@@ -244,6 +266,34 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, mesActual
               })}
             </TableBody>
           </Table>
+        </div>
+      )}
+
+      {/* Paginación */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-1">
+          <p className="text-xs" style={{ color: T.textDim }}>
+            {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, alumnos.length)} de {alumnos.length}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="w-8 h-8 rounded-lg flex items-center justify-center disabled:opacity-30 hover:opacity-70 transition-opacity"
+              style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text }}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-xs px-3 font-mono" style={{ color: T.textDim }}>{page} / {totalPages}</span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="w-8 h-8 rounded-lg flex items-center justify-center disabled:opacity-30 hover:opacity-70 transition-opacity"
+              style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text }}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 

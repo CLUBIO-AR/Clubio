@@ -43,11 +43,12 @@ export async function createMpPreference(args: CreatePreferenceArgs) {
         },
       ],
       external_reference: args.cuotaId,
-      // back_urls son redirects del browser — funcionan en localhost
-      back_urls: args.backUrls,
-      auto_return: "approved" as const,
-      // notification_url es server-to-server — solo en producción
-      ...(local ? {} : { notification_url: args.notificationUrl }),
+      // En localhost MP rechaza tanto notification_url como back_urls (no acepta localhost)
+      ...(local ? {} : {
+        notification_url: args.notificationUrl,
+        back_urls: args.backUrls,
+        auto_return: "approved" as const,
+      }),
       statement_descriptor: "CLUBIO",
       metadata: { gym_id: args.gymId, cuota_id: args.cuotaId },
     },

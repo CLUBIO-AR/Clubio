@@ -1,20 +1,18 @@
 import { createClient } from "@/lib/supabase/server";
+import { getGymContext } from "@/lib/supabase/auth";
 import { Users, AlertTriangle, TrendingUp, Clock } from "lucide-react";
 import Link from "next/link";
 import { T } from "@/lib/theme";
 
 export default async function DashboardPage() {
+  const ctx = await getGymContext();
+  if (!ctx) return null;
+  const gymId = ctx.gymId;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data: gymUsuario } = await supabase.from("gym_usuarios").select("gym_id").eq("id", user.id).single();
-  if (!gymUsuario) return null;
-
-  const gymId = gymUsuario.gym_id;
   const now = new Date();
   const mesInicio = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   const { data: gym } = await supabase.from("gyms").select("nombre").eq("id", gymId).single();
+
 
   const [alumnosRes, cuotasVencidasRes, cobrosRes, pendientesRes] = await Promise.all([
     supabase.from("alumnos").select("id", { count: "exact", head: true }).eq("gym_id", gymId).eq("activo", true).is("deleted_at", null),

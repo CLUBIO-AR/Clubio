@@ -15,15 +15,11 @@ export default async function CuotaDetailPage({
 }) {
   const { id } = await params;
   const { accion } = await searchParams;
+  const ctx = await (await import("@/lib/supabase/auth")).getGymContext();
+  if (!ctx) return null;
+
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data: gymUsuario } = await supabase
-    .from("gym_usuarios").select("gym_id").eq("id", user.id).single();
-  if (!gymUsuario) return null;
-
-  const { data: cuota } = await getCuotaById(supabase, gymUsuario.gym_id, id);
+  const { data: cuota } = await getCuotaById(supabase, ctx.gymId, id);
   if (!cuota) notFound();
 
   // Historial de pagos de esta cuota

@@ -17,18 +17,16 @@ const MESES = ["", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep"
 
 export default async function AlumnoDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const ctx = await (await import("@/lib/supabase/auth")).getGymContext();
+  if (!ctx) return null;
+
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
 
-  const { data: gymUsuario } = await supabase.from("gym_usuarios").select("gym_id").eq("id", user.id).single();
-  if (!gymUsuario) return null;
-
-  const { data: alumno } = await getAlumnoById(supabase, gymUsuario.gym_id, id);
+  const { data: alumno } = await getAlumnoById(supabase, ctx.gymId, id);
   if (!alumno) notFound();
 
   const [sucursalesRes, cuotasRes] = await Promise.all([
-    supabase.from("sucursales").select("id, nombre").eq("gym_id", gymUsuario.gym_id).eq("activa", true).order("nombre"),
+    supabase.from("sucursales").select("id, nombre").eq("gym_id", ctx.gymId).eq("activa", true).order("nombre"),
     supabase.from("cuotas").select("id, mes, anio, monto_total, estado, fecha_vencimiento").eq("alumno_id", id).order("anio", { ascending: false }).order("mes", { ascending: false }).limit(6),
   ]);
 

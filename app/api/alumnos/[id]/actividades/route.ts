@@ -22,10 +22,16 @@ export async function GET(
   return NextResponse.json(data ?? []);
 }
 
+const uuidLenient = z.string().regex(
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+  "ID inválido"
+);
+
 const UpsertSchema = z.object({
-  actividad_id: z.string().uuid(),
+  actividad_id: uuidLenient,
   monto_personalizado: z.number().min(0).nullable().optional(),
   activa: z.boolean().optional(),
+  fecha_inicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
 export async function POST(

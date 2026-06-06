@@ -24,6 +24,7 @@ export function AlumnoActividades({ alumnoId, inscripciones: inicial, actividade
   const [agregando, setAgregando] = useState(false);
   const [selectedId, setSelectedId] = useState("");
   const [montoCustom, setMontoCustom] = useState("");
+  const [fechaInicio, setFechaInicio] = useState(() => new Date().toISOString().split("T")[0]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,6 +42,7 @@ export function AlumnoActividades({ alumnoId, inscripciones: inicial, actividade
         actividad_id: selectedId,
         monto_personalizado: montoCustom ? parseFloat(montoCustom) : null,
         activa: true,
+        fecha_inicio: fechaInicio,
       }),
     });
     if (!res.ok) {
@@ -53,6 +55,7 @@ export function AlumnoActividades({ alumnoId, inscripciones: inicial, actividade
     setInscs(prev => [...prev, { ...nueva, actividades: actividad ?? null }]);
     setSelectedId("");
     setMontoCustom("");
+    setFechaInicio(new Date().toISOString().split("T")[0]);
     setAgregando(false);
     setLoading(false);
   }
@@ -122,6 +125,17 @@ export function AlumnoActividades({ alumnoId, inscripciones: inicial, actividade
                   style={{ width: "100%", padding: "0.4rem 0.6rem", borderRadius: 7, background: T.bg, border: `1px solid ${T.border}`, color: T.text, fontSize: "0.8rem" }}
                 />
               </div>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+                Fecha de inicio
+              </label>
+              <input
+                type="date"
+                value={fechaInicio}
+                onChange={e => setFechaInicio(e.target.value)}
+                style={{ width: "100%", padding: "0.4rem 0.6rem", borderRadius: 7, background: T.bg, border: `1px solid ${T.border}`, color: T.text, fontSize: "0.8rem" }}
+              />
             </div>
             {error && <p className="text-xs" style={{ color: T.danger }}>{error}</p>}
             <div className="flex gap-2 justify-end">

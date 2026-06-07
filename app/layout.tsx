@@ -23,7 +23,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GymSaaS — Gestión de Gimnasios",
+  title: "CLUBIO — Gestión de Gimnasios",
   description: "Sistema de gestión de alumnos, cuotas y pagos para gimnasios",
 };
 

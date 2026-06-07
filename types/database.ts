@@ -657,12 +657,10 @@ export type Database = {
           cuota_id: string | null;
           tipo: string;
           enviado_a: string | null;
-          enviado: boolean;
           estado: string | null;
           canal: string;
           provider_id: string | null;
           error_detail: string | null;
-          resend_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -672,20 +670,16 @@ export type Database = {
           cuota_id?: string | null;
           tipo: string;
           enviado_a?: string | null;
-          enviado?: boolean;
           estado?: string | null;
           canal?: string;
           provider_id?: string | null;
           error_detail?: string | null;
-          resend_id?: string | null;
         };
         Update: {
-          enviado?: boolean;
           estado?: string | null;
           canal?: string;
           provider_id?: string | null;
           error_detail?: string | null;
-          resend_id?: string | null;
         };
         Relationships: [
           {

@@ -114,6 +114,7 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
     if (desde)       params.set("desde", desde);
     if (hasta)       params.set("hasta", hasta);
     if (metodo)      params.set("metodo", metodo);
+    if (actividad)   params.set("actividad", actividad);
     if (localSearch) params.set("search", localSearch);
     window.location.href = `/api/pagos/export?${params.toString()}`;
   }

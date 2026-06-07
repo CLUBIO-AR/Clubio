@@ -20,14 +20,20 @@ type Pago = {
   metodo: string;
   created_at: string;
   alumnos: { nombre: string; apellido: string; dni?: string } | null;
-  cuotas: { mes: number; anio: number; tipo: string; descripcion: string | null; actividades: { nombre: string; color: string } | null } | null;
+  cuotas: { mes: number; anio: number; tipo: string; descripcion: string | null; actividades: { id: string; nombre: string; color: string } | null } | null;
 };
+
+type ActividadOpt = { id: string; nombre: string; color: string };
+
+const SIN_ACTIVIDAD = "__general__";
 
 interface Props {
   pagos: Pago[];
   desde: string;
   hasta: string;
   metodo: string;
+  actividad: string;
+  actividades: ActividadOpt[];
 }
 
 const inp: React.CSSProperties = {
@@ -36,7 +42,7 @@ const inp: React.CSSProperties = {
   fontSize: "0.82rem", height: 36,
 };
 
-export function PagosClient({ pagos, desde, hasta, metodo }: Props) {
+export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividades }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -73,20 +79,30 @@ export function PagosClient({ pagos, desde, hasta, metodo }: Props) {
     });
   }
 
-  // Filtro local por nombre/DNI alumno
+  // Filtro local por nombre/DNI alumno + actividad
   const filtered = useMemo(() => {
     const term = localSearch.trim().toLowerCase();
-    if (!term) return pagos;
     return pagos.filter((p) => {
-      const alumno = p.alumnos;
-      if (!alumno) return false;
-      return (
-        alumno.nombre.toLowerCase().includes(term) ||
-        alumno.apellido.toLowerCase().includes(term) ||
-        alumno.dni?.toLowerCase().includes(term)
-      );
+      if (term) {
+        const alumno = p.alumnos;
+        if (!alumno) return false;
+        const matchTerm =
+          alumno.nombre.toLowerCase().includes(term) ||
+          alumno.apellido.toLowerCase().includes(term) ||
+          alumno.dni?.toLowerCase().includes(term);
+        if (!matchTerm) return false;
+      }
+      if (actividad) {
+        const actId = p.cuotas?.actividades?.id ?? null;
+        if (actividad === SIN_ACTIVIDAD) {
+          if (actId !== null) return false;
+        } else if (actId !== actividad) {
+          return false;
+        }
+      }
+      return true;
     });
-  }, [pagos, localSearch]);
+  }, [pagos, localSearch, actividad]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginados  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -147,11 +163,21 @@ export function PagosClient({ pagos, desde, hasta, metodo }: Props) {
           </select>
         </div>
 
+        {/* Actividad */}
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)", fontSize: "0.65rem" }}>Actividad</span>
+          <select value={actividad} onChange={(e) => applyFilters({ actividad: e.target.value })} style={{ ...inp, width: 160 }}>
+            <option value="">Todas</option>
+            <option value={SIN_ACTIVIDAD}>General (sin actividad)</option>
+            {actividades.map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
+          </select>
+        </div>
+
         {/* Quick actions */}
         <div className="flex gap-1.5 items-center self-end mb-0.5">
           <button onClick={setEsteMes} style={btnSm()}>Este mes</button>
           <button onClick={setMesAnterior} style={btnSm()}>Mes anterior</button>
-          <button onClick={() => applyFilters({ desde: "", hasta: "", metodo: "" })} style={btnSm()}>Limpiar</button>
+          <button onClick={() => applyFilters({ desde: "", hasta: "", metodo: "", actividad: "" })} style={btnSm()}>Limpiar</button>
         </div>
 
         {/* Export */}

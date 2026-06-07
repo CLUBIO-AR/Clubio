@@ -1,17 +1,26 @@
 import { requireGymContext } from "@/lib/supabase/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { CheckCircle, XCircle, Clock, Zap, Bell, TrendingDown, Mail, AlertCircle } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Zap, Bell, TrendingDown } from "lucide-react";
 import { T } from "@/lib/theme";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { redirect } from "next/navigation";
 import { CronsActions } from "@/components/crons/crons-actions";
+import { HistorialEjecuciones } from "@/components/crons/historial-ejecuciones";
+import { MailsEnviados } from "@/components/crons/mails-enviados";
 
 const TIPO_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   generar_cuotas:   { label: "Generar cuotas",    icon: Zap,          color: T.accent  },
   enviar_avisos:    { label: "Enviar avisos",      icon: Bell,         color: T.blue    },
   aplicar_recargos: { label: "Aplicar recargos",   icon: TrendingDown, color: T.warning },
 };
+
+const PAGE_SIZE = 10;
+
+function paginaDesde(v: string | undefined): number {
+  const n = parseInt(v ?? "1", 10);
+  return Number.isFinite(n) && n > 0 ? n : 1;
+}
 
 const MESES_CORTO = ["", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
@@ -25,11 +34,18 @@ function formatDuracion(ms: number | null) {
   return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`;
 }
 
-export default async function CronsPage() {
+export default async function CronsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ hDesde?: string; hHasta?: string; hPage?: string; mDesde?: string; mHasta?: string; mPage?: string }>;
+}) {
+  const sp = await searchParams;
   const ctx = await requireGymContext();
   if (ctx.rol !== "owner" && ctx.rol !== "admin") redirect("/dashboard/configuracion");
 
   const admin = createAdminClient();
+  const hPage = paginaDesde(sp.hPage);
+  const mPage = paginaDesde(sp.mPage);
 
   // Última ejecución: worker logs de ESTE GYM (no dispatcher cross-gym)
   const { data: workerLogs } = await admin
@@ -40,22 +56,28 @@ export default async function CronsPage() {
     .order("created_at", { ascending: false })
     .limit(30);
 
-  // Historial del gym (solo workers de este gym)
-  const { data: historial } = await admin
+  // Historial del gym (solo workers de este gym), con filtro de fecha + paginado
+  let histQuery = admin
     .from("cron_logs")
-    .select("id, tipo, items_creados, items_error, duracion_ms, error_detalle, created_at")
+    .select("id, tipo, items_creados, items_error, duracion_ms, error_detalle, created_at", { count: "exact" })
     .eq("gym_id", ctx.gymId)
-    .eq("es_dispatcher", false)
+    .eq("es_dispatcher", false);
+  if (sp.hDesde) histQuery = histQuery.gte("created_at", `${sp.hDesde}T00:00:00`);
+  if (sp.hHasta) histQuery = histQuery.lte("created_at", `${sp.hHasta}T23:59:59`);
+  const { data: historial, count: histTotal } = await histQuery
     .order("created_at", { ascending: false })
-    .limit(50);
+    .range((hPage - 1) * PAGE_SIZE, hPage * PAGE_SIZE - 1);
 
-  // Mails enviados recientes
-  const { data: notifs } = await admin
+  // Mails enviados, con filtro de fecha + paginado
+  let mailsQuery = admin
     .from("notificaciones_log")
-    .select("id, tipo, enviado_a, estado, created_at, alumnos(nombre, apellido)")
-    .eq("gym_id", ctx.gymId)
+    .select("id, tipo, enviado_a, estado, created_at, alumnos(nombre, apellido)", { count: "exact" })
+    .eq("gym_id", ctx.gymId);
+  if (sp.mDesde) mailsQuery = mailsQuery.gte("created_at", `${sp.mDesde}T00:00:00`);
+  if (sp.mHasta) mailsQuery = mailsQuery.lte("created_at", `${sp.mHasta}T23:59:59`);
+  const { data: notifs, count: mailsTotal } = await mailsQuery
     .order("created_at", { ascending: false })
-    .limit(30);
+    .range((mPage - 1) * PAGE_SIZE, mPage * PAGE_SIZE - 1);
 
   type WorkerRow = NonNullable<typeof workerLogs>[number];
   const ultimas: Record<string, WorkerRow> = {};
@@ -130,103 +152,22 @@ export default async function CronsPage() {
       </div>
 
       {/* Historial */}
-      <div className="rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>
-        <div className="px-5 py-4 border-b" style={{ borderColor: T.borderSub }}>
-          <h2 className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
-            — Historial de ejecuciones (últimas 50)
-          </h2>
-        </div>
-
-        <div className="px-5 py-2 grid gap-3 border-b" style={{ borderColor: T.borderSub, background: T.bgDeep, gridTemplateColumns: "1fr 130px 60px 60px 60px" }}>
-          {["Fecha", "Tipo", "Items", "Errores", "Estado"].map((h) => (
-            <p key={h} className="text-xs font-bold uppercase tracking-[0.1em]" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>{h}</p>
-          ))}
-        </div>
-
-        {(historial ?? []).length === 0 && (
-          <div className="px-5 py-10 text-center" style={{ color: T.textDim }}>
-            <Clock className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">Sin registros de ejecución</p>
-          </div>
-        )}
-
-        {(historial ?? []).map((log) => {
-          const tipoInfo = TIPO_CONFIG[log.tipo];
-          const hayError = (log.items_error ?? 0) > 0 || !!log.error_detalle;
-          const TipoIcon = tipoInfo?.icon ?? Zap;
-          return (
-            <div key={log.id} className="px-5 py-3 grid gap-3 items-center border-b last:border-b-0"
-              style={{ borderColor: T.borderSub, gridTemplateColumns: "1fr 130px 60px 60px 60px" }}>
-              <div>
-                <p className="text-xs font-mono" style={{ color: T.text }}>{formatFecha(log.created_at)}</p>
-                <p className="text-xs" style={{ color: T.textDim }}>{formatDuracion(log.duracion_ms)}</p>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <TipoIcon className="w-3.5 h-3.5 shrink-0" style={{ color: tipoInfo?.color ?? T.accent }} />
-                <span className="text-xs font-medium truncate" style={{ color: T.text }}>{tipoInfo?.label ?? log.tipo}</span>
-              </div>
-              <p className="text-xs font-mono" style={{ color: T.textMuted }}>{log.items_creados ?? "—"}</p>
-              <p className="text-xs font-mono" style={{ color: (log.items_error ?? 0) > 0 ? T.danger : T.textMuted }}>
-                {log.items_error ?? "—"}
-              </p>
-              <div>
-                {hayError ? (
-                  <XCircle className="w-4 h-4" style={{ color: T.danger }} />
-                ) : (
-                  <CheckCircle className="w-4 h-4" style={{ color: T.accent }} />
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <HistorialEjecuciones
+        logs={historial ?? []}
+        total={histTotal ?? 0}
+        page={hPage}
+        desde={sp.hDesde ?? ""}
+        hasta={sp.hHasta ?? ""}
+      />
 
       {/* Avisos enviados */}
-      <div className="rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>
-        <div className="px-5 py-4 border-b" style={{ borderColor: T.borderSub }}>
-          <h2 className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.blue, fontFamily: "var(--font-barlow-condensed)" }}>
-            — Mails enviados (últimos 30)
-          </h2>
-        </div>
-
-        <div className="px-5 py-2 grid gap-3 border-b" style={{ borderColor: T.borderSub, background: T.bgDeep, gridTemplateColumns: "minmax(0,1fr) minmax(0,1.5fr) 80px 70px" }}>
-          {["Alumno", "Email", "Tipo", "Estado"].map((h) => (
-            <p key={h} className="text-xs font-bold uppercase tracking-[0.1em]" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>{h}</p>
-          ))}
-        </div>
-
-        {(notifs ?? []).length === 0 && (
-          <div className="px-5 py-10 text-center" style={{ color: T.textDim }}>
-            <Mail className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">Sin avisos enviados</p>
-          </div>
-        )}
-
-        {(notifs ?? []).map((n) => {
-          const alumno = n.alumnos as { nombre: string; apellido: string } | null;
-          const ok = n.estado === "enviado";
-          return (
-            <div key={n.id} className="px-5 py-3 grid gap-3 items-center border-b last:border-b-0"
-              style={{ borderColor: T.borderSub, gridTemplateColumns: "minmax(0,1fr) minmax(0,1.5fr) 80px 70px" }}>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold truncate" style={{ color: T.text }}>
-                  {alumno ? `${alumno.apellido}, ${alumno.nombre}` : "—"}
-                </p>
-                <p className="text-xs" style={{ color: T.textDim }}>{formatFecha(n.created_at)}</p>
-              </div>
-              <p className="text-xs font-mono truncate" style={{ color: T.textDim }}>{n.enviado_a}</p>
-              <p className="text-xs capitalize" style={{ color: T.textDim }}>{n.tipo?.replace(/_/g, " ")}</p>
-              <div className="flex items-center gap-1">
-                {ok ? (
-                  <><CheckCircle className="w-3.5 h-3.5" style={{ color: T.accent }} /><span className="text-xs" style={{ color: T.accent }}>OK</span></>
-                ) : (
-                  <><AlertCircle className="w-3.5 h-3.5" style={{ color: T.danger }} /><span className="text-xs" style={{ color: T.danger }}>{n.estado}</span></>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <MailsEnviados
+        notifs={(notifs ?? []) as never}
+        total={mailsTotal ?? 0}
+        page={mPage}
+        desde={sp.mDesde ?? ""}
+        hasta={sp.mHasta ?? ""}
+      />
     </div>
   );
 }

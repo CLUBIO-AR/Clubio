@@ -7,7 +7,7 @@ import { PagosClient } from "@/components/pagos/pagos-client";
 export default async function PagosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ desde?: string; hasta?: string; metodo?: string }>;
+  searchParams: Promise<{ desde?: string; hasta?: string; metodo?: string; actividad?: string }>;
 }) {
   const sp  = await searchParams;
   const ctx = await requireGymContext();
@@ -18,17 +18,18 @@ export default async function PagosPage({
   const defaultDesde = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
   const defaultHasta = now.toISOString().split("T")[0];
 
-  const desde  = sp.desde  ?? defaultDesde;
-  const hasta  = sp.hasta  ?? defaultHasta;
-  const metodo = sp.metodo ?? "";
+  const desde     = sp.desde     ?? defaultDesde;
+  const hasta     = sp.hasta     ?? defaultHasta;
+  const metodo    = sp.metodo    ?? "";
+  const actividad = sp.actividad ?? "";
 
   // Stats: cobrado este mes (siempre mes actual, independiente de filtros)
   const mesInicio = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  const [pagosRes, pagosMesRes] = await Promise.all([
+  const [pagosRes, pagosMesRes, actividadesRes] = await Promise.all([
     (() => {
       let q = supabase
         .from("pagos")
-        .select("id, monto, metodo, created_at, alumnos(nombre, apellido, dni), cuotas(mes, anio, tipo, descripcion, actividades(nombre, color))")
+        .select("id, monto, metodo, created_at, alumnos(nombre, apellido, dni), cuotas(mes, anio, tipo, descripcion, actividades(id, nombre, color))")
         .eq("gym_id", ctx.gymId)
         .gte("created_at", `${desde}T00:00:00`)
         .lte("created_at", `${hasta}T23:59:59`)
@@ -37,9 +38,11 @@ export default async function PagosPage({
       return q;
     })(),
     supabase.from("pagos").select("monto").eq("gym_id", ctx.gymId).gte("created_at", mesInicio),
+    supabase.from("actividades").select("id, nombre, color").eq("gym_id", ctx.gymId).is("deleted_at", null).order("nombre"),
   ]);
 
-  const pagos    = pagosRes.data    ?? [];
+  const pagos      = pagosRes.data      ?? [];
+  const actividades = actividadesRes.data ?? [];
   const pagosMes = pagosMesRes.data ?? [];
   const totalMes = pagosMes.reduce((s, p) => s + p.monto, 0);
   const totalPeriodo = pagos.reduce((s, p) => s + p.monto, 0);
@@ -77,7 +80,14 @@ export default async function PagosPage({
         ))}
       </div>
 
-      <PagosClient pagos={pagos as never} desde={desde} hasta={hasta} metodo={metodo} />
+      <PagosClient
+        pagos={pagos as never}
+        desde={desde}
+        hasta={hasta}
+        metodo={metodo}
+        actividad={actividad}
+        actividades={actividades}
+      />
     </div>
   );
 }

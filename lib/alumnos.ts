@@ -65,11 +65,15 @@ export async function getAlumnosConCuotaMes(
   gymId: string,
   mes: number,
   anio: number,
-  opts: { search?: string; activo?: boolean } = {}
+  opts: { search?: string; activo?: boolean; actividadId?: string } = {}
 ) {
-  let query = supabase
-    .from("alumnos")
-    .select("id, nombre, apellido, dni, email, telefono, activo, fecha_alta, cuotas!left(id, estado, monto_total, mes, anio)")
+  const baseCols = "id, nombre, apellido, dni, email, telefono, activo, fecha_alta, cuotas!left(id, estado, monto_total, mes, anio)";
+
+  let query = (
+    opts.actividadId
+      ? supabase.from("alumnos").select(`${baseCols}, alumno_actividades!inner(actividad_id, activa)`)
+      : supabase.from("alumnos").select(baseCols)
+  )
     .eq("gym_id", gymId)
     .is("deleted_at", null)
     .eq("cuotas.mes", mes)
@@ -83,6 +87,12 @@ export async function getAlumnosConCuotaMes(
   if (opts.search?.trim()) {
     const term = opts.search.trim();
     query = query.or(`nombre.ilike.%${term}%,apellido.ilike.%${term}%,dni.ilike.%${term}%`);
+  }
+
+  if (opts.actividadId) {
+    query = query
+      .eq("alumno_actividades.actividad_id", opts.actividadId)
+      .eq("alumno_actividades.activa", true);
   }
 
   return query;

@@ -6,7 +6,7 @@ import { AlumnosClient } from "@/components/alumnos/alumnos-client";
 export default async function AlumnosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; activo?: string }>;
+  searchParams: Promise<{ search?: string; activo?: string; actividad?: string }>;
 }) {
   const sp = await searchParams;
   const ctx = await getGymContext();
@@ -20,16 +20,21 @@ export default async function AlumnosPage({
   const mes = now.getMonth() + 1;
   const anio = now.getFullYear();
 
-  const { data: alumnos = [] } = await getAlumnosConCuotaMes(
-    supabase, ctx.gymId, mes, anio,
-    { search: sp.search, activo: activoFilter }
-  );
+  const [{ data: alumnos = [] }, { data: actividades }] = await Promise.all([
+    getAlumnosConCuotaMes(
+      supabase, ctx.gymId, mes, anio,
+      { search: sp.search, activo: activoFilter, actividadId: sp.actividad }
+    ),
+    supabase.from("actividades").select("id, nombre, color").eq("gym_id", ctx.gymId).is("deleted_at", null).order("nombre"),
+  ]);
 
   return (
     <AlumnosClient
       alumnos={alumnos ?? []}
       searchDefault={sp.search ?? ""}
       activoDefault={sp.activo ?? "todos"}
+      actividadDefault={sp.actividad ?? ""}
+      actividades={actividades ?? []}
       mesActual={mes}
       anioActual={anio}
     />

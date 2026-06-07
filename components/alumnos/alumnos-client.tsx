@@ -29,10 +29,14 @@ interface AlumnoRow {
   cuotas?: CuotaResumen[] | null;
 }
 
+type ActividadOpt = { id: string; nombre: string; color: string };
+
 interface AlumnosClientProps {
   alumnos: AlumnoRow[];
   searchDefault: string;
   activoDefault: string;
+  actividadDefault: string;
+  actividades: ActividadOpt[];
   mesActual: number;
   anioActual: number;
 }
@@ -51,10 +55,11 @@ function cuotaEstadoPeor(cuotas: CuotaResumen[]): string {
   return "condonada";
 }
 
-export function AlumnosClient({ alumnos, searchDefault, activoDefault, mesActual, anioActual }: AlumnosClientProps) {
+export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividadDefault, actividades, mesActual, anioActual }: AlumnosClientProps) {
   const router = useRouter();
   const [search, setSearch] = useState(searchDefault);
   const [activo, setActivo] = useState(activoDefault);
+  const [actividad, setActividad] = useState(actividadDefault);
   const [isPending, startTransition] = useTransition();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -67,10 +72,11 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, mesActual
     [alumnos, page]
   );
 
-  function applyFilters(newSearch: string, newActivo: string) {
+  function applyFilters(newSearch: string, newActivo: string, newActividad: string) {
     const params = new URLSearchParams();
     if (newSearch) params.set("search", newSearch);
     if (newActivo !== "todos") params.set("activo", newActivo);
+    if (newActividad) params.set("actividad", newActividad);
     setPage(1);
     startTransition(() => router.push(`/dashboard/alumnos?${params.toString()}`));
   }
@@ -125,13 +131,13 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, mesActual
             placeholder="Buscar por nombre o DNI..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && applyFilters(search, activo)}
+            onKeyDown={(e) => e.key === "Enter" && applyFilters(search, activo, actividad)}
             className="pl-9 placeholder:opacity-25"
             style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text }}
           />
         </div>
         <button
-          onClick={() => applyFilters(search, activo)}
+          onClick={() => applyFilters(search, activo, actividad)}
           disabled={isPending}
           className="h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-all hover:opacity-80"
           style={{ fontFamily: "var(--font-barlow-condensed)", background: T.card, border: `1px solid ${T.border}`, color: T.accent }}
@@ -142,7 +148,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, mesActual
           {TABS.map((tab) => (
             <button
               key={tab.value}
-              onClick={() => { setActivo(tab.value); applyFilters(search, tab.value); }}
+              onClick={() => { setActivo(tab.value); applyFilters(search, tab.value, actividad); }}
               className="px-3 py-1.5 text-xs rounded-md font-bold uppercase tracking-widest transition-all"
               style={{
                 fontFamily: "var(--font-barlow-condensed)",
@@ -154,6 +160,15 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, mesActual
             </button>
           ))}
         </div>
+        <select
+          value={actividad}
+          onChange={(e) => { setActividad(e.target.value); applyFilters(search, activo, e.target.value); }}
+          className="h-9 px-3 rounded-lg text-sm"
+          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" }}
+        >
+          <option value="">Todas las actividades</option>
+          {actividades.map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
+        </select>
       </div>
 
       {/* Table */}

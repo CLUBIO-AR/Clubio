@@ -4,6 +4,17 @@ import { z } from "zod";
 
 export type Alumno = Database["public"]["Tables"]["alumnos"]["Row"];
 
+const FECHA_ALTA_MAX_DIAS_ATRAS = 90;
+
+const fechaAltaSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato YYYY-MM-DD").refine((v) => {
+  const fecha = new Date(`${v}T00:00:00`);
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const limite = new Date(hoy);
+  limite.setDate(limite.getDate() - FECHA_ALTA_MAX_DIAS_ATRAS);
+  return fecha <= hoy && fecha >= limite;
+}, `La fecha de alta no puede ser futura ni mayor a ${FECHA_ALTA_MAX_DIAS_ATRAS} días atrás`);
+
 export const AlumnoInsertSchema = z.object({
   nombre: z.string().min(1, "Requerido"),
   apellido: z.string().min(1, "Requerido"),
@@ -11,6 +22,7 @@ export const AlumnoInsertSchema = z.object({
   email: z.string().email("Email inválido").nullable().optional(),
   telefono: z.string().nullable().optional(),
   fecha_nacimiento: z.string().nullable().optional(),
+  fecha_alta: fechaAltaSchema.optional(),
   sucursal_id: z.string().uuid().nullable().optional(),
   monto_cuota_personalizado: z.number().positive().nullable().optional(),
   notas: z.string().nullable().optional(),

@@ -28,7 +28,9 @@ export function AlumnoForm({ sucursales, mode, alumno, onCreated }: AlumnoFormPr
   const [form, setForm] = useState({
     nombre: alumno?.nombre ?? "", apellido: alumno?.apellido ?? "", dni: alumno?.dni ?? "",
     email: alumno?.email ?? "", telefono: alumno?.telefono ?? "",
-    fecha_nacimiento: alumno?.fecha_nacimiento ?? "", sucursal_id: alumno?.sucursal_id ?? "",
+    fecha_nacimiento: alumno?.fecha_nacimiento ?? "",
+    fecha_alta: alumno?.fecha_alta ?? new Date().toISOString().split("T")[0],
+    sucursal_id: alumno?.sucursal_id ?? "",
     monto_cuota_personalizado: alumno?.monto_cuota_personalizado?.toString() ?? "", notas: alumno?.notas ?? "",
   });
 
@@ -45,6 +47,7 @@ export function AlumnoForm({ sucursales, mode, alumno, onCreated }: AlumnoFormPr
       nombre: form.nombre, apellido: form.apellido, dni: form.dni,
       email: form.email || null, telefono: form.telefono || null,
       fecha_nacimiento: form.fecha_nacimiento || null,
+      fecha_alta: form.fecha_alta || undefined,
       sucursal_id: form.sucursal_id || null,
       monto_cuota_personalizado: form.monto_cuota_personalizado ? parseFloat(form.monto_cuota_personalizado) : null,
       notas: form.notas || null,
@@ -106,6 +109,13 @@ export function AlumnoForm({ sucursales, mode, alumno, onCreated }: AlumnoFormPr
           <div className="space-y-1.5">
             <Label style={labelStyle}>Cuota personalizada ($)</Label>
             <Input name="monto_cuota_personalizado" type="number" min="0" step="0.01" value={form.monto_cuota_personalizado} onChange={handleChange} placeholder="Default del gym" style={inp} className="placeholder:opacity-20 font-mono" />
+          </div>
+          <div className="space-y-1.5">
+            <Label style={labelStyle}>Fecha de alta</Label>
+            <Input name="fecha_alta" type="date" value={form.fecha_alta} onChange={handleChange} style={inp} />
+            <p className="text-xs" style={{ color: T.textDim }}>
+              Para migrar alumnos que ya entrenaban antes de cargarlos acá. No afecta cuándo se generan sus cuotas.
+            </p>
           </div>
         </div>
         <div className="space-y-1.5">

@@ -167,6 +167,23 @@ describe("generarCuotaAlta", () => {
     expect(result.motivo).toBe("config_desactivada");
   });
 
+  it("fecha_alta histórica (alumno migrado) no cambia el resultado: la cuota siempre se calcula con la fecha de HOY", async () => {
+    // Esto documenta que generarCuotaAlta nunca lee fecha_alta — sólo le importa
+    // el momento real de ejecución (alta = "hoy"). Un alumno migrado con fecha_alta
+    // de hace 2 meses produce exactamente el mismo resultado que uno recién creado.
+    vi.setSystemTime(new Date("2026-06-05T10:00:00Z"));
+
+    setupAdminMock({ config: BASE_CONFIG, alumno: BASE_ALUMNO, insertResult: { error: null } });
+    const { generarCuotaAlta } = await import("@/lib/cuotas");
+    const resultAlumnoNuevo = await generarCuotaAlta("alumno-nuevo", "gym-uuid");
+
+    vi.clearAllMocks();
+    setupAdminMock({ config: BASE_CONFIG, alumno: BASE_ALUMNO, insertResult: { error: null } });
+    const resultAlumnoMigrado = await generarCuotaAlta("alumno-migrado-hace-2-meses", "gym-uuid");
+
+    expect(resultAlumnoMigrado).toEqual(resultAlumnoNuevo);
+  });
+
   it("monto_cero → no crea cuota si no hay monto configurado", async () => {
     vi.setSystemTime(new Date("2026-06-05T10:00:00Z"));
 

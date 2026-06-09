@@ -3,7 +3,7 @@ import { SignJWT } from "jose";
 import { logCron } from "@/lib/cron-logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendNotification } from "@/lib/notifications";
-import type { GymNotificationConfig } from "@/lib/notifications";
+import type { GymNotificationConfig, EmailTemplates } from "@/lib/notifications";
 import { z } from "zod";
 
 const Schema = z.object({ gym_id: z.string().uuid() });
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   // Config del gym
   const { data: gymConfig } = await admin
     .from("gym_config")
-    .select("email_activo, whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token")
+    .select("email_activo, whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, email_color_acento, email_templates")
     .eq("gym_id", gym_id)
     .single();
 
@@ -66,6 +66,7 @@ export async function POST(request: Request) {
 
   const notifConfig: GymNotificationConfig = {
     email_activo: gymConfig.email_activo ?? true,
+    email_templates: (gymConfig.email_templates as EmailTemplates | null) ?? null,
     whatsapp_activo: gymConfig.whatsapp_activo ?? false,
     whatsapp_phone_number_id: gymConfig.whatsapp_phone_number_id,
     whatsapp_access_token: gymConfig.whatsapp_access_token,
@@ -101,7 +102,7 @@ export async function POST(request: Request) {
       type: tipo,
       alumno: { nombre: alumno.nombre, email: alumno.email, telefono: alumno.telefono },
       cuota: { mes: cuota.mes, anio: cuota.anio, monto_total: cuota.monto_total ?? 0, pago_url: pagoUrl },
-      gym: { nombre: gym.nombre, logo_url: gym.logo_url },
+      gym: { nombre: gym.nombre, logo_url: gym.logo_url, color_acento: gymConfig.email_color_acento },
     });
 
     // Registrar en notificaciones_log

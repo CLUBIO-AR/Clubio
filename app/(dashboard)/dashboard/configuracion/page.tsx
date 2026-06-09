@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireGymContext } from "@/lib/supabase/auth";
 import { ConfigGym } from "@/components/configuracion/config-gym";
+import { ConfigBranding } from "@/components/configuracion/config-branding";
+import { ConfigPlantillas } from "@/components/configuracion/config-plantillas";
 import { ConfigCuotas } from "@/components/configuracion/config-cuotas";
 import { ConfigRecargos } from "@/components/configuracion/config-recargos";
 import { ConfigNotificaciones } from "@/components/configuracion/config-notificaciones";
@@ -15,7 +17,7 @@ export default async function ConfiguracionPage() {
   const supabase = await createClient();
 
   const [gymRes, configRes, actividadesRes] = await Promise.all([
-    supabase.from("gyms").select("id, nombre, email_contacto, telefono, direccion").eq("id", ctx.gymId).single(),
+    supabase.from("gyms").select("id, nombre, email_contacto, telefono, direccion, logo_url").eq("id", ctx.gymId).single(),
     supabase.from("gym_config").select("*").eq("gym_id", ctx.gymId).maybeSingle(),
     supabase.from("actividades").select("*").eq("gym_id", ctx.gymId).is("deleted_at", null).order("nombre"),
   ]);
@@ -38,6 +40,11 @@ export default async function ConfiguracionPage() {
         emailContacto={gym?.email_contacto ?? ""}
         telefono={gym?.telefono ?? ""}
         direccion={gym?.direccion ?? ""}
+      />
+
+      <ConfigBranding
+        logoUrl={gym?.logo_url ?? null}
+        colorAcento={config?.email_color_acento ?? null}
       />
 
       <ConfigCuotas
@@ -63,6 +70,10 @@ export default async function ConfiguracionPage() {
         maxAvisosPost={config?.max_avisos_post ?? 3}
         emailRemitenteNombre={config?.email_remitente_nombre ?? ""}
         emailRemitenteAddress={config?.email_remitente_address ?? ""}
+      />
+
+      <ConfigPlantillas
+        templates={(config?.email_templates as { aviso_vencimiento?: { subject?: string; body?: string }; recordatorio_vencido?: { subject?: string; body?: string } } | null) ?? null}
       />
 
       <ConfigMercadoPago

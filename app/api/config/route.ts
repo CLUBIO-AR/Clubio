@@ -41,6 +41,19 @@ const PatchSchema = z.object({
   max_avisos_post: z.number().int().min(0).optional(),
   email_remitente_nombre: z.string().nullable().optional(),
   email_remitente_address: z.string().email().nullable().optional(),
+  // Config: branding de emails a alumnos
+  email_color_acento: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(),
+  email_templates: z
+    .object({
+      aviso_vencimiento: z
+        .object({ subject: z.string().max(200).optional(), body: z.string().max(2000).optional() })
+        .optional(),
+      recordatorio_vencido: z
+        .object({ subject: z.string().max(200).optional(), body: z.string().max(2000).optional() })
+        .optional(),
+    })
+    .nullable()
+    .optional(),
   // Config: MercadoPago
   mp_access_token: z.string().nullable().optional(),
   mp_public_key: z.string().nullable().optional(),
@@ -94,6 +107,8 @@ export async function PATCH(request: Request) {
     max_avisos_post: number;
     email_remitente_nombre: string | null;
     email_remitente_address: string | null;
+    email_color_acento: string | null;
+    email_templates: z.infer<typeof PatchSchema>["email_templates"] | null;
     mp_access_token: string | null;
     mp_public_key: string | null;
     generar_cuota_al_alta: boolean;
@@ -107,6 +122,7 @@ export async function PATCH(request: Request) {
     "recargo_1_dias", "recargo_1_porcentaje", "recargo_2_dias", "recargo_2_porcentaje",
     "email_activo", "dias_aviso_antes", "aviso_post_vencimiento_dias", "max_avisos_post",
     "email_remitente_nombre", "email_remitente_address",
+    "email_color_acento", "email_templates",
     "mp_access_token", "mp_public_key",
     "generar_cuota_al_alta", "cuota_alta_proporcional", "dias_minimos_para_cuota_alta",
   ] as const;

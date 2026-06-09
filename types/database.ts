@@ -223,6 +223,8 @@ export type Database = {
           email_activo: boolean;
           email_remitente_nombre: string | null;
           email_remitente_address: string | null;
+          email_color_acento: string | null;
+          email_templates: Json | null;
           whatsapp_activo: boolean;
           whatsapp_phone_number_id: string | null;
           whatsapp_access_token: string | null;
@@ -253,6 +255,8 @@ export type Database = {
           email_activo?: boolean;
           email_remitente_nombre?: string | null;
           email_remitente_address?: string | null;
+          email_color_acento?: string | null;
+          email_templates?: Json | null;
           whatsapp_activo?: boolean;
           whatsapp_phone_number_id?: string | null;
           whatsapp_access_token?: string | null;
@@ -279,6 +283,8 @@ export type Database = {
           email_activo?: boolean;
           email_remitente_nombre?: string | null;
           email_remitente_address?: string | null;
+          email_color_acento?: string | null;
+          email_templates?: Json | null;
           whatsapp_activo?: boolean;
           whatsapp_phone_number_id?: string | null;
           whatsapp_access_token?: string | null;
@@ -304,6 +310,7 @@ export type Database = {
           id: string;
           gym_id: string;
           nombre: string;
+          email: string | null;
           rol: "owner" | "admin" | "recepcion";
           activo: boolean;
           created_at: string;
@@ -313,11 +320,13 @@ export type Database = {
           id: string;
           gym_id: string;
           nombre: string;
+          email?: string | null;
           rol?: "owner" | "admin" | "recepcion";
           activo?: boolean;
         };
         Update: {
           nombre?: string;
+          email?: string | null;
           rol?: "owner" | "admin" | "recepcion";
           activo?: boolean;
           updated_at?: string;
@@ -661,6 +670,9 @@ export type Database = {
           canal: string;
           provider_id: string | null;
           error_detail: string | null;
+          subject: string | null;
+          preview: string | null;
+          metadata: Json | null;
           created_at: string;
         };
         Insert: {
@@ -674,12 +686,18 @@ export type Database = {
           canal?: string;
           provider_id?: string | null;
           error_detail?: string | null;
+          subject?: string | null;
+          preview?: string | null;
+          metadata?: Json | null;
         };
         Update: {
           estado?: string | null;
           canal?: string;
           provider_id?: string | null;
           error_detail?: string | null;
+          subject?: string | null;
+          preview?: string | null;
+          metadata?: Json | null;
         };
         Relationships: [
           {
@@ -712,6 +730,8 @@ export type Database = {
           items_error: number | null;
           duracion_ms: number | null;
           error_detalle: string | null;
+          triggered_by: string | null;
+          metadata: Json | null;
           created_at: string;
         };
         Insert: {
@@ -727,11 +747,215 @@ export type Database = {
           items_error?: number | null;
           duracion_ms?: number | null;
           error_detalle?: string | null;
+          triggered_by?: string | null;
+          metadata?: Json | null;
         };
         Update: Record<string, never>;
         Relationships: [
           {
             foreignKeyName: "cron_logs_gym_id_fkey";
+            columns: ["gym_id"];
+            isOneToOne: false;
+            referencedRelation: "gyms";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      admin_users: {
+        Row: {
+          id: string;
+          email: string;
+          nombre: string;
+          activo: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          email: string;
+          nombre: string;
+          activo?: boolean;
+        };
+        Update: {
+          email?: string;
+          nombre?: string;
+          activo?: boolean;
+        };
+        Relationships: [];
+      };
+      admin_settings: {
+        Row: {
+          id: boolean;
+          notification_email: string;
+          tipo_cambio_usd: number;
+          dias_cobro_antes_vencimiento: number;
+          clubio_mp_access_token: string | null;
+          plan_basic_precio: number;
+          plan_plus_precio: number;
+          plan_multi_precio: number;
+          moneda_suscripcion: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: boolean;
+          notification_email?: string;
+          tipo_cambio_usd?: number;
+          dias_cobro_antes_vencimiento?: number;
+          clubio_mp_access_token?: string | null;
+          plan_basic_precio?: number;
+          plan_plus_precio?: number;
+          plan_multi_precio?: number;
+          moneda_suscripcion?: string;
+          updated_at?: string;
+        };
+        Update: {
+          notification_email?: string;
+          tipo_cambio_usd?: number;
+          dias_cobro_antes_vencimiento?: number;
+          clubio_mp_access_token?: string | null;
+          plan_basic_precio?: number;
+          plan_plus_precio?: number;
+          plan_multi_precio?: number;
+          moneda_suscripcion?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      cobros_suscripcion: {
+        Row: {
+          id: string;
+          gym_id: string;
+          licencia_id: string;
+          periodo: string;
+          plan: string;
+          monto_usd: number;
+          tipo_cambio: number;
+          monto_ars: number;
+          estado: "pendiente" | "pagado" | "vencido" | "cancelado";
+          mp_preference_id: string | null;
+          mp_payment_id: string | null;
+          link_pago: string | null;
+          email_enviado_at: string | null;
+          paid_at: string | null;
+          renovacion_aplicada: boolean;
+          triggered_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          licencia_id: string;
+          periodo: string;
+          plan: string;
+          monto_usd: number;
+          tipo_cambio: number;
+          monto_ars: number;
+          estado?: "pendiente" | "pagado" | "vencido" | "cancelado";
+          mp_preference_id?: string | null;
+          mp_payment_id?: string | null;
+          link_pago?: string | null;
+          email_enviado_at?: string | null;
+          paid_at?: string | null;
+          renovacion_aplicada?: boolean;
+          triggered_by?: string;
+        };
+        Update: {
+          estado?: "pendiente" | "pagado" | "vencido" | "cancelado";
+          mp_preference_id?: string | null;
+          mp_payment_id?: string | null;
+          link_pago?: string | null;
+          email_enviado_at?: string | null;
+          paid_at?: string | null;
+          renovacion_aplicada?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cobros_suscripcion_gym_id_fkey";
+            columns: ["gym_id"];
+            isOneToOne: false;
+            referencedRelation: "gyms";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cobros_suscripcion_licencia_id_fkey";
+            columns: ["licencia_id"];
+            isOneToOne: false;
+            referencedRelation: "licencias";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      leads: {
+        Row: {
+          id: string;
+          nombre: string;
+          email: string;
+          telefono: string | null;
+          gym_nombre: string | null;
+          cantidad_alumnos: string | null;
+          como_nos_conocio: string | null;
+          estado: string;
+          notas: string | null;
+          gym_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          nombre: string;
+          email: string;
+          telefono?: string | null;
+          gym_nombre?: string | null;
+          cantidad_alumnos?: string | null;
+          como_nos_conocio?: string | null;
+          estado?: string;
+          notas?: string | null;
+          gym_id?: string | null;
+        };
+        Update: {
+          estado?: string;
+          notas?: string | null;
+          gym_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "leads_gym_id_fkey";
+            columns: ["gym_id"];
+            isOneToOne: false;
+            referencedRelation: "gyms";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      admin_logs: {
+        Row: {
+          id: string;
+          admin_id: string | null;
+          accion: string;
+          gym_id: string | null;
+          detalle: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          admin_id?: string | null;
+          accion: string;
+          gym_id?: string | null;
+          detalle?: Json | null;
+        };
+        Update: Record<string, never>;
+        Relationships: [
+          {
+            foreignKeyName: "admin_logs_admin_id_fkey";
+            columns: ["admin_id"];
+            isOneToOne: false;
+            referencedRelation: "admin_users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "admin_logs_gym_id_fkey";
             columns: ["gym_id"];
             isOneToOne: false;
             referencedRelation: "gyms";

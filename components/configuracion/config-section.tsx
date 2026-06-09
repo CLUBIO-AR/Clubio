@@ -93,3 +93,7 @@ export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
 export function NumberInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input type="number" {...props} style={{ ...inputBase, ...props.style }} />;
 }
+
+export function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return <textarea {...props} style={{ ...inputBase, resize: "vertical", ...props.style }} />;
+}

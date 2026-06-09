@@ -20,14 +20,22 @@ export type NotificationPayload = {
   gym: {
     nombre: string;
     logo_url?: string | null;
-    color_primario?: string;
+    color_acento?: string | null;
   };
 };
+
+// Plantillas de email personalizables por el gym (asunto/cuerpo en texto plano,
+// con variables {nombre}/{gym}/{monto}/{mes}/{anio}/{link} — ver renderTemplate
+// en channels/email.ts). Solo cubre los tipos que realmente se disparan.
+export type EmailTemplates = Partial<
+  Record<"aviso_vencimiento" | "recordatorio_vencido", { subject?: string; body?: string }>
+>;
 
 export type GymNotificationConfig = {
   email_activo: boolean;
   email_remitente_nombre?: string | null;
   email_remitente_address?: string | null;
+  email_templates?: EmailTemplates | null;
   whatsapp_activo: boolean;
   whatsapp_phone_number_id?: string | null;
   whatsapp_access_token?: string | null;

@@ -11,6 +11,14 @@
     {
       "path": "/api/cron/generar-cuotas",
       "schedule": "0 8 1 * *"
+    },
+    {
+      "path": "/api/cron/verificar-suscripciones",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/generar-cobros-suscripcion",
+      "schedule": "0 9 * * *"
     }
   ]
 }

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 
 const PUBLIC_PATHS = [
@@ -73,6 +74,31 @@ export async function proxy(request: NextRequest) {
       loginUrl.pathname = "/login";
       loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  // Admin routes: solo superadmin. Nunca revelar que /admin existe —
+  // un gym que navega ahí es redirigido silenciosamente a /dashboard.
+  if (pathname.startsWith("/admin")) {
+    if (!user) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/login";
+      loginUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // Service-role: evita que la verificación dependa del access token de la
+    // sesión (que puede expirar entre el getUser() de arriba y esta query,
+    // provocando un falso negativo y un redirect a /dashboard).
+    const { data: adminUser } = await createAdminClient()
+      .from("admin_users")
+      .select("id")
+      .eq("id", user.id)
+      .eq("activo", true)
+      .maybeSingle();
+
+    if (!adminUser) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }
 

@@ -20,20 +20,24 @@ const _getCachedGymCtx = (userId: string) =>
         .from("gym_usuarios")
         .select("gym_id, nombre, rol")
         .eq("id", userId)
+        .eq("activo", true)
         .single();
       if (!gu) return null;
 
       const { data: gym } = await admin
         .from("gyms")
-        .select("nombre")
+        .select("nombre, activo")
         .eq("id", gu.gym_id)
         .single();
+
+      // Gym suspendido por vencimiento de licencia o acción manual del superadmin
+      if (!gym?.activo) return null;
 
       return {
         gym_id: gu.gym_id,
         nombre: gu.nombre,
         rol: gu.rol,
-        gymNombre: gym?.nombre ?? "GYM",
+        gymNombre: gym.nombre ?? "GYM",
       };
     },
     ["gym-ctx", userId],

@@ -1,6 +1,6 @@
 # CLUBIO — Funcionalidades implementadas
 
-> Estado al 09/06/2026
+> Estado al 09/06/2026 — actualizado tras implementación de Features 1.1.1, 1.2.1, 1.2.2, 1.3.1, 1.3.2
 
 ---
 
@@ -16,10 +16,12 @@
 
 ### Alumnos
 - Crear alumno con datos completos (nombre, apellido, DNI, email, teléfono, dirección, fecha de alta)
+- **Aviso inmediato por email al crear alumno:** si el gym generó una cuota de alta y el alumno tiene email, recibe el aviso con link de pago en el momento (sin esperar el cron diario)
 - Editar datos de alumno
 - Activar / desactivar alumno
 - Eliminar alumno
 - Ver perfil detallado: información de contacto, actividades inscritas, historial de cuotas (últimas 6)
+- **Ver historial completo de cuotas del alumno:** página dedicada `/alumnos/[id]/cuotas` con paginación (50/cuota), filtros por mes, año y estado, nombre de actividad por cuota, y link de pago generado por demanda
 - Buscar alumnos por nombre, apellido, DNI, email
 - Filtrar alumnos por estado (activo / inactivo)
 - Filtrar alumnos por actividad
@@ -39,7 +41,8 @@
 - Marcar cuota como pagada (efectivo, transferencia, MercadoPago, otro)
 - Registrar pago parcial de cuota
 - Condonar cuota con notas
-- Generar link de pago MercadoPago para que el alumno pague por su cuenta
+- **Generar link de pago por demanda** para cualquier cuota pendiente/vencida (desde el historial del alumno); el link va a `/pagar/{token}` con JWT firmado de 30 días
+- **Pagar todo:** desde el historial del alumno, generar un único link de MercadoPago que engloba todas las cuotas pendientes y vencidas en un solo pago; el webhook marca todas las cuotas como pagadas al confirmar
 - Verificar manualmente un pago de MP ingresando el ID de transacción
 
 ### Pagos
@@ -215,10 +218,11 @@
 | Cron | Horario | Qué hace |
 |---|---|---|
 | `generar-cuotas` | 8 AM UTC, día 1 de cada mes | Genera cuotas mensuales para todos los alumnos activos de cada gym con licencia activa |
-| `enviar-avisos` | 9 AM UTC, todos los días | Envía emails de aviso de vencimiento y recordatorio de cuotas vencidas según configuración de cada gym |
+| `enviar-avisos` | 9 AM UTC, todos los días | Envía emails de aviso de vencimiento y recordatorio de cuotas vencidas según configuración de cada gym. Si un alumno tiene múltiples cuotas pendientes, recibe UN solo email consolidado con links individuales por cuota y un botón "Pagar todo" |
 | `aplicar-recargos` | 0:01 AM UTC, todos los días | Aplica recargos por mora a cuotas vencidas según la configuración de cada gym |
 | `verificar-suscripciones` | 7 AM UTC, todos los días | Verifica estado de licencias; suspende gyms con licencia vencida e invalida su cache de sesión |
 | `generar-cobros-suscripcion` | 9 AM UTC, todos los días | Genera cobros de suscripción y envía links de pago a gyms cuya licencia vence en N días |
+
 | `vencer-cobros-suscripcion` | 10 AM UTC, todos los días | Marca como "vencido" los cobros pendientes cuyo período ya pasó |
 | `avisos-suscripcion` | 8:30 AM UTC, todos los días | Envía emails informativos al gym cuando su licencia vence en 30, 14, 7 o 3 días (sin link de pago, solo aviso) |
 
@@ -226,6 +230,6 @@
 
 | Webhook | Qué hace |
 |---|---|
-| `/api/webhooks/mercadopago` | Recibe notificación de pago de cuota de alumno → marca cuota como pagada, registra método y deduplica |
+| `/api/webhooks/mercadopago` | Recibe notificación de pago de cuota de alumno → marca cuota como pagada, registra en historial de pagos y deduplica. También maneja pagos de lote (`external_reference: lote-{id}`) → marca todas las cuotas del lote como pagadas |
 | `/api/webhooks/mp-suscripciones` | Recibe notificación de pago de suscripción CLUBIO → marca cobro como pagado, renueva licencia en cascada (+1 mes por cada cobro pagado pendiente de aplicar), reactiva gym si estaba suspendido, invalida cache de sesión de todos los usuarios del gym |
 | `/api/mp-redirect` | Landing de resultado de pago MP del alumno; redirige al dashboard con mensaje de éxito o error |

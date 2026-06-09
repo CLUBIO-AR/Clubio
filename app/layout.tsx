@@ -23,8 +23,24 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CLUBIO — Gestión de Gimnasios",
-  description: "Sistema de gestión de alumnos, cuotas y pagos para gimnasios",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://app.clubio.com.ar"),
+  title: "CLUBIO — Tus cuotas se cobran solas",
+  description:
+    "Sistema de cobros automáticos para gimnasios en Argentina. Cuotas automáticas, avisos por email, pago sin cuenta con MercadoPago. Sin setup fee.",
+  manifest: "/manifest.json",
+  openGraph: {
+    title: "CLUBIO — Tus cuotas se cobran solas",
+    description:
+      "Sistema de cobros automáticos para gimnasios en Argentina. Cuotas automáticas, avisos por email, pago con MercadoPago.",
+    url: "https://app.clubio.com.ar",
+    siteName: "CLUBIO",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "CLUBIO — Tus cuotas se cobran solas",
+    description: "Sistema de cobros automáticos para gimnasios en Argentina.",
+  },
 };
 
 export default function RootLayout({

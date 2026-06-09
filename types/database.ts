@@ -607,6 +607,43 @@ export type Database = {
           }
         ];
       };
+      cuota_lotes: {
+        Row: {
+          id: string;
+          gym_id: string;
+          alumno_id: string;
+          cuota_ids: string[];
+          mp_preference_id: string | null;
+          mp_payment_id: string | null;
+          estado: string;
+          monto_total: number;
+          paid_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          alumno_id: string;
+          cuota_ids: string[];
+          mp_preference_id?: string | null;
+          mp_payment_id?: string | null;
+          estado?: string;
+          monto_total?: number;
+          paid_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          mp_preference_id?: string | null;
+          mp_payment_id?: string | null;
+          estado?: string;
+          monto_total?: number;
+          paid_at?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "cuota_lotes_gym_id_fkey"; columns: ["gym_id"]; isOneToOne: false; referencedRelation: "gyms"; referencedColumns: ["id"]; },
+          { foreignKeyName: "cuota_lotes_alumno_id_fkey"; columns: ["alumno_id"]; isOneToOne: false; referencedRelation: "alumnos"; referencedColumns: ["id"]; }
+        ];
+      };
       pagos: {
         Row: {
           id: string;

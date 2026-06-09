@@ -198,7 +198,7 @@ export async function condonarCuota(
 export async function generarCuotaAlta(
   alumnoId: string,
   gymId: string
-): Promise<{ generada: boolean; motivo: string }> {
+): Promise<{ generada: boolean; motivo: string; cuotaId?: string; mes?: number; anio?: number; monto?: number }> {
   const supabase = createAdminClient();
 
   const { data: config } = await supabase
@@ -248,7 +248,7 @@ export async function generarCuotaAlta(
   }
   const fechaVto = fechaVtoDate.toISOString().split("T")[0];
 
-  const { error } = await supabase.from("cuotas").insert({
+  const { data: cuotaCreada, error } = await supabase.from("cuotas").insert({
     gym_id: gymId,
     alumno_id: alumnoId,
     mes,
@@ -258,14 +258,14 @@ export async function generarCuotaAlta(
     monto_base: montoFinal,
     fecha_vencimiento: fechaVto,
     estado: "pendiente",
-  });
+  }).select("id").single();
 
   if (error?.code === "23505") {
     return { generada: false, motivo: "ya_existe" };
   }
   if (error) throw error;
 
-  return { generada: true, motivo: descripcion };
+  return { generada: true, motivo: descripcion, cuotaId: cuotaCreada?.id, mes, anio, monto: montoFinal };
 }
 
 // --- Helpers usados por los crons ---

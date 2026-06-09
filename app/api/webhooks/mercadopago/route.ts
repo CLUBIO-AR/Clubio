@@ -38,14 +38,15 @@ export async function POST(request: Request) {
   const accessToken = gymConfig?.mp_access_token ?? process.env.MP_ACCESS_TOKEN;
   if (!accessToken) return NextResponse.json({ error: "MP no configurado" }, { status: 503 });
 
-  // Verificar que no procesamos este pago antes
-  const { data: existente } = await admin
-    .from("pagos")
-    .select("id")
-    .eq("mp_payment_id", paymentId)
-    .maybeSingle();
+  // Verificar que no procesamos este pago antes (cuota individual o lote)
+  const [pagoExistente, loteExistente] = await Promise.all([
+    admin.from("pagos").select("id").eq("mp_payment_id", paymentId).maybeSingle(),
+    admin.from("cuota_lotes").select("id").eq("mp_payment_id", paymentId).maybeSingle(),
+  ]);
 
-  if (existente) return NextResponse.json({ ok: true, duplicate: true });
+  if (pagoExistente.data || loteExistente.data) {
+    return NextResponse.json({ ok: true, duplicate: true });
+  }
 
   // Obtener datos del pago desde MP
   let payment;
@@ -59,8 +60,61 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, status: payment.status });
   }
 
-  const cuotaId = payment.external_reference;
-  if (!cuotaId) return NextResponse.json({ error: "external_reference vacío" }, { status: 422 });
+  const extRef = payment.external_reference ?? "";
+  if (!extRef) return NextResponse.json({ error: "external_reference vacío" }, { status: 422 });
+
+  // --- Pago de lote (múltiples cuotas) ---
+  if (extRef.startsWith("lote-")) {
+    const loteId = extRef.slice(5);
+
+    const { data: lote } = await admin
+      .from("cuota_lotes")
+      .select("id, estado, gym_id, cuota_ids, alumno_id")
+      .eq("id", loteId)
+      .maybeSingle();
+
+    if (!lote) return NextResponse.json({ error: "Lote no encontrado" }, { status: 404 });
+    if (lote.gym_id !== gymId) return NextResponse.json({ error: "Gym mismatch" }, { status: 403 });
+    if (lote.estado === "pagado") return NextResponse.json({ ok: true, already_paid: true });
+
+    // Marcar el lote primero (deduplicación ante reintentos de MP)
+    await admin.from("cuota_lotes").update({
+      estado:        "pagado",
+      mp_payment_id: paymentId,
+      paid_at:       new Date().toISOString(),
+    }).eq("id", loteId);
+
+    // Marcar cada cuota pendiente como pagada
+    const { data: cuotasLote } = await admin
+      .from("cuotas")
+      .select("id, alumno_id, monto_total")
+      .in("id", lote.cuota_ids as string[])
+      .eq("gym_id", gymId)
+      .neq("estado", "pagada")
+      .neq("estado", "condonada");
+
+    const ahora = new Date().toISOString();
+    for (const c of cuotasLote ?? []) {
+      await admin.from("pagos").insert({
+        gym_id:        gymId,
+        cuota_id:      c.id,
+        alumno_id:     c.alumno_id,
+        monto:         c.monto_total ?? 0,
+        metodo:        "mercadopago",
+        mp_payment_id: paymentId,
+      });
+      await admin.from("cuotas").update({
+        estado:      "pagada",
+        fecha_pago:  ahora,
+        metodo_pago: "mercadopago",
+      }).eq("id", c.id);
+    }
+
+    return NextResponse.json({ ok: true, lote_id: loteId, cuotas_pagadas: (cuotasLote ?? []).length });
+  }
+
+  // --- Pago de cuota individual ---
+  const cuotaId = extRef;
 
   // Verificar que la cuota pertenece al gym
   const { data: cuota } = await admin
@@ -82,19 +136,19 @@ export async function POST(request: Request) {
   // pero usamos dos operaciones: si falla la segunda, el webhook re-intentará y el duplicate
   // check del inicio lo filtrará)
   const { error: pagoError } = await admin.from("pagos").insert({
-    gym_id: gymId,
-    cuota_id: cuotaId,
-    alumno_id: cuota.alumno_id,
+    gym_id:        gymId,
+    cuota_id:      cuotaId,
+    alumno_id:     cuota.alumno_id,
     monto,
-    metodo: "mercadopago",
+    metodo:        "mercadopago",
     mp_payment_id: paymentId,
   });
 
   if (pagoError) return NextResponse.json({ error: pagoError.message }, { status: 500 });
 
   await admin.from("cuotas").update({
-    estado: "pagada",
-    fecha_pago: new Date().toISOString(),
+    estado:      "pagada",
+    fecha_pago:  new Date().toISOString(),
     metodo_pago: "mercadopago",
   }).eq("id", cuotaId);
 

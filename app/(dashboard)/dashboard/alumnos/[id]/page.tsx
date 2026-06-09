@@ -104,7 +104,7 @@ export default async function AlumnoDetailPage({ params }: { params: Promise<{ i
             })}
           </div>
           <div className="px-5 py-3 border-t" style={{ borderColor: T.borderSub }}>
-            <Link href={`/dashboard/cuotas?alumno=${id}`} className="text-xs font-bold uppercase tracking-wider transition-opacity hover:opacity-70" style={{ color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
+            <Link href={`/dashboard/alumnos/${id}/cuotas`} className="text-xs font-bold uppercase tracking-wider transition-opacity hover:opacity-70" style={{ color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
               Ver todas →
             </Link>
           </div>

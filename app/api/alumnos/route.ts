@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getApiGymId } from "@/lib/supabase/api-auth";
 import { getAlumnos, createAlumno, AlumnoInsertSchema } from "@/lib/alumnos";
 import { generarCuotaAlta } from "@/lib/cuotas";
+import { enviarAvisoCuotaInmediato } from "@/lib/email/aviso-cuota-inmediato";
 
 export async function GET(request: Request) {
   const gymId = await getApiGymId();
@@ -39,11 +40,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Generar cuota inicial si la config del gym lo permite (best-effort)
+  // Generar cuota inicial si la config del gym lo permite; si se genera, enviar aviso inmediato
   if (data?.id) {
-    generarCuotaAlta(data.id, gymId).catch((err) =>
-      console.error(`[api:alumnos:post] generarCuotaAlta alumno=${data.id} error:`, err)
-    );
+    const email = parsed.data.email ?? null;
+    const nombre = `${parsed.data.nombre} ${parsed.data.apellido}`;
+
+    generarCuotaAlta(data.id, gymId)
+      .then((resultado) => {
+        if (resultado.generada && resultado.cuotaId && email) {
+          enviarAvisoCuotaInmediato({
+            alumnoId:     data.id,
+            alumnoNombre: nombre,
+            alumnoEmail:  email,
+            gymId,
+            cuotaId:      resultado.cuotaId,
+            mes:          resultado.mes!,
+            anio:         resultado.anio!,
+            monto:        resultado.monto!,
+          }).catch((err) =>
+            console.error(`[api:alumnos:post] aviso inmediato alumno=${data.id} error:`, err)
+          );
+        }
+      })
+      .catch((err) =>
+        console.error(`[api:alumnos:post] generarCuotaAlta alumno=${data.id} error:`, err)
+      );
   }
 
   return NextResponse.json(data, { status: 201 });

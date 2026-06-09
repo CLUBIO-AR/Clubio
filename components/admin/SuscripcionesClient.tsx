@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Copy, Check, Send, Ban, Loader2 } from "lucide-react";
+import { Copy, Check, Send, Ban, Loader2, ArrowLeft } from "lucide-react";
 import { T } from "@/lib/theme";
 import { ADMIN_ACCENT } from "./AdminSidebar";
 import { AdminBadge } from "./AdminBadge";
@@ -35,9 +36,11 @@ interface Props {
   page: number;
   totalPages: number;
   filtroEstado: string;
+  filtroGymId: string;
+  gymNombreFiltro: string | null;
 }
 
-export function SuscripcionesClient({ cobros, total, page, totalPages, filtroEstado }: Props) {
+export function SuscripcionesClient({ cobros, total, page, totalPages, filtroEstado, filtroGymId, gymNombreFiltro }: Props) {
   const router = useRouter();
   const sp = useSearchParams();
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -80,12 +83,21 @@ export function SuscripcionesClient({ cobros, total, page, totalPages, filtroEst
 
   return (
     <div className="space-y-5">
+      {filtroGymId && gymNombreFiltro && (
+        <Link
+          href={`/admin/gyms/${filtroGymId}`}
+          className="inline-flex items-center gap-1.5 text-xs uppercase tracking-widest font-bold transition-opacity hover:opacity-70"
+          style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}
+        >
+          <ArrowLeft className="w-3.5 h-3.5" /> Volver a {gymNombreFiltro}
+        </Link>
+      )}
       <div>
         <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>
-          SUSCRIPCIONES
+          {gymNombreFiltro ? `COBROS — ${gymNombreFiltro.toUpperCase()}` : "SUSCRIPCIONES"}
         </h1>
         <p className="text-sm mt-1" style={{ color: T.textDim }}>
-          Cobros de licencia generados a los gyms — {total} total
+          {gymNombreFiltro ? `Historial completo de cobros de ${gymNombreFiltro}` : "Cobros de licencia generados a los gyms"} — {total} total
         </p>
       </div>
 

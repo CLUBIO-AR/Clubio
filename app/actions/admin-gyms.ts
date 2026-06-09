@@ -30,15 +30,49 @@ export async function toggleGymActivoAction(gymId: string, activo: boolean): Pro
 export async function cambiarPlanAction(
   gymId: string,
   licenciaId: string,
-  plan: "basic" | "plus" | "multi"
+  plan: "basic" | "plus" | "multi",
+  motivo?: string
 ): Promise<ActionResult> {
   const ctx = await requireSuperadmin();
   const admin = createAdminClient();
 
-  const { error } = await admin.from("licencias").update({ plan }).eq("id", licenciaId).eq("gym_id", gymId);
-  if (error) return { ok: false, error: error.message };
+  const [updateRes, gymRes] = await Promise.all([
+    admin.from("licencias").update({ plan }).eq("id", licenciaId).eq("gym_id", gymId),
+    admin.from("gyms").select("nombre, email_contacto").eq("id", gymId).single(),
+  ]);
 
-  await logAdminAction(ctx.adminId, "plan_cambiado", gymId, { plan });
+  if (updateRes.error) return { ok: false, error: updateRes.error.message };
+
+  await logAdminAction(ctx.adminId, "plan_cambiado", gymId, { plan, motivo: motivo || undefined });
+
+  // Notificar al gym por email
+  if (gymRes.data?.email_contacto) {
+    const PLAN_LABELS: Record<string, string> = { basic: "Basic", plus: "Plus", multi: "Multi" };
+    const { Resend } = await import("resend");
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const from = `CLUBIO <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.com.ar"}>`;
+    const { clubioEmailHtml, clubioEmailTable } = await import("@/lib/email/template");
+
+    await resend.emails.send({
+      from,
+      to: gymRes.data.email_contacto,
+      subject: `Tu plan CLUBIO fue actualizado — ${gymRes.data.nombre}`,
+      html: clubioEmailHtml(`
+        <h2 style="margin:0 0 8px;color:#f9fafb;font-size:20px">Actualización de plan</h2>
+        <p style="color:#9ca3af;margin:0 0 20px;font-size:14px">
+          Hola <strong style="color:#f9fafb">${gymRes.data.nombre}</strong>, tu plan de suscripción a CLUBIO fue actualizado.
+        </p>
+        ${clubioEmailTable([
+          ["Nuevo plan", PLAN_LABELS[plan] ?? plan],
+          ...(motivo ? [["Motivo", motivo] as [string, string]] : []),
+        ])}
+        <p style="color:#6b7280;font-size:12px;margin:16px 0 0">
+          Si tenés alguna duda, respondé este email o contactate con soporte.
+        </p>
+      `),
+    }).catch((e) => console.error("[admin-gyms] email cambio-plan error:", e));
+  }
+
   revalidatePath("/admin/gyms");
   revalidatePath(`/admin/gyms/${gymId}`);
   return { ok: true, data: undefined };

@@ -27,12 +27,13 @@ type EstadoFiltro = typeof ESTADOS_VALIDOS[number];
 export default async function AdminSuscripcionesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; estado?: string }>;
+  searchParams: Promise<{ page?: string; estado?: string; gym_id?: string }>;
 }) {
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
   const estadoParam = sp.estado ?? "";
   const estado = ESTADOS_VALIDOS.includes(estadoParam as EstadoFiltro) ? (estadoParam as EstadoFiltro) : null;
+  const gymId = sp.gym_id ?? null;
 
   const admin = createAdminClient();
 
@@ -42,8 +43,14 @@ export default async function AdminSuscripcionesPage({
     .order("created_at", { ascending: false });
 
   if (estado) query = query.eq("estado", estado);
+  if (gymId) query = query.eq("gym_id", gymId);
 
-  const result = await paginate(query, page, PAGE_SIZE);
+  const [result, gymRes] = await Promise.all([
+    paginate(query, page, PAGE_SIZE),
+    gymId
+      ? admin.from("gyms").select("nombre").eq("id", gymId).single()
+      : Promise.resolve({ data: null }),
+  ]);
 
   return (
     <SuscripcionesClient
@@ -52,6 +59,8 @@ export default async function AdminSuscripcionesPage({
       page={result.page}
       totalPages={result.totalPages}
       filtroEstado={estadoParam}
+      filtroGymId={gymId ?? ""}
+      gymNombreFiltro={gymRes.data?.nombre ?? null}
     />
   );
 }

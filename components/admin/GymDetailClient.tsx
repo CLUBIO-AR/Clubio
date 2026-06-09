@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Building2, Users, DollarSign, RefreshCw, Loader2, Ban, CheckCircle2, UserPlus, Copy, Check, CreditCard, ExternalLink } from "lucide-react";
+import { ArrowLeft, Building2, Users, DollarSign, RefreshCw, Loader2, Ban, CheckCircle2, UserPlus, Copy, Check, CreditCard, ExternalLink, FileText } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,6 +55,7 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
   const [planDialogOpen, setPlanDialogOpen] = useState(false);
   const [renovarDialogOpen, setRenovarDialogOpen] = useState(false);
   const [nuevoPlan, setNuevoPlan] = useState(licencia?.plan ?? "basic");
+  const [motivoCambioPlan, setMotivoCambioPlan] = useState("");
   const [meses, setMeses] = useState(12);
   const [precio, setPrecio] = useState(licencia?.precio_pagado ?? 0);
 
@@ -81,10 +82,11 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
     if (!licencia) return;
     setLoading(true);
     setError(null);
-    const res = await cambiarPlanAction(gym.id, licencia.id, nuevoPlan as "basic" | "plus" | "multi");
+    const res = await cambiarPlanAction(gym.id, licencia.id, nuevoPlan as "basic" | "plus" | "multi", motivoCambioPlan.trim() || undefined);
     setLoading(false);
     if (!res.ok) return setError(res.error);
     setPlanDialogOpen(false);
+    setMotivoCambioPlan("");
     router.refresh();
   }
 
@@ -297,6 +299,13 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
             <h3 className="text-sm font-extrabold uppercase tracking-widest" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
               Cobros de suscripción
             </h3>
+            <Link
+              href={`/admin/suscripciones?gym_id=${gym.id}`}
+              className="text-xs font-bold uppercase tracking-wider hover:opacity-70 transition-opacity"
+              style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}
+            >
+              Ver todos
+            </Link>
           </div>
           <button
             onClick={handleGenerarCobro}
@@ -356,20 +365,39 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
       </div>
 
       {/* Cambiar plan dialog */}
-      <Dialog open={planDialogOpen} onOpenChange={setPlanDialogOpen}>
+      <Dialog open={planDialogOpen} onOpenChange={(open) => { setPlanDialogOpen(open); if (!open) setMotivoCambioPlan(""); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Cambiar plan</DialogTitle>
-            <DialogDescription>Actualizá el plan contratado por {gym.nombre}.</DialogDescription>
+            <DialogDescription>El gym recibirá un email notificando el cambio.</DialogDescription>
           </DialogHeader>
-          <select value={nuevoPlan} onChange={(e) => setNuevoPlan(e.target.value)} className="h-9 px-3 rounded-lg text-sm w-full"
-            style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
-            <option value="basic">Basic — USD 28</option>
-            <option value="plus">Plus — USD 45</option>
-            <option value="multi">Multi — USD 75</option>
-          </select>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-bold uppercase tracking-widest block mb-1.5" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Nuevo plan</label>
+              <select value={nuevoPlan} onChange={(e) => setNuevoPlan(e.target.value)} className="h-9 px-3 rounded-lg text-sm w-full"
+                style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
+                <option value="basic">Basic — USD 28</option>
+                <option value="plus">Plus — USD 45</option>
+                <option value="multi">Multi — USD 75</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-widest flex items-center gap-1.5 mb-1.5" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+                <FileText className="w-3 h-3" /> Motivo del cambio <span style={{ color: T.textDim, fontWeight: 400 }}>(opcional)</span>
+              </label>
+              <textarea
+                value={motivoCambioPlan}
+                onChange={(e) => setMotivoCambioPlan(e.target.value)}
+                rows={2}
+                placeholder="Ej: Upgrade acordado por email, descuento comercial..."
+                className="w-full px-3 py-2 rounded-lg text-sm resize-none"
+                style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text, fontFamily: "inherit" }}
+              />
+              <p className="text-xs mt-1" style={{ color: T.textDim }}>Se registra en el historial y se incluye en el email al gym.</p>
+            </div>
+          </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPlanDialogOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => { setPlanDialogOpen(false); setMotivoCambioPlan(""); }}>Cancelar</Button>
             <Button onClick={handleCambiarPlan} disabled={loading} className={buttonVariants({ className: "gap-2" })} style={{ background: ADMIN_ACCENT, color: T.bgDeep, border: "none" }}>
               {loading && <Loader2 className="w-4 h-4 animate-spin" />} Guardar
             </Button>

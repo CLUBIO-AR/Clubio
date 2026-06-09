@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Users, CreditCard, DollarSign, Settings, LogOut, Zap } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, DollarSign, Settings, LogOut, Zap, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { T } from "@/lib/theme";
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/alumnos",       label: "Alumnos",        icon: Users },
   { href: "/dashboard/cuotas",        label: "Cuotas",         icon: CreditCard },
   { href: "/dashboard/pagos",         label: "Pagos",          icon: DollarSign },
+  { href: "/dashboard/suscripcion",   label: "Suscripción",    icon: Receipt },
   { href: "/dashboard/configuracion", label: "Configuración",  icon: Settings },
 ];
 

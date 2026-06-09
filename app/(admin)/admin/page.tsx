@@ -8,6 +8,8 @@ import {
   Mail,
   Wallet,
   Inbox,
+  TrendingUp,
+  BarChart2,
 } from "lucide-react";
 import { T } from "@/lib/theme";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -18,6 +20,7 @@ export default async function AdminDashboardPage() {
 
   const now = new Date();
   const hoyInicio = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+  const mesInicio = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   const en7dias = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
   const hace48hs = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString();
   const hace24hs = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
@@ -34,6 +37,8 @@ export default async function AdminDashboardPage() {
     gymsSinMpRes,
     cronsErrorRes,
     leadsSinContactarRes,
+    cobrosPagadosMesRes,
+    cobrosGeneradosMesRes,
   ] = await Promise.all([
     admin.from("gyms").select("id", { count: "exact", head: true }).eq("activo", true),
     admin.from("licencias").select("id", { count: "exact", head: true }).eq("es_trial", true).eq("activa", true),
@@ -68,11 +73,25 @@ export default async function AdminDashboardPage() {
       .lte("created_at", hace48hs)
       .order("created_at", { ascending: true })
       .limit(10),
+    admin
+      .from("cobros_suscripcion")
+      .select("monto_ars")
+      .eq("estado", "pagado")
+      .gte("paid_at", mesInicio),
+    admin
+      .from("cobros_suscripcion")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", mesInicio)
+      .neq("estado", "cancelado"),
   ]);
 
   const licenciasVencen = licenciasVencenRes.data ?? [];
   const cronsConError = cronsErrorRes.data ?? [];
   const leadsSinContactar = leadsSinContactarRes.data ?? [];
+  const ingresosMes = (cobrosPagadosMesRes.data ?? []).reduce((s, c) => s + Number(c.monto_ars), 0);
+  const totalCobrosMes = cobrosGeneradosMesRes.count ?? 0;
+  const pagadosMes = cobrosPagadosMesRes.data?.length ?? 0;
+  const tasaConversion = totalCobrosMes > 0 ? Math.round((pagadosMes / totalCobrosMes) * 100) : 0;
   const gymsSinMp = (gymsSinMpRes.data ?? []).filter((g) => {
     const cfg = Array.isArray(g.gym_config) ? g.gym_config[0] : g.gym_config;
     return !cfg?.mp_access_token;
@@ -96,6 +115,8 @@ export default async function AdminDashboardPage() {
     { label: "Emails hoy",        value: emailsHoyRes.count ?? 0,                                    icon: Mail,       color: T.blue,       bg: `${T.blue}15` },
     { label: "Pagos hoy",         value: pagosHoyRes.count ?? 0,                                     icon: Wallet,     color: T.lime,       bg: `${T.lime}15` },
     { label: "Leads nuevos",      value: leadsNuevosRes.count ?? 0,                                  icon: Inbox,      color: T.danger,     bg: `${T.danger}15` },
+    { label: "Cobrado en suscr.", value: `$ ${ingresosMes.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`, icon: TrendingUp, color: T.lime, bg: `${T.lime}15` },
+    { label: "Tasa cobros",       value: `${tasaConversion}%`,                                       icon: BarChart2,  color: T.blue,       bg: `${T.blue}15` },
   ];
 
   const alertas = [

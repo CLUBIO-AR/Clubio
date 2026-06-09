@@ -17,6 +17,7 @@ import {
   ChevronDown,
   ShieldCheck,
   Settings,
+  History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -41,6 +42,7 @@ const LOGS_ITEMS = [
   { href: "/admin/logs/emails", label: "Emails", icon: Mail },
   { href: "/admin/logs/crons", label: "Crons", icon: Clock },
   { href: "/admin/logs/pagos", label: "Pagos / Webhooks", icon: Wallet },
+  { href: "/admin/logs/acciones", label: "Audit Trail", icon: History },
 ];
 
 export function AdminSidebar() {

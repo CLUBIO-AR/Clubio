@@ -56,6 +56,7 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
   const [renovarDialogOpen, setRenovarDialogOpen] = useState(false);
   const [nuevoPlan, setNuevoPlan] = useState(licencia?.plan ?? "basic");
   const [motivoCambioPlan, setMotivoCambioPlan] = useState("");
+  const [motivoRenovar, setMotivoRenovar] = useState("");
   const [meses, setMeses] = useState(12);
   const [precio, setPrecio] = useState(licencia?.precio_pagado ?? 0);
 
@@ -134,10 +135,11 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
     if (!licencia) return;
     setLoading(true);
     setError(null);
-    const res = await renovarLicenciaAction(gym.id, licencia.id, meses, precio);
+    const res = await renovarLicenciaAction(gym.id, licencia.id, meses, precio, motivoRenovar.trim() || undefined);
     setLoading(false);
     if (!res.ok) return setError(res.error);
     setRenovarDialogOpen(false);
+    setMotivoRenovar("");
     router.refresh();
   }
 
@@ -483,7 +485,7 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
       </Dialog>
 
       {/* Renovar licencia dialog */}
-      <Dialog open={renovarDialogOpen} onOpenChange={setRenovarDialogOpen}>
+      <Dialog open={renovarDialogOpen} onOpenChange={(open) => { setRenovarDialogOpen(open); if (!open) setMotivoRenovar(""); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Renovar licencia</DialogTitle>
@@ -495,12 +497,26 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
               <Input type="number" min={1} value={meses} onChange={(e) => setMeses(Number(e.target.value))} style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text }} />
             </div>
             <div>
-              <label className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Precio acordado (USD)</label>
+              <label className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Precio acordado (USD) <span style={{ color: T.textDim, fontWeight: 400 }}>(0 = sin costo)</span></label>
               <Input type="number" min={0} value={precio} onChange={(e) => setPrecio(Number(e.target.value))} style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text }} />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-widest flex items-center gap-1.5 mb-1.5" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+                <FileText className="w-3 h-3" /> Motivo <span style={{ color: T.textDim, fontWeight: 400 }}>(opcional)</span>
+              </label>
+              <textarea
+                value={motivoRenovar}
+                onChange={(e) => setMotivoRenovar(e.target.value)}
+                rows={2}
+                placeholder="Ej: Período de gracia por soporte, promoción anual..."
+                className="w-full px-3 py-2 rounded-lg text-sm resize-none"
+                style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text, fontFamily: "inherit" }}
+              />
+              <p className="text-xs mt-1" style={{ color: T.textDim }}>Se registra en el historial para trazabilidad.</p>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRenovarDialogOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => { setRenovarDialogOpen(false); setMotivoRenovar(""); }}>Cancelar</Button>
             <Button onClick={handleRenovar} disabled={loading} className={buttonVariants({ className: "gap-2" })} style={{ background: T.accent, color: T.bgDeep, border: "none" }}>
               {loading && <Loader2 className="w-4 h-4 animate-spin" />} Renovar
             </Button>

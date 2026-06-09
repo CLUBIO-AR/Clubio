@@ -86,11 +86,24 @@ export async function POST(request: Request) {
     .single();
 
   if (licencia) {
-    const base = new Date(licencia.fecha_vencimiento) > new Date()
+    // Renovación en cascada: aplicar +1 mes por cada cobro pagado pendiente de renovación
+    // (cubre el caso en que el gym paga múltiples períodos atrasados)
+    const { data: cobrosAplicar } = await admin
+      .from("cobros_suscripcion")
+      .select("id, periodo")
+      .eq("licencia_id", cobro.licencia_id)
+      .eq("estado", "pagado")
+      .eq("renovacion_aplicada", false)
+      .order("periodo", { ascending: true });
+
+    const pendientes = cobrosAplicar ?? [];
+    const totalMeses = Math.max(1, pendientes.length);
+
+    let base = new Date(licencia.fecha_vencimiento) > new Date()
       ? new Date(licencia.fecha_vencimiento)
       : new Date();
     const nuevoVencimiento = new Date(base);
-    nuevoVencimiento.setMonth(nuevoVencimiento.getMonth() + 1);
+    nuevoVencimiento.setMonth(nuevoVencimiento.getMonth() + totalMeses);
     const nuevoVencimientoStr = nuevoVencimiento.toISOString().split("T")[0];
 
     await admin.from("licencias").update({
@@ -99,7 +112,13 @@ export async function POST(request: Request) {
       precio_pagado: cobro.monto_usd,
     }).eq("id", cobro.licencia_id);
 
-    await admin.from("cobros_suscripcion").update({ renovacion_aplicada: true }).eq("id", cobroId);
+    // Marcar todos los cobros aplicados
+    const idsAplicar = pendientes.map((c) => c.id);
+    if (idsAplicar.length > 0) {
+      await admin.from("cobros_suscripcion").update({ renovacion_aplicada: true }).in("id", idsAplicar);
+    } else {
+      await admin.from("cobros_suscripcion").update({ renovacion_aplicada: true }).eq("id", cobroId);
+    }
   }
 
   // Reactivar gym si estaba suspendido

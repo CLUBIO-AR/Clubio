@@ -82,7 +82,8 @@ export async function renovarLicenciaAction(
   gymId: string,
   licenciaId: string,
   meses: number,
-  precioUsd: number
+  precioUsd: number,
+  motivo?: string
 ): Promise<ActionResult> {
   const ctx = await requireSuperadmin();
   const admin = createAdminClient();
@@ -110,7 +111,7 @@ export async function renovarLicenciaAction(
     .eq("gym_id", gymId);
   if (error) return { ok: false, error: error.message };
 
-  await logAdminAction(ctx.adminId, "licencia_renovada", gymId, { meses, precio_usd: precioUsd, nuevo_vencimiento: nuevoVencimiento.toISOString().split("T")[0] });
+  await logAdminAction(ctx.adminId, "licencia_renovada", gymId, { meses, precio_usd: precioUsd, nuevo_vencimiento: nuevoVencimiento.toISOString().split("T")[0], motivo: motivo || undefined });
   revalidatePath("/admin/gyms");
   revalidatePath("/admin/licencias");
   revalidatePath(`/admin/gyms/${gymId}`);

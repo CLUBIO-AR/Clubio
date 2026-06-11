@@ -187,7 +187,7 @@ export function LicenciasClient({ licencias, total, page, totalPages, filters }:
           <p className="text-sm" style={{ color: T.textDim }}>No se encontraron licencias con estos filtros.</p>
         </div>
       ) : (
-        <div className="rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+        <div className="rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
           <Table>
             <TableHeader>
               <TableRow style={{ background: T.bg, borderColor: T.border }}>

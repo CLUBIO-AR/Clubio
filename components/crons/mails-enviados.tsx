@@ -52,7 +52,7 @@ export function MailsEnviados({ notifs, total, page, desde, hasta }: Props) {
   const hayFiltro = !!(desde || hasta);
 
   return (
-    <div className="rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+    <div className="rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
       <div className="px-5 py-4 border-b flex items-center justify-between flex-wrap gap-3" style={{ borderColor: T.borderSub }}>
         <h2 className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.blue, fontFamily: "var(--font-barlow-condensed)" }}>
           — Mails enviados

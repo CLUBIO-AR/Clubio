@@ -113,7 +113,7 @@ export function AccionesLogClient({ logs, total, page, totalPages, accionesUnica
       </div>
 
       {/* Tabla */}
-      <div className="rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+      <div className="rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
         {logs.length === 0 ? (
           <p className="p-8 text-center text-sm" style={{ color: T.textDim }}>Sin acciones registradas</p>
         ) : (

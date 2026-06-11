@@ -127,7 +127,7 @@ export function SuscripcionesClient({ cobros, total, page, totalPages, filtroEst
       )}
 
       {/* Tabla */}
-      <div className="rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+      <div className="rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
         {cobros.length === 0 ? (
           <p className="p-8 text-center text-sm" style={{ color: T.textDim }}>Sin cobros registrados</p>
         ) : (

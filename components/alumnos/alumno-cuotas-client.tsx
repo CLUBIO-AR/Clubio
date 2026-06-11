@@ -159,7 +159,7 @@ export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, 
       </div>
 
       {/* Tabla */}
-      <div className="rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+      <div className="rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
         {cuotas.length === 0 ? (
           <p className="p-8 text-center text-sm" style={{ color: T.textDim }}>Sin cuotas para los filtros aplicados</p>
         ) : (

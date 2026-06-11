@@ -144,7 +144,7 @@ export function GymsClient({ gyms, total, page, totalPages, alumnosPorGym, cobra
           <p className="text-sm" style={{ color: T.textDim }}>No se encontraron gyms con estos filtros.</p>
         </div>
       ) : (
-        <div className="rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+        <div className="rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
           <Table>
             <TableHeader>
               <TableRow style={{ background: T.bg, borderColor: T.border }}>

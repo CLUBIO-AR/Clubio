@@ -180,7 +180,7 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
 
       {/* Table */}
       {cuotas.length === 0 ? <EmptyState /> : (
-        <div className="rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+        <div className="rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
           <Table>
             <TableHeader>
               <TableRow style={{ background: T.bg, borderColor: T.border }}>

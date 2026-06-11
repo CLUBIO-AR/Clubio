@@ -69,7 +69,7 @@ export function SuperAdminsClient({ admins }: Props) {
         <div className="rounded-lg px-4 py-2.5 text-sm" style={{ background: `${T.danger}15`, border: `1px solid ${T.danger}40`, color: T.danger }}>{error}</div>
       )}
 
-      <div className="rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+      <div className="rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
         {admins.length === 0 ? (
           <div className="p-10 text-center">
             <ShieldCheck className="w-8 h-8 mx-auto mb-3" style={{ color: T.textDim }} />

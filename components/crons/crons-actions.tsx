@@ -86,7 +86,7 @@ export function CronsActions() {
   }
 
   return (
-    <div className="rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+    <div className="rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
       {/* Header colapsable */}
       <button
         onClick={() => setExpanded((e) => !e)}

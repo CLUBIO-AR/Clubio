@@ -30,7 +30,7 @@ export function ConfigSection({ title, children, onSave }: ConfigSectionProps) {
   }
 
   return (
-    <div className="rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+    <div className="rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
       <div className="px-5 py-4 border-b" style={{ borderColor: T.borderSub }}>
         <h2 className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
           — {title}

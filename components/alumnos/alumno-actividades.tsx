@@ -81,7 +81,7 @@ export function AlumnoActividades({ alumnoId, inscripciones: inicial, actividade
   const actividad = selectedId ? actividadesDisponibles.find(a => a.id === selectedId) : null;
 
   return (
-    <div className="rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+    <div className="rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
       <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: T.borderSub }}>
         <h2 className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
           — Actividades inscriptas

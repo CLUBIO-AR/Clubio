@@ -106,7 +106,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-4xl text-white leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900 }}>ALUMNOS</h1>
           <p className="text-sm mt-1" style={{ color: T.textDim }}>
@@ -188,7 +188,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
 
       {/* Table */}
       {alumnos.length === 0 ? <EmptyState search={search} /> : (
-        <div className="rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+        <div className="rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
           <Table>
             <TableHeader>
               <TableRow style={{ background: T.bg, borderColor: T.border }}>

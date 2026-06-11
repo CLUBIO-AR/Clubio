@@ -156,8 +156,8 @@ export default async function SuscripcionPage() {
             <p className="text-sm" style={{ color: T.textMuted }}>Sin cobros registrados aún.</p>
           </div>
         ) : (
-          <div className="rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>
-            <table className="w-full text-sm">
+          <div className="rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+            <table className="w-full min-w-[560px] text-sm">
               <thead>
                 <tr style={{ borderBottom: `1px solid ${T.border}` }}>
                   {["Período", "Plan", "Monto", "Estado", "Fecha pago", ""].map((h) => (

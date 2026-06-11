@@ -202,7 +202,9 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
       )}
 
       {/* Tabla */}
-      <div className="rounded-xl overflow-x-auto" style={{ border: `1px solid ${T.border}` }}>
+      <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${T.border}` }}>
+       <div className="overflow-x-auto">
+        <div className="min-w-[640px]">
         <div className="px-5 py-3 grid gap-4 border-b"
           style={{ background: T.bgDeep, borderColor: T.borderSub, gridTemplateColumns: "minmax(0,2fr) minmax(0,1.2fr) minmax(0,1fr) 130px 110px" }}>
           {[
@@ -277,6 +279,8 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
             </div>
           );
         })}
+        </div>
+       </div>
       </div>
 
       {/* Paginación */}

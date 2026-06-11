@@ -106,6 +106,7 @@ export default async function AlumnoCuotasPage({
         page={page}
         totalPages={totalPages}
         alumnoId={id}
+        alumnoNombre={alumno.nombre ?? ""}
         nonPaidIds={nonPaidIds}
         filtros={{ estado, mes, anio }}
       />

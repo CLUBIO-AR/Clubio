@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button";
 import { NuevaCuotaModal } from "@/components/cuotas/nueva-cuota-modal";
-import { Plus, Search, MoreHorizontal, Eye, UserX, UserCheck, Loader2, Users, Receipt, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Eye, UserX, UserCheck, Loader2, Users, Receipt, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { T } from "@/lib/theme";
 
 type CuotaResumen = { id: string; estado: string; monto_total: number | null; mes: number; anio: number };
@@ -114,13 +114,28 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
             {totalPages > 1 && ` · página ${page} de ${totalPages}`}
           </p>
         </div>
-        <Link
-          href="/dashboard/alumnos/nuevo"
-          className={buttonVariants({ className: "gap-2 font-bold uppercase tracking-widest text-sm hover:opacity-90" })}
-          style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accent, color: T.bgDeep, border: "none", boxShadow: T.accentGlow }}
-        >
-          <Plus className="w-4 h-4" /> Nuevo alumno
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              const params = new URLSearchParams();
+              if (activo !== "todos") params.set("activo", activo);
+              if (search.trim()) params.set("search", search.trim());
+              window.location.href = `/api/alumnos/export?${params.toString()}`;
+            }}
+            className="inline-flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-widest transition-opacity hover:opacity-80"
+            style={{ fontFamily: "var(--font-barlow-condensed)", background: "transparent", color: T.textMuted, border: `1px solid ${T.border}` }}
+          >
+            <Download className="w-3.5 h-3.5" />
+            Exportar
+          </button>
+          <Link
+            href="/dashboard/alumnos/nuevo"
+            className={buttonVariants({ className: "gap-2 font-bold uppercase tracking-widest text-sm hover:opacity-90" })}
+            style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accent, color: T.bgDeep, border: "none", boxShadow: T.accentGlow }}
+          >
+            <Plus className="w-4 h-4" /> Nuevo alumno
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}

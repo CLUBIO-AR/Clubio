@@ -33,11 +33,12 @@ interface Props {
   page: number;
   totalPages: number;
   alumnoId: string;
+  alumnoNombre: string;
   nonPaidIds: string[];
   filtros: { estado: string; mes: string; anio: string };
 }
 
-export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, nonPaidIds, filtros }: Props) {
+export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, alumnoNombre, nonPaidIds, filtros }: Props) {
   const router = useRouter();
   const sp = useSearchParams();
   const [isPending, startTransition] = useTransition();
@@ -152,7 +153,7 @@ export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, 
             style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accentBg, color: T.accent, border: `1px solid ${T.accentBorder}` }}
           >
             <CreditCard className="w-3.5 h-3.5" />
-            {loadingLote ? "Generando..." : `Pagar todo (${nonPaidIds.length})`}
+            {loadingLote ? "Generando..." : `Cobrar todo a ${alumnoNombre} (${nonPaidIds.length})`}
           </button>
         )}
       </div>

@@ -30,7 +30,9 @@ export default async function PagarPage({
     const { payload: p } = await jwtVerify(token, secret);
     payload = p as unknown as TokenPayload;
   } catch {
-    notFound();
+    return (
+      <ErrorPage mensaje="Este link de pago venció o no es válido. Pedile uno nuevo a tu gimnasio." />
+    );
   }
 
   const admin = createAdminClient();

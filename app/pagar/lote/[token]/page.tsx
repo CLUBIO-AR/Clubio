@@ -36,7 +36,7 @@ export default async function PagarLotePage({
       notFound();
     }
   } catch {
-    notFound();
+    return <ErrorPage mensaje="Este link de pago venció o no es válido. Pedile uno nuevo a tu gimnasio." />;
   }
 
   const admin = createAdminClient();

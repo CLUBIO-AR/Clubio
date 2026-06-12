@@ -10,7 +10,7 @@ import { ConfigMercadoPago } from "@/components/configuracion/config-mercadopago
 import { ConfigActividades } from "@/components/configuracion/config-actividades";
 import { T } from "@/lib/theme";
 import Link from "next/link";
-import { Activity, ChevronRight } from "lucide-react";
+import { Activity, ChevronRight, Mail } from "lucide-react";
 
 export default async function ConfiguracionPage() {
   const ctx = await requireGymContext();
@@ -101,6 +101,23 @@ export default async function ConfiguracionPage() {
                 MONITOREO DE CRONS
               </p>
               <p className="text-xs" style={{ color: T.textDim }}>Estado de tareas automáticas</p>
+            </div>
+            <ChevronRight className="w-4 h-4 shrink-0" style={{ color: T.textDim }} />
+          </Link>
+
+          <Link
+            href="/dashboard/configuracion/emails"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl transition-opacity hover:opacity-75"
+            style={{ background: T.card, border: `1px solid ${T.border}` }}
+          >
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${T.blue}15`, border: `1px solid ${T.blue}30` }}>
+              <Mail className="w-4 h-4" style={{ color: T.blue }} />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
+                EMAILS ENVIADOS
+              </p>
+              <p className="text-xs" style={{ color: T.textDim }}>Historial de avisos y recordatorios</p>
             </div>
             <ChevronRight className="w-4 h-4 shrink-0" style={{ color: T.textDim }} />
           </Link>

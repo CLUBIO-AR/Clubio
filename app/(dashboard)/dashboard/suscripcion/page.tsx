@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { CreditCard, Calendar, AlertTriangle, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { T } from "@/lib/theme";
 
-const PLAN_LABELS: Record<string, string> = { basic: "Basic", plus: "Plus", multi: "Multi" };
+const PLAN_LABELS: Record<string, string> = { basic: "Basic", plus: "Plus (legacy)", multi: "Multi" };
 
 const ESTADO_COLORS: Record<string, string> = {
   pendiente: "#fbbf24",

@@ -1,18 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { PLAN_FEATURES, type Plan } from "@/lib/features";
 
-// CRÍTICO: estos tests verifican que los planes están correctamente definidos
-// según PRODUCT.md v3.0. Cualquier fallo aquí es un bug crítico de negocio.
+// CRÍTICO: estos tests verifican que los planes están correctamente definidos.
+// Cualquier fallo aquí es un bug crítico de negocio.
 
 describe("PLAN_FEATURES — validación de planes", () => {
   // ─── Planes que DEBEN existir ───────────────────────────────────────────
 
   it("plan 'basic' existe", () => {
     expect(PLAN_FEATURES).toHaveProperty("basic");
-  });
-
-  it("plan 'plus' existe", () => {
-    expect(PLAN_FEATURES).toHaveProperty("plus");
   });
 
   it("plan 'multi' existe", () => {
@@ -29,14 +25,14 @@ describe("PLAN_FEATURES — validación de planes", () => {
     expect(PLAN_FEATURES).not.toHaveProperty("pro");
   });
 
+  it("plan 'plus' NO EXISTE — eliminado junio 2026 (bug crítico si falla)", () => {
+    expect(PLAN_FEATURES).not.toHaveProperty("plus");
+  });
+
   // ─── Alumnos ilimitados ─────────────────────────────────────────────────
 
   it("plan 'basic' tiene alumnos ilimitados (Infinity)", () => {
     expect(PLAN_FEATURES.basic.alumnos).toBe(Infinity);
-  });
-
-  it("plan 'plus' tiene alumnos ilimitados (Infinity)", () => {
-    expect(PLAN_FEATURES.plus.alumnos).toBe(Infinity);
   });
 
   it("plan 'multi' tiene alumnos ilimitados (Infinity)", () => {
@@ -49,10 +45,6 @@ describe("PLAN_FEATURES — validación de planes", () => {
     expect(PLAN_FEATURES.basic.avisos_whatsapp).toBe(false);
   });
 
-  it("plan 'plus' SÍ tiene WhatsApp", () => {
-    expect(PLAN_FEATURES.plus.avisos_whatsapp).toBe(true);
-  });
-
   it("plan 'multi' SÍ tiene WhatsApp", () => {
     expect(PLAN_FEATURES.multi.avisos_whatsapp).toBe(true);
   });
@@ -63,22 +55,14 @@ describe("PLAN_FEATURES — validación de planes", () => {
     expect(PLAN_FEATURES.basic.max_sucursales).toBe(1);
   });
 
-  it("plan 'plus' tiene 1 sucursal máximo", () => {
-    expect(PLAN_FEATURES.plus.max_sucursales).toBe(1);
-  });
-
   it("plan 'multi' tiene 5 sucursales máximo", () => {
     expect(PLAN_FEATURES.multi.max_sucursales).toBe(5);
   });
 
   // ─── Admins ──────────────────────────────────────────────────────────────
 
-  it("plan 'basic' tiene 2 admins", () => {
-    expect(PLAN_FEATURES.basic.max_admins).toBe(2);
-  });
-
-  it("plan 'plus' tiene 3 admins", () => {
-    expect(PLAN_FEATURES.plus.max_admins).toBe(3);
+  it("plan 'basic' tiene 3 admins", () => {
+    expect(PLAN_FEATURES.basic.max_admins).toBe(3);
   });
 
   it("plan 'multi' tiene 10 admins", () => {
@@ -87,12 +71,8 @@ describe("PLAN_FEATURES — validación de planes", () => {
 
   // ─── Branding ────────────────────────────────────────────────────────────
 
-  it("plan 'basic' NO tiene branding propio", () => {
-    expect(PLAN_FEATURES.basic.branding_propio).toBe(false);
-  });
-
-  it("plan 'plus' SÍ tiene branding propio", () => {
-    expect(PLAN_FEATURES.plus.branding_propio).toBe(true);
+  it("plan 'basic' SÍ tiene branding propio", () => {
+    expect(PLAN_FEATURES.basic.branding_propio).toBe(true);
   });
 
   it("plan 'multi' SÍ tiene branding propio", () => {
@@ -101,8 +81,8 @@ describe("PLAN_FEATURES — validación de planes", () => {
 
   // ─── Type safety ─────────────────────────────────────────────────────────
 
-  it("el tipo Plan solo acepta 'basic', 'plus', 'multi'", () => {
-    const planesValidos: Plan[] = ["basic", "plus", "multi"];
+  it("el tipo Plan solo acepta 'basic' y 'multi'", () => {
+    const planesValidos: Plan[] = ["basic", "multi"];
     expect(Object.keys(PLAN_FEATURES)).toEqual(planesValidos);
   });
 });

@@ -17,11 +17,12 @@ This version has breaking changes — APIs, conventions, and file structure may 
 | dev | .claude/agents/dev.md | Implementación y fixes |
 
 ## Contexto de negocio (siempre presente)
-- Planes: Basic (USD 28) / Plus (USD 45) / Multi (USD 75)
-- Plan 'starter' NO EXISTE. Plan 'pro' NO EXISTE.
+- Planes activos: Basic (USD 28) / Multi (USD 75)
+- Plan 'plus' ELIMINADO junio 2026. Plan 'starter' NO EXISTE. Plan 'pro' NO EXISTE.
+- Gyms legacy con plan 'plus' en DB: mostrar "Plus (legacy)" en UI, no migrar forzado
 - Alumnos: ILIMITADOS en todos los planes
 - Sin setup fee
-- WhatsApp: solo plan Plus y Multi
+- WhatsApp: solo plan Multi
 - El gym conecta su propio número Meta (CLUBIO no paga WA)
 
 ## Flujo estándar de una feature

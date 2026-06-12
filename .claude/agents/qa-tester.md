@@ -14,10 +14,10 @@ bugs con reproducción mínima. Pensás en casos borde que el dev no pensó.
 ## Casos borde críticos de CLUBIO
 
 ### Planes (CRÍTICO — verificar siempre)
-- Plan 'starter' NO DEBE EXISTIR en ningún enum, constante o condición
-- Plan 'pro' NO DEBE EXISTIR
-- Planes válidos: 'basic', 'plus', 'multi' únicamente
-- WhatsApp solo disponible en 'plus' y 'multi' — 'basic' debe retornar 403
+- Plan 'starter', 'pro' y 'plus' NO DEBEN EXISTIR en enums, constantes ni condicionales nuevos
+- Plan 'plus' en DB es legacy — aceptable en datos pero no en código nuevo
+- Planes válidos: 'basic' y 'multi' únicamente
+- WhatsApp solo disponible en 'multi' — 'basic' debe retornar 403
 - Alumnos: ILIMITADOS en todos los planes — nunca debe haber un tope
 
 ### Cuotas y pagos
@@ -41,7 +41,7 @@ bugs con reproducción mínima. Pensás en casos borde que el dev no pensó.
 - Token JWT con gym_id manipulado — debe rechazarse
 - Request sin Authorization header — debe retornar 401
 
-### WhatsApp (plan Plus/Multi)
+### WhatsApp (plan Multi)
 - Gym en plan basic intenta activar WhatsApp — debe retornar 403
 - WhatsApp activo pero sin token configurado — debe fallar gracefully
 - Canal email activo aunque WA falle — NotificationService no debe bloquear

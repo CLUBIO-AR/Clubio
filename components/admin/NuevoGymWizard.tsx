@@ -24,7 +24,7 @@ interface NuevoGymWizardProps {
 
 const PASOS = ["Datos del gym", "Owner", "Comercial", "Configuración"];
 
-const PLAN_PRECIOS: Record<string, number> = { basic: 28, plus: 45, multi: 75 };
+const PLAN_PRECIOS: Record<string, number> = { basic: 28, multi: 75 };
 
 const labelStyle: React.CSSProperties = {
   color: T.textMuted, fontFamily: "var(--font-barlow-condensed)",
@@ -39,7 +39,7 @@ type FormState = {
   direccion: string;
   owner_nombre: string;
   owner_email: string;
-  plan: "basic" | "plus" | "multi";
+  plan: "basic" | "multi";
   meses_licencia: 1 | 6 | 12;
   precio_acordado_usd: string;
   monto_cuota_defecto: string;
@@ -80,7 +80,7 @@ export function NuevoGymWizard({ lead }: NuevoGymWizardProps) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  function setPlan(plan: "basic" | "plus" | "multi") {
+  function setPlan(plan: "basic" | "multi") {
     setForm((f) => ({ ...f, plan, precio_acordado_usd: String(PLAN_PRECIOS[plan] * f.meses_licencia) }));
   }
 
@@ -280,7 +280,7 @@ export function NuevoGymWizard({ lead }: NuevoGymWizardProps) {
             <div className="space-y-1.5">
               <Label style={labelStyle}>Plan</Label>
               <div className="flex gap-2">
-                {(["basic", "plus", "multi"] as const).map((p) => (
+                {(["basic", "multi"] as const).map((p) => (
                   <button key={p} type="button" onClick={() => setPlan(p)}
                     className="flex-1 px-3 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wider transition-all"
                     style={{
@@ -289,7 +289,7 @@ export function NuevoGymWizard({ lead }: NuevoGymWizardProps) {
                       border: `1px solid ${form.plan === p ? "#F9731648" : T.border}`,
                       color: form.plan === p ? ADMIN_ACCENT : T.textMuted,
                     }}>
-                    {p === "basic" ? "Basic — USD 28" : p === "plus" ? "Plus — USD 45" : "Multi — USD 75"}
+                    {p === "basic" ? "Basic — USD 28" : "Multi — USD 75"}
                   </button>
                 ))}
               </div>

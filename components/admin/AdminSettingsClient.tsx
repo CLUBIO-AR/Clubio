@@ -14,7 +14,6 @@ interface Props {
   diasCobroAntesVencimiento: number;
   clubioMpTokenMask: string | null;
   planBasicPrecio: number;
-  planPlusPrecio: number;
   planMultiPrecio: number;
   monedaSuscripcion: "USD" | "ARS";
 }
@@ -25,7 +24,6 @@ export function AdminSettingsClient({
   diasCobroAntesVencimiento,
   clubioMpTokenMask,
   planBasicPrecio,
-  planPlusPrecio,
   planMultiPrecio,
   monedaSuscripcion,
 }: Props) {
@@ -35,7 +33,6 @@ export function AdminSettingsClient({
   const [mpToken, setMpToken] = useState("");
   const [showToken, setShowToken] = useState(false);
   const [precioBasic, setPrecioBasic] = useState(String(planBasicPrecio));
-  const [precioPlus, setPrecioPlus] = useState(String(planPlusPrecio));
   const [precioMulti, setPrecioMulti] = useState(String(planMultiPrecio));
   const [moneda, setMoneda] = useState<"USD" | "ARS">(monedaSuscripcion);
   const [loading, setLoading] = useState(false);
@@ -54,7 +51,6 @@ export function AdminSettingsClient({
       diasCobroAntesVencimiento: Number(dias),
       clubioMpAccessToken: mpToken,
       planBasicPrecio: Number(precioBasic),
-      planPlusPrecio: Number(precioPlus),
       planMultiPrecio: Number(precioMulti),
       monedaSuscripcion: moneda,
     });
@@ -156,10 +152,9 @@ export function AdminSettingsClient({
           ))}
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           {[
             { label: "Basic", value: precioBasic, set: setPrecioBasic },
-            { label: "Plus", value: precioPlus, set: setPrecioPlus },
             { label: "Multi", value: precioMulti, set: setPrecioMulti },
           ].map(({ label, value, set }) => (
             <Field key={label} label={`${label} (${moneda})`}>

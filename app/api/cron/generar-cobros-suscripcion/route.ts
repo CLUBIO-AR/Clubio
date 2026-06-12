@@ -5,7 +5,7 @@ import { createSuscripcionPreference } from "@/lib/mercadopago-suscripcion";
 import { logCron } from "@/lib/cron-logger";
 import { clubioEmailHtml, clubioEmailTable } from "@/lib/email/template";
 
-const PLAN_LABELS: Record<string, string> = { basic: "Basic", plus: "Plus", multi: "Multi" };
+const PLAN_LABELS: Record<string, string> = { basic: "Basic", plus: "Plus (legacy)", multi: "Multi" };
 
 export async function GET(request: Request) {
   const auth = request.headers.get("Authorization");

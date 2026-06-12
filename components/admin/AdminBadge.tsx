@@ -30,6 +30,6 @@ export const PLAN_COLORS: Record<string, string> = {
 
 export const PLAN_LABELS: Record<string, string> = {
   basic: "Basic",
-  plus: "Plus",
+  plus: "Plus (legacy)",
   multi: "Multi",
 };

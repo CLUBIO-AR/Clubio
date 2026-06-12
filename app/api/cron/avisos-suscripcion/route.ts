@@ -7,7 +7,7 @@ import { clubioEmailHtml } from "@/lib/email/template";
 // (independientes del link de cobro — son emails informativos)
 const DIAS_AVISO = [30, 14, 7, 3];
 
-const PLAN_LABELS: Record<string, string> = { basic: "Basic", plus: "Plus", multi: "Multi" };
+const PLAN_LABELS: Record<string, string> = { basic: "Basic", plus: "Plus (legacy)", multi: "Multi" };
 
 export async function GET(request: Request) {
   const auth = request.headers.get("Authorization");

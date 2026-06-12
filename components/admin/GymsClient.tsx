@@ -36,7 +36,7 @@ interface GymsClientProps {
 const PLAN_OPTS = [
   { value: "", label: "Todos los planes" },
   { value: "basic", label: "Basic" },
-  { value: "plus", label: "Plus" },
+  { value: "plus", label: "Plus (legacy)" },
   { value: "multi", label: "Multi" },
 ];
 

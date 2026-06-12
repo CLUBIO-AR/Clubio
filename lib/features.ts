@@ -1,10 +1,10 @@
-// Planes válidos: basic | plus | multi
-// Plan 'starter' y 'pro' NO EXISTEN.
+// Planes válidos: basic | multi
+// Plan 'starter', 'pro' y 'plus' NO EXISTEN (plus eliminado junio 2026).
 // Alumnos ILIMITADOS en todos los planes.
 export const PLAN_FEATURES = {
   basic: {
     max_sucursales:     1,
-    max_admins:         2,
+    max_admins:         3,
     alumnos:            Infinity,
     cobros_automaticos: true,
     avisos_email:       true,
@@ -13,22 +13,8 @@ export const PLAN_FEATURES = {
     qr_asistencia:      false,   // MVP 2
     clases:             false,   // MVP 3
     reportes_avanzados: false,
-    branding_propio:    false,
+    branding_propio:    true,    // branding email en todos los planes
     avisos_whatsapp:    false,
-  },
-  plus: {
-    max_sucursales:     1,
-    max_admins:         3,
-    alumnos:            Infinity,
-    cobros_automaticos: true,
-    avisos_email:       true,
-    pago_sin_login:     true,
-    portal_alumno:      true,
-    qr_asistencia:      false,
-    clases:             false,
-    reportes_avanzados: true,
-    branding_propio:    true,
-    avisos_whatsapp:    true,
   },
   multi: {
     max_sucursales:     5,

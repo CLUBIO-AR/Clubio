@@ -29,7 +29,7 @@ export default async function AdminGymsPage({
     .order("created_at", { ascending: false });
 
   if (search) query = query.or(`nombre.ilike.%${search}%,email_contacto.ilike.%${search}%`);
-  if (plan) query = query.eq("licencias.plan", plan as "basic" | "plus" | "multi");
+  if (plan) query = query.eq("licencias.plan", plan);
   if (estado === "activo") query = query.eq("activo", true).gte("licencias.fecha_vencimiento", hoy);
   if (estado === "suspendido") query = query.eq("activo", false);
   if (estado === "vencida") query = query.lt("licencias.fecha_vencimiento", hoy);

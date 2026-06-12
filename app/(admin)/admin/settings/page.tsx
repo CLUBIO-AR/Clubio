@@ -16,7 +16,6 @@ export default async function AdminSettingsPage() {
       diasCobroAntesVencimiento={settings.dias_cobro_antes_vencimiento}
       clubioMpTokenMask={tokenMask}
       planBasicPrecio={settings.plan_basic_precio}
-      planPlusPrecio={settings.plan_plus_precio}
       planMultiPrecio={settings.plan_multi_precio}
       monedaSuscripcion={settings.moneda_suscripcion}
     />

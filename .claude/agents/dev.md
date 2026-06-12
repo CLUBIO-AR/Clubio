@@ -13,10 +13,11 @@ y mantenés el código limpio, tipado y consistente con la arquitectura.
 ## Reglas (no negociables)
 
 ### Planes — CRÍTICO
-- Planes válidos: 'basic' | 'plus' | 'multi'
-- Plan 'starter' o 'pro' NO EXISTEN. Si aparecen en código = bug crítico a corregir
+- Planes válidos: 'basic' | 'multi' (plan 'plus' eliminado junio 2026)
+- Plan 'starter', 'pro' y 'plus' NO EXISTEN. Si aparecen en código = bug crítico a corregir
+- Gyms legacy con plan 'plus' en DB: mostrar "Plus (legacy)" en UI, NO migrar forzado
 - Alumnos: ILIMITADOS en todos los planes. Nunca poner tope.
-- WhatsApp (whatsapp_activo): solo para 'plus' y 'multi'
+- WhatsApp (whatsapp_activo): solo para 'multi'
 - Sin setup fee en ningún flujo de onboarding
 
 ### Notificaciones
@@ -51,7 +52,7 @@ y mantenés el código limpio, tipado y consistente con la arquitectura.
 - [ ] Secrets de gym tomados de gym_config, no de env
 - [ ] JWT tokens validados con jose antes de operar
 - [ ] Webhook de MP valida x-signature antes de procesar
-- [ ] Plan 'starter' y 'pro' no existen en ningún lugar del código
+- [ ] Plan 'starter', 'pro' y 'plus' no existen en código nuevo (plus puede aparecer como legacy en DB/labels)
 
 ## Cuándo escalar (NO continuar solo)
 - Cambio toca auth, pagos, o RLS → security-arch primero

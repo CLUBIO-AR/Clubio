@@ -13,7 +13,6 @@ export async function updateAdminSettingsAction(params: {
   diasCobroAntesVencimiento: number;
   clubioMpAccessToken: string;
   planBasicPrecio: number;
-  planPlusPrecio: number;
   planMultiPrecio: number;
   monedaSuscripcion: "USD" | "ARS";
 }): Promise<ActionResult> {
@@ -28,7 +27,7 @@ export async function updateAdminSettingsAction(params: {
   const dias = Number(params.diasCobroAntesVencimiento);
   if (!Number.isInteger(dias) || dias < 1 || dias > 60) return { ok: false, error: "Días de anticipación debe ser entre 1 y 60" };
 
-  for (const [label, val] of [["Basic", params.planBasicPrecio], ["Plus", params.planPlusPrecio], ["Multi", params.planMultiPrecio]] as [string, number][]) {
+  for (const [label, val] of [["Basic", params.planBasicPrecio], ["Multi", params.planMultiPrecio]] as [string, number][]) {
     if (!Number.isFinite(val) || val <= 0) return { ok: false, error: `Precio de plan ${label} inválido` };
   }
 
@@ -45,7 +44,6 @@ export async function updateAdminSettingsAction(params: {
       dias_cobro_antes_vencimiento: dias,
       ...(token ? { clubio_mp_access_token: token } : {}),
       plan_basic_precio: params.planBasicPrecio,
-      plan_plus_precio: params.planPlusPrecio,
       plan_multi_precio: params.planMultiPrecio,
       moneda_suscripcion: params.monedaSuscripcion,
       updated_at: new Date().toISOString(),

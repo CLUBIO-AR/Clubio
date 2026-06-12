@@ -30,7 +30,7 @@ export async function toggleGymActivoAction(gymId: string, activo: boolean): Pro
 export async function cambiarPlanAction(
   gymId: string,
   licenciaId: string,
-  plan: "basic" | "plus" | "multi",
+  plan: "basic" | "multi",
   motivo?: string
 ): Promise<ActionResult> {
   const ctx = await requireSuperadmin();
@@ -47,7 +47,7 @@ export async function cambiarPlanAction(
 
   // Notificar al gym por email
   if (gymRes.data?.email_contacto) {
-    const PLAN_LABELS: Record<string, string> = { basic: "Basic", plus: "Plus", multi: "Multi" };
+    const PLAN_LABELS: Record<string, string> = { basic: "Basic", multi: "Multi", plus: "Plus (legacy)" };
     const { Resend } = await import("resend");
     const resend = new Resend(process.env.RESEND_API_KEY);
     const from = `CLUBIO <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.com.ar"}>`;

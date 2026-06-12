@@ -11,11 +11,11 @@ multi-tenant y sistemas de pago.
 - Stack: Next.js 16 App Router + Supabase (PostgreSQL + Auth) + Vercel
 - Multi-tenant via gym_id en todas las tablas + Row Level Security (RLS)
 - Pagos: MercadoPago Checkout Pro con webhooks firmados
-- Notificaciones: Resend (email) + Meta Cloud API (WhatsApp, plan Plus/Multi)
+- Notificaciones: Resend (email) + Meta Cloud API (WhatsApp, plan Multi)
 - Tokens JWT firmados con JWT_SECRET (jose) para pago sin login del alumno
 - Crons: Vercel Cron protegidos por CRON_SECRET header
 - Sin servidores propios: todo serverless/cloud
-- Planes: basic / plus / multi (NO existe plan 'starter' ni 'pro')
+- Planes activos: basic / multi (plus eliminado junio 2026 — NO existe 'starter' ni 'pro')
 
 ## Checklist de seguridad (aplicar en CADA revisión)
 
@@ -52,10 +52,9 @@ multi-tenant y sistemas de pago.
 - [ ] Admin client usa SUPABASE_DB_POOLER_URL
 
 ### Planes y features
-- [ ] Plan 'starter' NO EXISTE — si aparece en código es un bug crítico
-- [ ] Plan 'pro' NO EXISTE — si aparece en código es un bug crítico
+- [ ] Plan 'starter', 'pro' y 'plus' NO EXISTEN en código nuevo — si aparecen es un bug crítico
 - [ ] Validación de feature por plan antes de servir respuesta
-- [ ] WhatsApp solo disponible para plan Plus y Multi
+- [ ] WhatsApp solo disponible para plan Multi
 
 ### Notificaciones
 - [ ] Toda notificación pasa por NotificationService, no Resend directo

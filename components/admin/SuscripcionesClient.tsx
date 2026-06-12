@@ -22,7 +22,7 @@ const ESTADO_LABELS: Record<string, string> = {
   vencido:   "Vencido",
   cancelado: "Cancelado",
 };
-const PLAN_LABELS: Record<string, string> = { basic: "Basic", plus: "Plus", multi: "Multi" };
+const PLAN_LABELS: Record<string, string> = { basic: "Basic", plus: "Plus (legacy)", multi: "Multi" };
 
 function gymNombre(g: CobroRow["gyms"]): string {
   if (!g) return "—";

@@ -9,7 +9,7 @@ import { clubioEmailHtml, clubioEmailTable } from "@/lib/email/template";
 
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
-const PLAN_LABELS: Record<string, string> = { basic: "Basic", plus: "Plus", multi: "Multi" };
+const PLAN_LABELS: Record<string, string> = { basic: "Basic", multi: "Multi", plus: "Plus (legacy)" };
 
 function getPeriodo(fechaVencimiento: string): string {
   return fechaVencimiento.slice(0, 7); // 'YYYY-MM'

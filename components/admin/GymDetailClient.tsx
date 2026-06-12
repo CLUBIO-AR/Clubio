@@ -83,7 +83,7 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
     if (!licencia) return;
     setLoading(true);
     setError(null);
-    const res = await cambiarPlanAction(gym.id, licencia.id, nuevoPlan as "basic" | "plus" | "multi", motivoCambioPlan.trim() || undefined);
+    const res = await cambiarPlanAction(gym.id, licencia.id, nuevoPlan as "basic" | "multi", motivoCambioPlan.trim() || undefined);
     setLoading(false);
     if (!res.ok) return setError(res.error);
     setPlanDialogOpen(false);
@@ -379,7 +379,6 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
               <select value={nuevoPlan} onChange={(e) => setNuevoPlan(e.target.value)} className="h-9 px-3 rounded-lg text-sm w-full"
                 style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
                 <option value="basic">Basic — USD 28</option>
-                <option value="plus">Plus — USD 45</option>
                 <option value="multi">Multi — USD 75</option>
               </select>
             </div>

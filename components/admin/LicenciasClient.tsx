@@ -38,8 +38,8 @@ interface LicenciasClientProps {
 const PLAN_OPTS = [
   { value: "", label: "Todos los planes" },
   { value: "basic", label: "Basic" },
-  { value: "plus", label: "Plus" },
   { value: "multi", label: "Multi" },
+  { value: "plus", label: "Plus (legacy)" },
 ];
 
 const ESTADO_OPTS = [
@@ -71,7 +71,7 @@ export function LicenciasClient({ licencias, total, page, totalPages, filters }:
   const [error, setError] = useState<string | null>(null);
   const [planTarget, setPlanTarget] = useState<LicenciaRow | null>(null);
   const [renovarTarget, setRenovarTarget] = useState<LicenciaRow | null>(null);
-  const [nuevoPlan, setNuevoPlan] = useState<"basic" | "plus" | "multi">("basic");
+  const [nuevoPlan, setNuevoPlan] = useState<"basic" | "multi">("basic");
   const [meses, setMeses] = useState(12);
   const [precio, setPrecio] = useState(0);
 
@@ -96,7 +96,7 @@ export function LicenciasClient({ licencias, total, page, totalPages, filters }:
 
   function abrirCambiarPlan(l: LicenciaRow) {
     setError(null);
-    setNuevoPlan(l.plan as "basic" | "plus" | "multi");
+    setNuevoPlan((l.plan === "plus" ? "basic" : l.plan) as "basic" | "multi");
     setPlanTarget(l);
   }
 
@@ -256,10 +256,9 @@ export function LicenciasClient({ licencias, total, page, totalPages, filters }:
             <DialogTitle>Cambiar plan</DialogTitle>
             <DialogDescription>Actualizá el plan contratado por {planTarget ? gymDe(planTarget).nombre : ""}.</DialogDescription>
           </DialogHeader>
-          <select value={nuevoPlan} onChange={(e) => setNuevoPlan(e.target.value as "basic" | "plus" | "multi")} className="h-9 px-3 rounded-lg text-sm w-full"
+          <select value={nuevoPlan} onChange={(e) => setNuevoPlan(e.target.value as "basic" | "multi")} className="h-9 px-3 rounded-lg text-sm w-full"
             style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
             <option value="basic">Basic — USD 28</option>
-            <option value="plus">Plus — USD 45</option>
             <option value="multi">Multi — USD 75</option>
           </select>
           <DialogFooter>

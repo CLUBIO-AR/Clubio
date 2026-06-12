@@ -13,7 +13,7 @@ const NuevoGymSchema = z.object({
   direccion: z.string().optional(),
   owner_nombre: z.string().min(2),
   owner_email: z.string().email(),
-  plan: z.enum(["basic", "plus", "multi"]),
+  plan: z.enum(["basic", "multi"]),
   meses_licencia: z.union([z.literal(1), z.literal(6), z.literal(12)]),
   precio_acordado_usd: z.number().positive(),
   lead_id: z.string().uuid().optional(),

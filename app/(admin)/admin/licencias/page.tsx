@@ -31,7 +31,7 @@ export default async function AdminLicenciasPage({
     .order("fecha_vencimiento", { ascending: true });
 
   if (search) query = query.ilike("gyms.nombre", `%${search}%`);
-  if (plan) query = query.eq("plan", plan);
+  if (plan) query = query.eq("plan", plan as "basic" | "plus" | "multi");
   if (estado === "vigente") query = query.gte("fecha_vencimiento", en7dias);
   if (estado === "por_vencer") query = query.gte("fecha_vencimiento", hoy).lt("fecha_vencimiento", en7dias);
   if (estado === "vencida") query = query.lt("fecha_vencimiento", hoy);

@@ -1,7 +1,42 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { SignJWT, jwtVerify } from "jose";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
+
+const ADMIN_COOKIE = "admin_v1";
+const ADMIN_TTL_S = 300; // 5 min — matches unstable_cache TTL in lib/admin/auth.ts
+
+function adminSecret() {
+  return new TextEncoder().encode(process.env.SUPABASE_SERVICE_ROLE_KEY!);
+}
+
+async function checkAdminCookie(request: NextRequest, userId: string): Promise<boolean> {
+  const token = request.cookies.get(ADMIN_COOKIE)?.value;
+  if (!token) return false;
+  try {
+    const { payload } = await jwtVerify(token, adminSecret());
+    return payload.sub === userId;
+  } catch {
+    return false;
+  }
+}
+
+async function setAdminCookie(response: NextResponse, userId: string): Promise<void> {
+  const token = await new SignJWT({})
+    .setProtectedHeader({ alg: "HS256" })
+    .setSubject(userId)
+    .setIssuedAt()
+    .setExpirationTime(`${ADMIN_TTL_S}s`)
+    .sign(adminSecret());
+  response.cookies.set(ADMIN_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: ADMIN_TTL_S,
+    path: "/admin",
+  });
+}
 
 const PUBLIC_PATHS = [
   "/login",
@@ -87,18 +122,22 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    // Service-role: evita que la verificación dependa del access token de la
-    // sesión (que puede expirar entre el getUser() de arriba y esta query,
-    // provocando un falso negativo y un redirect a /dashboard).
-    const { data: adminUser } = await createAdminClient()
-      .from("admin_users")
-      .select("id")
-      .eq("id", user.id)
-      .eq("activo", true)
-      .maybeSingle();
+    // Cookie cache hit → skip DB round-trip (~100ms saved per navigation).
+    // On miss: service-role query to avoid depending on the access token
+    // (which could expire between getUser() and this check).
+    if (!(await checkAdminCookie(request, user.id))) {
+      const { data: adminUser } = await createAdminClient()
+        .from("admin_users")
+        .select("id")
+        .eq("id", user.id)
+        .eq("activo", true)
+        .maybeSingle();
 
-    if (!adminUser) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      if (!adminUser) {
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+      }
+
+      await setAdminCookie(supabaseResponse, user.id);
     }
   }
 

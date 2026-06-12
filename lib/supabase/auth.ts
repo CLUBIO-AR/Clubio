@@ -16,19 +16,16 @@ const _getCachedGymCtx = (userId: string) =>
   unstable_cache(
     async (): Promise<{ gym_id: string; nombre: string; rol: string; gymNombre: string } | null> => {
       const admin = createAdminClient();
+      // Un solo JOIN en vez de dos queries secuenciales
       const { data: gu } = await admin
         .from("gym_usuarios")
-        .select("gym_id, nombre, rol")
+        .select("gym_id, nombre, rol, gyms!inner(nombre, activo)")
         .eq("id", userId)
         .eq("activo", true)
         .single();
       if (!gu) return null;
 
-      const { data: gym } = await admin
-        .from("gyms")
-        .select("nombre, activo")
-        .eq("id", gu.gym_id)
-        .single();
+      const gym = Array.isArray(gu.gyms) ? gu.gyms[0] : gu.gyms;
 
       // Gym suspendido por vencimiento de licencia o acción manual del superadmin
       if (!gym?.activo) return null;
@@ -37,7 +34,7 @@ const _getCachedGymCtx = (userId: string) =>
         gym_id: gu.gym_id,
         nombre: gu.nombre,
         rol: gu.rol,
-        gymNombre: gym.nombre ?? "GYM",
+        gymNombre: (gym.nombre as string) ?? "GYM",
       };
     },
     ["gym-ctx", userId],

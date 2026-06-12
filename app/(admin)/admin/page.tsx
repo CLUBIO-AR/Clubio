@@ -49,7 +49,7 @@ export default async function AdminDashboardPage() {
       .lte("fecha_vencimiento", en7dias)
       .order("fecha_vencimiento", { ascending: true })
       .limit(10),
-    admin.from("licencias").select("precio_pagado, fecha_inicio, fecha_vencimiento").eq("activa", true).eq("es_trial", false),
+    admin.from("licencias").select("precio_pagado, fecha_inicio, fecha_vencimiento").eq("activa", true).eq("es_trial", false).limit(2000),
     admin.from("alumnos").select("id", { count: "exact", head: true }).eq("activo", true),
     admin.from("notificaciones_log").select("id", { count: "exact", head: true }).gte("created_at", hoyInicio),
     admin.from("pagos").select("id", { count: "exact", head: true }).gte("created_at", hoyInicio),

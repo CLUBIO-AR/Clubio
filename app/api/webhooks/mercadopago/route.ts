@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getMpPayment } from "@/lib/mercadopago";
+import { notifyGymOwnerPago } from "@/lib/notifications/gym-owner";
 
 // MercadoPago envía notificaciones tipo "payment" a esta URL.
 // La URL se configura en la preference como notification_url.
@@ -110,6 +111,16 @@ export async function POST(request: Request) {
       }).eq("id", c.id);
     }
 
+    if (lote.alumno_id && (cuotasLote ?? []).length > 0) {
+      notifyGymOwnerPago({
+        gymId,
+        alumnoId:       lote.alumno_id,
+        monto:          payment.transaction_amount ?? 0,
+        metodo:         "mercadopago",
+        cantidadCuotas: (cuotasLote ?? []).length,
+      }).catch(console.error);
+    }
+
     return NextResponse.json({ ok: true, lote_id: loteId, cuotas_pagadas: (cuotasLote ?? []).length });
   }
 
@@ -119,7 +130,7 @@ export async function POST(request: Request) {
   // Verificar que la cuota pertenece al gym
   const { data: cuota } = await admin
     .from("cuotas")
-    .select("id, alumno_id, monto_total, estado")
+    .select("id, alumno_id, monto_total, estado, mes, anio")
     .eq("id", cuotaId)
     .eq("gym_id", gymId)
     .single();
@@ -151,6 +162,16 @@ export async function POST(request: Request) {
     fecha_pago:  new Date().toISOString(),
     metodo_pago: "mercadopago",
   }).eq("id", cuotaId);
+
+  notifyGymOwnerPago({
+    gymId,
+    alumnoId: cuota.alumno_id,
+    cuotaId,
+    monto,
+    metodo: "mercadopago",
+    mes:    cuota.mes,
+    anio:   cuota.anio,
+  }).catch(console.error);
 
   return NextResponse.json({ ok: true, cuota_id: cuotaId, monto });
 }

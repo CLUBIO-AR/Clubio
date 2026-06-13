@@ -1,7 +1,7 @@
 // Canal email — ÚNICO lugar donde se importa Resend.
 // Nunca importar Resend fuera de este archivo.
 import type { NotificationPayload, GymNotificationConfig } from "../index";
-import { clubioEmailHtml, emailAccentColor, type EmailBrand } from "@/lib/email/template";
+import { clubioEmailHtml, clubioEmailTable, emailAccentColor, type EmailBrand } from "@/lib/email/template";
 
 export async function sendEmail(
   config: GymNotificationConfig & { gym_nombre?: string },
@@ -164,3 +164,124 @@ function cuotaVars(payload: NotificationPayload, cuota: NonNullable<Notification
 const MESES = ["", "enero", "febrero", "marzo", "abril", "mayo", "junio",
                "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 function mesNombre(n: number) { return MESES[n] ?? String(n); }
+
+// ─── Notificaciones al owner del gym (no al alumno) ──────────────────────────
+
+const METODO_LABEL: Record<string, string> = {
+  mercadopago: "MercadoPago",
+  efectivo:    "Efectivo",
+  transferencia: "Transferencia",
+  otro:        "Otro",
+};
+
+export async function sendGymOwnerPagoRecibido(params: {
+  to: string;
+  gymNombre: string;
+  alumnoNombre: string;
+  alumnoApellido: string;
+  monto: number;
+  metodo: string;
+  descripcion: string;
+}): Promise<string> {
+  const { Resend } = await import("resend");
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
+  const { data, error } = await resend.emails.send({
+    from: `CLUBIO <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.app"}>`,
+    to:   params.to,
+    subject: `✓ Pago recibido — ${params.alumnoNombre} ${params.alumnoApellido} · $${params.monto.toLocaleString("es-AR")}`,
+    html: clubioEmailHtml(`
+      <h2 style="margin:0 0 8px;color:#34d399;font-size:16px">✓ Pago recibido</h2>
+      <p style="color:#9ca3af;margin:0 0 20px;font-size:13px">${escapeHtml(params.gymNombre)}</p>
+      ${clubioEmailTable([
+        ["Alumno",  `${escapeHtml(params.alumnoNombre)} ${escapeHtml(params.alumnoApellido)}`],
+        ["Cuota",   escapeHtml(params.descripcion)],
+        ["Monto",   `$${params.monto.toLocaleString("es-AR")}`],
+        ["Método",  METODO_LABEL[params.metodo] ?? escapeHtml(params.metodo)],
+      ])}
+    `),
+  });
+
+  if (error || !data?.id) throw new Error(`Resend error: ${error?.message ?? "sin id"}`);
+  return data.id;
+}
+
+export async function sendGymOwnerCuotasVencidas(params: {
+  to: string;
+  gymNombre: string;
+  cuotas: Array<{ nombre: string; apellido: string; monto_total: number; mes: number; anio: number }>;
+}): Promise<string> {
+  const { Resend } = await import("resend");
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
+  const total = params.cuotas.reduce((s, c) => s + c.monto_total, 0);
+  const filas = params.cuotas.map((c) => `
+    <tr style="border-bottom:1px solid #1e293b">
+      <td style="padding:8px 0;color:#f9fafb">${escapeHtml(c.nombre)} ${escapeHtml(c.apellido)}</td>
+      <td style="padding:8px 0;color:#9ca3af;font-size:13px">${mesNombre(c.mes)} ${c.anio}</td>
+      <td style="padding:8px 0;color:#f87171;font-family:monospace">$${c.monto_total.toLocaleString("es-AR")}</td>
+    </tr>`).join("");
+
+  const { data, error } = await resend.emails.send({
+    from: `CLUBIO <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.app"}>`,
+    to:   params.to,
+    subject: `${params.cuotas.length} cuota${params.cuotas.length > 1 ? "s" : ""} vencida${params.cuotas.length > 1 ? "s" : ""} hoy — ${params.gymNombre}`,
+    html: clubioEmailHtml(`
+      <h2 style="margin:0 0 8px;color:#f87171;font-size:16px">Cuotas vencidas hoy</h2>
+      <p style="color:#9ca3af;margin:0 0 20px;font-size:13px">${escapeHtml(params.gymNombre)}</p>
+      <table style="width:100%;border-collapse:collapse;margin:0 0 20px">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:6px 0;color:#6b7280;font-size:12px;font-weight:normal;border-bottom:1px solid #374151">Alumno</th>
+            <th style="text-align:left;padding:6px 0;color:#6b7280;font-size:12px;font-weight:normal;border-bottom:1px solid #374151">Cuota</th>
+            <th style="text-align:left;padding:6px 0;color:#6b7280;font-size:12px;font-weight:normal;border-bottom:1px solid #374151">Monto</th>
+          </tr>
+        </thead>
+        <tbody>${filas}</tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2" style="padding:10px 0;color:#9ca3af;font-size:13px">Total vencido hoy</td>
+            <td style="padding:10px 0;color:#f87171;font-family:monospace;font-weight:bold">$${total.toLocaleString("es-AR")}</td>
+          </tr>
+        </tfoot>
+      </table>
+    `),
+  });
+
+  if (error || !data?.id) throw new Error(`Resend error: ${error?.message ?? "sin id"}`);
+  return data.id;
+}
+
+export async function sendGymOwnerResumenSemanal(params: {
+  to: string;
+  gymNombre: string;
+  totalVencidas: number;
+  montoTotal: number;
+  dashboardUrl: string;
+}): Promise<string> {
+  const { Resend } = await import("resend");
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
+  const { data, error } = await resend.emails.send({
+    from: `CLUBIO <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.app"}>`,
+    to:   params.to,
+    subject: `Resumen semanal — ${params.totalVencidas} cuota${params.totalVencidas !== 1 ? "s" : ""} vencida${params.totalVencidas !== 1 ? "s" : ""} · ${params.gymNombre}`,
+    html: clubioEmailHtml(`
+      <h2 style="margin:0 0 8px;color:#f9fafb;font-size:16px">Resumen semanal</h2>
+      <p style="color:#9ca3af;margin:0 0 20px;font-size:13px">${escapeHtml(params.gymNombre)}</p>
+      ${clubioEmailTable([
+        ["Cuotas vencidas", String(params.totalVencidas)],
+        ["Monto total",     `$${params.montoTotal.toLocaleString("es-AR")}`],
+      ])}
+      <p style="margin:24px 0 0">
+        <a href="${params.dashboardUrl}/dashboard/cuotas?estado=vencida"
+           style="background:#34d399;color:#030712;padding:10px 20px;text-decoration:none;border-radius:8px;font-weight:bold;display:inline-block;font-size:14px">
+          Ver cuotas vencidas →
+        </a>
+      </p>
+    `),
+  });
+
+  if (error || !data?.id) throw new Error(`Resend error: ${error?.message ?? "sin id"}`);
+  return data.id;
+}

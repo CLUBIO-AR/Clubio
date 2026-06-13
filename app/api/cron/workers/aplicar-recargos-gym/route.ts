@@ -3,6 +3,7 @@ import { z } from "zod";
 import { aplicarRecargosGym } from "@/lib/cuotas";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logCron } from "@/lib/cron-logger";
+import { notifyGymOwnerCuotasVencidas } from "@/lib/notifications/gym-owner";
 
 const BodySchema = z.object({ gym_id: z.string().uuid() });
 
@@ -25,6 +26,7 @@ export async function POST(request: Request) {
   try {
     const supabase = createAdminClient();
     await aplicarRecargosGym(supabase, gym_id);
+    await notifyGymOwnerCuotasVencidas(gym_id).catch(console.error);
     console.log(`[worker:aplicar-recargos] gym=${gym_id} ok`);
     await logCron({ tipo: "aplicar_recargos", gymId: gym_id, itemsCreados: 0, duracionMs: Date.now() - startTime });
     return NextResponse.json({ gym_id, ok: true });

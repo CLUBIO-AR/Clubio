@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCuotaById, marcarPagadaManual, condonarCuota, CuotaUpdateSchema } from "@/lib/cuotas";
+import { notifyGymOwnerPago } from "@/lib/notifications/gym-owner";
 
 async function getGymAndUser(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await supabase.auth.getUser();
@@ -48,6 +49,26 @@ export async function PATCH(
       update.metodo_pago, update.pagado_por, ctx.userId, update.notas
     );
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    void (async () => {
+      const { data: c } = await supabase
+        .from("cuotas")
+        .select("alumno_id, monto_total, mes, anio")
+        .eq("id", id)
+        .eq("gym_id", ctx.gymId)
+        .single();
+      if (!c) return;
+      notifyGymOwnerPago({
+        gymId:    ctx.gymId,
+        alumnoId: c.alumno_id,
+        cuotaId:  id,
+        monto:    c.monto_total ?? 0,
+        metodo:   update.metodo_pago,
+        mes:      c.mes,
+        anio:     c.anio,
+      }).catch(console.error);
+    })();
+
     revalidatePath("/dashboard/cuotas", "layout");
     revalidatePath("/dashboard/alumnos", "layout");
     revalidatePath("/dashboard", "page");

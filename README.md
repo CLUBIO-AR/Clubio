@@ -33,14 +33,16 @@ ai-review-framework/
 │   ├── architecture-reviewer.md  # Next.js patterns, SOLID, performance
 │   ├── qa-reviewer.md            # Edge cases, concurrencia, robustez
 │   ├── orchestrator.md           # Consolida hallazgos y emite veredicto
-│   └── context-updater.md        # Mantiene AGENTS.md actualizado
+│   ├── context-updater.md        # Mantiene AGENTS.md actualizado
+│   └── snapshot-architect.md     # Genera y mantiene ARCHITECTURE.md
 ├── checklists/
 │   ├── supabase.md               # RLS, clients, storage, queries
 │   ├── nextjs.md                 # App Router, caché, Server Actions
 │   └── security.md               # OWASP Top 10 adaptado al stack
 └── commands/
     ├── review.md                 # Orquesta la revisión completa
-    └── update-context.md         # Actualiza el contexto del proyecto
+    ├── update-context.md         # Actualiza el contexto de negocio (AGENTS.md)
+    └── snapshot.md               # Genera el mapa técnico del proyecto (ARCHITECTURE.md)
 ```
 
 ## Integración en un proyecto
@@ -77,6 +79,17 @@ Crear `.claude/commands/update-context.md`:
 # /update-context
 
 Lee `.review/commands/update-context.md` y ejecutá sus instrucciones exactamente.
+
+Los agentes están en `.review/agents/`.
+El contexto del proyecto está en `AGENTS.md`.
+```
+
+Crear `.claude/commands/snapshot.md`:
+
+```markdown
+# /snapshot
+
+Lee `.review/commands/snapshot.md` y ejecutá sus instrucciones exactamente.
 
 Los agentes están en `.review/agents/`.
 El contexto del proyecto está en `AGENTS.md`.
@@ -153,14 +166,52 @@ Actualiza `AGENTS.md` después de una feature o cambio importante.
 
 Propone los cambios antes de aplicarlos. Requiere confirmación explícita.
 
+### `/snapshot`
+
+Genera o actualiza `ARCHITECTURE.md` — el mapa técnico del proyecto.
+Cubre: archivos clave, patrones del proyecto, decisiones de arquitectura y trabajo en curso.
+Una vez generado, Claude lo carga automáticamente en cada sesión sin explorar el codebase.
+
+```
+/snapshot            # Genera ARCHITECTURE.md completo
+/snapshot --update   # Actualiza solo las secciones afectadas por cambios recientes
+```
+
 ## Flujo de trabajo recomendado
+
+### Primera vez en un proyecto
+
+```
+1. /snapshot         ← analiza el codebase y genera ARCHITECTURE.md
+                       (Claude agrega @ARCHITECTURE.md a CLAUDE.md automáticamente)
+2. Listo — las próximas sesiones arrancan con contexto completo
+```
+
+### Trabajo diario
 
 ```
 1. Implementás una feature
-2. /update-context    ← actualiza AGENTS.md con lo nuevo
-3. /review            ← revisa el diff antes de mergear
+2. /update-context   ← actualiza AGENTS.md con nuevas reglas o flujos
+3. /review           ← revisa el diff antes de mergear
 4. Merge
 ```
+
+### Después de una refactorización
+
+```
+1. /snapshot --update  ← actualiza solo las secciones del mapa que cambiaron
+```
+
+### Qué carga Claude al inicio de cada sesión
+
+```
+CLAUDE.md
+  @AGENTS.md          ← negocio: reglas, flujos, invariantes, variables críticas
+  @ARCHITECTURE.md    ← técnico: archivos clave, patrones, decisiones, trabajo en curso
+```
+
+Con ambos archivos al día, Claude no necesita explorar el proyecto desde cero.
+El contexto persiste entre sesiones sin esfuerzo manual.
 
 ## Actualizar el framework en un proyecto
 

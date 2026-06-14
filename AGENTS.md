@@ -18,19 +18,19 @@ mediante links de pago sin que el alumno necesite registrarse.
 - Vercel (hosting + crons)
 - MercadoPago Checkout Pro (pagos)
 - Resend (email)
-- Meta Cloud API (WhatsApp — solo plan Multi)
+- Meta Cloud API (WhatsApp — add-on +USD 8/mes, disponible en todos los planes)
 - jose (JWT para links de pago sin login)
 
 ## Planes activos
 | Plan  | Precio/mes | Sedes | Admins | WhatsApp |
 |-------|-----------|-------|--------|----------|
-| Basic | USD 28    | 1     | 3      | ✗        |
-| Multi | USD 75    | 5     | 10     | ✓        |
+| Basic | USD 28    | 1     | 3      | add-on +USD 8/mes |
+| Multi | USD 75    | 5     | 10     | add-on +USD 8/mes |
 
 - Plan 'plus' ELIMINADO junio 2026. Gyms legacy con plus siguen activos, no migrar forzado.
 - Planes 'starter' y 'pro' NO EXISTEN — si aparecen en código es un bug crítico.
 - Alumnos ILIMITADOS en todos los planes. Sin setup fee.
-- El gym conecta su propio número Meta. CLUBIO no paga WhatsApp.
+- WhatsApp disponible en todos los planes como add-on (+USD 8/mes). El gym conecta su propio número Meta. CLUBIO no paga WA.
 
 ## Arquitectura multi-tenant
 - Aislamiento por `gym_id` en todas las tablas

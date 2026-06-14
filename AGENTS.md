@@ -4,59 +4,62 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
-# Sistema de Agentes — CLUBIO
-> Leer al inicio de cada sesión de trabajo.
+# Contexto de Proyecto — CLUBIO
+> Leer al inicio de cada sesión de trabajo y antes de ejecutar /review.
 
-## Agentes
+## Descripción
+SaaS de gestión de cobros para gimnasios en Argentina y LATAM.
+El gym se registra, carga sus alumnos y el sistema cobra las cuotas automáticamente
+mediante links de pago sin que el alumno necesite registrarse.
 
-| Agente | Archivo | Especialidad |
-|---|---|---|
-| biz-validator | .claude/agents/biz-validator.md | Negocio, producto, pricing |
-| security-arch | .claude/agents/security-arch.md | Seguridad, arquitectura, RLS |
-| qa-tester | .claude/agents/qa-tester.md | Tests funcionales y de estrés |
-| dev | .claude/agents/dev.md | Implementación y fixes |
+## Stack
+- Next.js 16 App Router (TypeScript)
+- Supabase (PostgreSQL + Auth + Storage)
+- Vercel (hosting + crons)
+- MercadoPago Checkout Pro (pagos)
+- Resend (email)
+- Meta Cloud API (WhatsApp — solo plan Multi)
+- jose (JWT para links de pago sin login)
 
-## Contexto de negocio (siempre presente)
-- Planes activos: Basic (USD 28) / Multi (USD 75)
-- Plan 'plus' ELIMINADO junio 2026. Plan 'starter' NO EXISTE. Plan 'pro' NO EXISTE.
-- Gyms legacy con plan 'plus' en DB: mostrar "Plus (legacy)" en UI, no migrar forzado
-- Alumnos: ILIMITADOS en todos los planes
-- Sin setup fee
-- WhatsApp: solo plan Multi
-- El gym conecta su propio número Meta (CLUBIO no paga WA)
+## Planes activos
+| Plan  | Precio/mes | Sedes | Admins | WhatsApp |
+|-------|-----------|-------|--------|----------|
+| Basic | USD 28    | 1     | 3      | ✗        |
+| Multi | USD 75    | 5     | 10     | ✓        |
 
-## Flujo estándar de una feature
+- Plan 'plus' ELIMINADO junio 2026. Gyms legacy con plus siguen activos, no migrar forzado.
+- Planes 'starter' y 'pro' NO EXISTEN — si aparecen en código es un bug crítico.
+- Alumnos ILIMITADOS en todos los planes. Sin setup fee.
+- El gym conecta su propio número Meta. CLUBIO no paga WhatsApp.
 
-```
-1. [BIZ]      Validar que tiene sentido de negocio
-2. [DEV]      Implementar en branch feature/*
-3. [SECURITY] Revisar si toca auth, pagos, DB o RLS
-4. [QA]       Generar tests y verificar edge cases
-5. [DEV]      Aplicar fixes
-6. [DEV]      Merge a develop → main
-```
+## Arquitectura multi-tenant
+- Aislamiento por `gym_id` en todas las tablas
+- RLS activo en toda la base de datos usando `get_user_gym_id()`
+- Cada gym tiene su propio `mp_access_token` y `whatsapp_access_token`
 
-## Cuándo activar cada agente
+## Reglas de negocio invariantes
+- Webhook de MercadoPago DEBE validar `x-signature` antes de procesar
+- Los crons DEBEN ser idempotentes y validar `Authorization: Bearer CRON_SECRET`
+- Pagos son inmutables: tabla `payments` sin UPDATE, solo INSERT
+- Soft delete en todo: `deleted_at`, nunca DELETE físico en datos de clientes
+- Toda notificación pasa por `NotificationService`, nunca Resend directo
+- Resend solo se importa en `lib/notifications/channels/email.ts`
+- Admin client usa `SUPABASE_DB_POOLER_URL`
+- Crons usan patrón Dispatcher/Worker (no await secuencial por gym)
 
-| Situación | Agente | Obligatorio |
-|---|---|---|
-| Nueva feature | biz-validator | Sí |
-| Cambio en auth o pagos | security-arch | Sí |
-| Cambio en RLS o schema | security-arch | Sí |
-| Antes de merge a main | qa-tester | Sí |
-| Bug en producción | security-arch + qa-tester | Sí |
-| Cambio de pricing/planes | biz-validator | Sí |
-| Nuevo endpoint público | security-arch | Sí |
+## Variables de entorno críticas (nunca exponer al cliente)
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `JWT_SECRET`
+- `mp_access_token` por gym
+- `whatsapp_access_token` por gym
+- `CRON_SECRET`
+- `RESEND_API_KEY`
 
-## Reportes
+## Flujos críticos
+1. **Pago de cuota**: alumno recibe link → valida JWT → crea preferencia MP → webhook confirma
+2. **Vencimiento de licencia**: cron diario detecta gyms vencidos → suspende acceso
+3. **Renovación**: gym paga suscripción → webhook activa licencia → acceso restaurado
+4. **Notificaciones**: cuota próxima → NotificationService → email / WhatsApp
 
-```
-.claude/reports/
-├── biz-review-[fecha].md
-├── security-review-[fecha].md
-├── qa-review-[fecha].md
-└── consolidated-[fecha].md
-```
-
-## Regla de oro
-Ningún código llega a main sin pasar por security-arch y qa-tester.
+## Reportes de revisión
+`.claude/reports/review-[YYYY-MM-DD]-[HH-MM].md`

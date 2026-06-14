@@ -35,10 +35,17 @@
       "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d['dependencies'].get\\('next','?'\\)\\)\")",
       "Bash(npm i *)",
       "Bash(ls \"C:\\\\Users\\\\valen\\\\Downloads\" 2>/dev/null | grep -i spec || echo \"no spec file\")",
-      "Read(//c/Users/valen/Downloads/**)"
+      "Read(//c/Users/valen/Downloads/**)",
+      "Bash(mkdir -p \"c:\\\\Git\\\\Clubio\\\\Clubio\\\\.claude\\\\reports\")",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(JSON.stringify\\({scripts: p.scripts, devDeps: Object.keys\\(p.devDependencies || {}\\).filter\\(k => k.includes\\('test'\\) || k.includes\\('jest'\\) || k.includes\\('vitest'\\)\\)}, null, 2\\)\\)\")",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(JSON.stringify\\(p.devDependencies, null, 2\\)\\)\")",
+      "Bash(npm install *)",
+      "Bash(node -e \"require\\('xlsx'\\); console.log\\('ok'\\)\")",
+      "Bash(node -e \"const {z} = require\\('zod'\\); const r = z.string\\(\\).uuid\\(\\).safeParse\\('00000000-0000-0000-0002-000000000004'\\); console.log\\(JSON.stringify\\(r\\)\\)\")"
     ],
     "additionalDirectories": [
-      "c:\\Git\\Clubio\\Clubio\\app\\pagar"
+      "c:\\Git\\Clubio\\Clubio\\app\\pagar",
+      "c:\\Git\\Clubio\\Clubio\\.claude\\reports"
     ]
   }
 }

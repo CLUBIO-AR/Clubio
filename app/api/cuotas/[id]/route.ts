@@ -1,24 +1,19 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getApiGymContext } from "@/lib/supabase/api-auth";
 import { getCuotaById, marcarPagadaManual, condonarCuota, CuotaUpdateSchema } from "@/lib/cuotas";
 import { notifyGymOwnerPago } from "@/lib/notifications/gym-owner";
-
-async function getGymAndUser(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data } = await supabase.from("gym_usuarios").select("gym_id").eq("id", user.id).single();
-  return data ? { gymId: data.gym_id, userId: user.id } : null;
-}
 
 export async function GET(
   _: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = await createClient();
-  const ctx = await getGymAndUser(supabase);
+  const ctx = await getApiGymContext();
   if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const supabase = await createClient();
 
   const { data, error } = await getCuotaById(supabase, ctx.gymId, id);
   if (error || !data) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
@@ -31,9 +26,10 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = await createClient();
-  const ctx = await getGymAndUser(supabase);
+  const ctx = await getApiGymContext();
   if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const supabase = await createClient();
 
   const body = await request.json();
   const parsed = CuotaUpdateSchema.safeParse(body);

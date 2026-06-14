@@ -1,19 +1,14 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getApiGymContext } from "@/lib/supabase/api-auth";
 import { getCuotas, createCuotaManual, CuotaManualSchema } from "@/lib/cuotas";
 import type { CuotaEstado } from "@/lib/cuotas";
 
-async function getGymAndUser(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data } = await supabase.from("gym_usuarios").select("gym_id").eq("id", user.id).single();
-  return data ? { gymId: data.gym_id, userId: user.id } : null;
-}
-
 export async function GET(request: Request) {
-  const supabase = await createClient();
-  const ctx = await getGymAndUser(supabase);
+  const ctx = await getApiGymContext();
   if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const supabase = await createClient();
 
   const { searchParams } = new URL(request.url);
   const mes    = searchParams.get("mes")    ? Number(searchParams.get("mes"))    : undefined;
@@ -43,9 +38,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const ctx = await getGymAndUser(supabase);
+  const ctx = await getApiGymContext();
   if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const supabase = await createClient();
 
   const body = await request.json();
   const parsed = CuotaManualSchema.safeParse(body);

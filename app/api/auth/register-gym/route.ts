@@ -24,6 +24,19 @@ export async function POST(request: Request) {
   const { nombre, slug, email_contacto, password, nombre_admin } = parsed.data;
   const supabase = createAdminClient();
 
+  // Rate limit global: máximo 20 registros por hora. Protege contra spam de trial gyms.
+  const unaHoraAtras = new Date(Date.now() - 3_600_000).toISOString();
+  const { count } = await supabase
+    .from("gyms")
+    .select("id", { count: "exact", head: true })
+    .gte("created_at", unaHoraAtras);
+  if ((count ?? 0) >= 20) {
+    return NextResponse.json(
+      { error: "Límite de registros alcanzado. Intente nuevamente en una hora." },
+      { status: 429 }
+    );
+  }
+
   // Verificar slug único
   const { data: existing } = await supabase
     .from("gyms")

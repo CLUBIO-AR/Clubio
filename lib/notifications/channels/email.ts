@@ -165,6 +165,73 @@ const MESES = ["", "enero", "febrero", "marzo", "abril", "mayo", "junio",
                "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 function mesNombre(n: number) { return MESES[n] ?? String(n); }
 
+// Email consolidado para alumnos con múltiples cuotas pendientes.
+// Usado cuando el worker de avisos detecta más de 1 cuota por alumno.
+export async function sendEmailAvisosLote(params: {
+  to: string;
+  alumnoNombre: string;
+  gymNombre: string;
+  logoUrl?: string | null;
+  colorAccento?: string | null;
+  emailRemitenteNombre?: string | null;
+  emailRemitenteAddress?: string | null;
+  tieneVencidas: boolean;
+  cuotas: Array<{ mes: number; anio: number; monto_total: number | null; estado: string; pagoUrl: string }>;
+  pagarTodoUrl: string;
+  montoTotal: number;
+}): Promise<string> {
+  const { Resend } = await import("resend");
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
+  const brand: EmailBrand = { logoUrl: params.logoUrl, colorAccent: params.colorAccento };
+  const accent = emailAccentColor(brand);
+
+  const from = params.emailRemitenteAddress
+    ? `${params.emailRemitenteNombre ?? params.gymNombre} <${params.emailRemitenteAddress}>`
+    : `${params.gymNombre} <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.app"}>`;
+
+  const subject = params.tieneVencidas
+    ? `${params.gymNombre} · Cuotas vencidas — total $${params.montoTotal.toLocaleString("es-AR")}`
+    : `${params.gymNombre} · Cuotas próximas a vencer — total $${params.montoTotal.toLocaleString("es-AR")}`;
+
+  const cuotaListHtml = params.cuotas.map(({ mes, anio, monto_total, estado, pagoUrl }) => `
+    <tr style="border-bottom:1px solid #1e293b">
+      <td style="padding:10px 0;color:#f9fafb">
+        ${mesNombre(mes)} ${anio}
+        ${estado === "vencida" ? '<span style="color:#f87171;font-size:11px;margin-left:8px">VENCIDA</span>' : ""}
+      </td>
+      <td style="padding:10px 0;color:#f9fafb;font-family:monospace">$${(monto_total ?? 0).toLocaleString("es-AR")}</td>
+      <td style="padding:10px 0;text-align:right">
+        <a href="${pagoUrl}" style="color:${accent};font-size:12px;text-decoration:none;font-weight:bold">Pagar →</a>
+      </td>
+    </tr>
+  `).join("");
+
+  const html = clubioEmailHtml(`
+    <p style="color:#f9fafb;margin:0 0 16px">
+      Hola ${escapeHtml(params.alumnoNombre)}, tenés <strong>${params.cuotas.length} cuotas</strong> pendientes en <strong>${escapeHtml(params.gymNombre)}</strong>:
+    </p>
+    <table style="width:100%;border-collapse:collapse;margin:0 0 20px">
+      ${cuotaListHtml}
+      <tr>
+        <td style="padding:12px 0;color:#9ca3af;font-size:13px">Total</td>
+        <td style="padding:12px 0;color:#f9fafb;font-family:monospace;font-weight:bold">$${params.montoTotal.toLocaleString("es-AR")}</td>
+        <td></td>
+      </tr>
+    </table>
+    <p style="margin:0 0 20px;text-align:center">
+      <a href="${params.pagarTodoUrl}" style="background:${accent};color:#030712;padding:12px 32px;text-decoration:none;border-radius:8px;font-weight:bold;display:inline-block">
+        Pagar todo — $${params.montoTotal.toLocaleString("es-AR")}
+      </a>
+    </p>
+    <p style="color:#4b5563;font-size:12px;margin:0">${escapeHtml(params.gymNombre)}</p>
+  `, brand);
+
+  const { data, error } = await resend.emails.send({ from, to: params.to, subject, html });
+  if (error || !data?.id) throw new Error(`Resend error: ${error?.message ?? "sin id"}`);
+  return data.id;
+}
+
 // ─── Notificaciones al owner del gym (no al alumno) ──────────────────────────
 
 const METODO_LABEL: Record<string, string> = {

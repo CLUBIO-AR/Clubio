@@ -4,15 +4,12 @@ import { logCron } from "@/lib/cron-logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendNotification } from "@/lib/notifications";
 import type { GymNotificationConfig, EmailTemplates } from "@/lib/notifications";
-import { clubioEmailHtml, emailAccentColor } from "@/lib/email/template";
+import { sendEmailAvisosLote } from "@/lib/notifications/channels/email";
 import { z } from "zod";
 
 const Schema = z.object({ gym_id: z.string().uuid() });
 
 const DIAS_PREVIOS = 3; // avisar 3 días antes del vencimiento
-
-const MESES_LARGO = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
 export async function POST(request: Request) {
   const auth = request.headers.get("Authorization");
@@ -141,7 +138,7 @@ export async function POST(request: Request) {
       const tipo = tieneVencidas ? "recordatorio_vencido" : "aviso_vencimiento";
 
       // Generar JWT para cada cuota (links individuales)
-      const cuotasConLink: { cuota: typeof cuotasAlumno[0]; pagoUrl: string }[] = [];
+      const cuotasConLink: Array<{ mes: number; anio: number; monto_total: number | null; estado: string; pagoUrl: string }> = [];
       for (const cuota of cuotasAlumno) {
         const token = await new SignJWT({
           cuota_id:      cuota.id,
@@ -155,7 +152,7 @@ export async function POST(request: Request) {
           .setIssuedAt()
           .setExpirationTime("30d")
           .sign(secret);
-        cuotasConLink.push({ cuota, pagoUrl: `${appUrl}/pagar/${token}` });
+        cuotasConLink.push({ mes: cuota.mes, anio: cuota.anio, monto_total: cuota.monto_total, estado: cuota.estado, pagoUrl: `${appUrl}/pagar/${token}` });
       }
 
       // JWT para "pagar todo" — va a /pagar/lote/[token]
@@ -173,66 +170,36 @@ export async function POST(request: Request) {
       const pagarTodoUrl = `${appUrl}/pagar/lote/${loteToken}`;
 
       const montoTotal = cuotasAlumno.reduce((acc, c) => acc + (c.monto_total ?? 0), 0);
-      const accent = emailAccentColor({ colorAccent: gymConfig.email_color_acento });
 
-      const cuotaListHtml = cuotasConLink.map(({ cuota, pagoUrl }) => `
-        <tr style="border-bottom:1px solid #1e293b">
-          <td style="padding:10px 0;color:#f9fafb">
-            ${MESES_LARGO[cuota.mes]} ${cuota.anio}
-            ${cuota.estado === "vencida" ? '<span style="color:#f87171;font-size:11px;margin-left:8px">VENCIDA</span>' : ""}
-          </td>
-          <td style="padding:10px 0;color:#f9fafb;font-family:monospace">$${(cuota.monto_total ?? 0).toLocaleString("es-AR")}</td>
-          <td style="padding:10px 0;text-align:right">
-            <a href="${pagoUrl}" style="color:${accent};font-size:12px;text-decoration:none;font-weight:bold">Pagar →</a>
-          </td>
-        </tr>
-      `).join("");
+      let emailProviderId: string | undefined;
+      let emailOk = false;
+      try {
+        emailProviderId = await sendEmailAvisosLote({
+          to:                    alumno.email,
+          alumnoNombre:          alumno.nombre,
+          gymNombre:             gym.nombre,
+          logoUrl:               gym.logo_url,
+          colorAccento:          gymConfig.email_color_acento,
+          emailRemitenteNombre:  notifConfig.email_remitente_nombre,
+          emailRemitenteAddress: notifConfig.email_remitente_address,
+          tieneVencidas,
+          cuotas:                cuotasConLink,
+          pagarTodoUrl,
+          montoTotal,
+        });
+        emailOk = true;
+      } catch (err) {
+        console.error(`[worker:enviar-avisos] lote gym=${gym_id} alumno=${alumnoId} error:`, err);
+      }
 
-      const html = clubioEmailHtml(`
-        <p style="color:#f9fafb;margin:0 0 16px">
-          Hola ${alumno.nombre}, tenés <strong>${cuotasAlumno.length} cuotas</strong> pendientes en <strong>${gym.nombre}</strong>:
-        </p>
-        <table style="width:100%;border-collapse:collapse;margin:0 0 20px">
-          ${cuotaListHtml}
-          <tr>
-            <td style="padding:12px 0;color:#9ca3af;font-size:13px">Total</td>
-            <td style="padding:12px 0;color:#f9fafb;font-family:monospace;font-weight:bold">$${montoTotal.toLocaleString("es-AR")}</td>
-            <td></td>
-          </tr>
-        </table>
-        <p style="margin:0 0 20px;text-align:center">
-          <a href="${pagarTodoUrl}" style="background:${accent};color:#030712;padding:12px 32px;text-decoration:none;border-radius:8px;font-weight:bold;display:inline-block">
-            Pagar todo — $${montoTotal.toLocaleString("es-AR")}
-          </a>
-        </p>
-        <p style="color:#4b5563;font-size:12px;margin:0">${gym.nombre}</p>
-      `, { logoUrl: gym.logo_url, colorAccent: gymConfig.email_color_acento });
-
-      const { Resend } = await import("resend");
-      const resend = new Resend(process.env.RESEND_API_KEY);
-
-      const subject = tieneVencidas
-        ? `${gym.nombre} · Cuotas vencidas — total $${montoTotal.toLocaleString("es-AR")}`
-        : `${gym.nombre} · Cuotas próximas a vencer — total $${montoTotal.toLocaleString("es-AR")}`;
-
-      const { data: emailData, error: emailError } = await resend.emails.send({
-        from: `${gym.nombre} <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.app"}>`,
-        to:   alumno.email,
-        subject,
-        html,
-      });
-
-      const emailOk = !emailError && !!emailData?.id;
-
-      // Loguear una entrada por alumno
       await admin.from("notificaciones_log").insert({
         gym_id,
-        alumno_id: alumnoId,
-        cuota_id:  cuotasAlumno[0].id,
+        alumno_id:   alumnoId,
+        cuota_id:    cuotasAlumno[0].id,
         tipo,
-        enviado_a: alumno.email,
-        estado:    emailOk ? "enviado" : "error",
-        provider_id: emailData?.id ?? null,
+        enviado_a:   alumno.email,
+        estado:      emailOk ? "enviado" : "error",
+        provider_id: emailProviderId ?? null,
       });
 
       if (emailOk) {

@@ -10,7 +10,14 @@ export async function GET() {
   const supabase = await createClient();
   const [gymRes, configRes] = await Promise.all([
     supabase.from("gyms").select("id, nombre, email_contacto, telefono, direccion").eq("id", ctx.gymId).single(),
-    supabase.from("gym_config").select("*").eq("gym_id", ctx.gymId).single(),
+    supabase.from("gym_config").select(
+      "gym_id, monto_base_defecto, dia_vencimiento_mensual, dias_gracia, " +
+      "recargo_1_dias, recargo_1_porcentaje, recargo_2_dias, recargo_2_porcentaje, " +
+      "email_activo, dias_aviso_antes, aviso_post_vencimiento_dias, max_avisos_post, " +
+      "email_remitente_nombre, email_remitente_address, email_color_acento, email_templates, " +
+      "mp_public_key, whatsapp_activo, whatsapp_phone_number_id, " +
+      "generar_cuota_al_alta, cuota_alta_proporcional, dias_minimos_para_cuota_alta"
+    ).eq("gym_id", ctx.gymId).single(),
   ]);
 
   return NextResponse.json({

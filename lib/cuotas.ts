@@ -293,18 +293,26 @@ export async function generarCuotasMes(
   const diaVto = config.dia_vencimiento_mensual ?? 10;
   const fechaVto = `${anio}-${String(mes).padStart(2, "0")}-${String(diaVto).padStart(2, "0")}`;
 
+  // Precargar todas las inscripciones activas del gym en una sola query (evita N+1)
+  const { data: todasInscripciones } = await supabase
+    .from("alumno_actividades")
+    .select("alumno_id, actividad_id, monto_personalizado, actividades(monto_base)")
+    .eq("gym_id", gymId)
+    .eq("activa", true);
+
+  const inscripcionesPorAlumno = new Map<string, NonNullable<typeof todasInscripciones>>();
+  for (const ins of todasInscripciones ?? []) {
+    const list = inscripcionesPorAlumno.get(ins.alumno_id) ?? [];
+    list.push(ins);
+    inscripcionesPorAlumno.set(ins.alumno_id, list);
+  }
+
   let creadas = 0;
 
   for (const alumno of alumnos) {
-    // Obtener actividades activas del alumno
-    const { data: inscripciones } = await supabase
-      .from("alumno_actividades")
-      .select("actividad_id, monto_personalizado, actividades(monto_base)")
-      .eq("alumno_id", alumno.id)
-      .eq("gym_id", gymId)
-      .eq("activa", true);
+    const inscripciones = inscripcionesPorAlumno.get(alumno.id) ?? [];
 
-    if (inscripciones && inscripciones.length > 0) {
+    if (inscripciones.length > 0) {
       // Generar una cuota por cada actividad
       for (const ins of inscripciones) {
         const actividadData = ins.actividades as { monto_base: number } | null;
@@ -321,7 +329,9 @@ export async function generarCuotasMes(
           fecha_vencimiento: fechaVto,
         });
         if (!error) creadas++;
-        // 23505 = ya existe (idempotente), ignorar
+        else if (error.code !== "23505") {
+          console.error(`[generarCuotasMes] gym=${gymId} alumno=${alumno.id} actividad=${ins.actividad_id} error:`, error.message);
+        }
       }
     } else {
       // Flujo legacy: cuota única sin actividad
@@ -337,6 +347,9 @@ export async function generarCuotasMes(
         fecha_vencimiento: fechaVto,
       });
       if (!error) creadas++;
+      else if (error.code !== "23505") {
+        console.error(`[generarCuotasMes] gym=${gymId} alumno=${alumno.id} error:`, error.message);
+      }
     }
   }
 

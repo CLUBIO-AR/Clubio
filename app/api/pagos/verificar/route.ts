@@ -60,7 +60,7 @@ export async function POST(request: Request) {
 
   const monto = payment.transaction_amount ?? cuota.monto_total ?? 0;
 
-  await admin.from("pagos").insert({
+  const { error: pagoError } = await admin.from("pagos").insert({
     gym_id: gymUsuario.gym_id,
     cuota_id,
     alumno_id: cuota.alumno_id,
@@ -68,6 +68,11 @@ export async function POST(request: Request) {
     metodo: "mercadopago",
     mp_payment_id,
   });
+
+  if (pagoError) {
+    if (pagoError.code === "23505") return NextResponse.json({ ok: true, duplicate: true });
+    return NextResponse.json({ error: pagoError.message }, { status: 500 });
+  }
 
   await admin.from("cuotas").update({
     estado: "pagada",

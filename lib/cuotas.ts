@@ -61,7 +61,7 @@ export const CuotaUpdateSchema = z.discriminatedUnion("accion", [
   z.object({
     accion:     z.literal("actualizar"),
     monto_base: z.number().positive().optional(),
-    fecha_vencimiento: z.string().optional(),
+    fecha_vencimiento: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato YYYY-MM-DD").optional(),
     notas:      z.string().nullable().optional(),
   }),
 ]);

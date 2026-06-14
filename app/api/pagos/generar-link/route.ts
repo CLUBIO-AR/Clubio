@@ -42,6 +42,7 @@ export async function POST(request: Request) {
     monto: cuota.monto_total,
   })
     .setProtectedHeader({ alg: "HS256" })
+    .setJti(crypto.randomUUID())
     .setIssuedAt()
     .setExpirationTime("30d")
     .sign(secret);

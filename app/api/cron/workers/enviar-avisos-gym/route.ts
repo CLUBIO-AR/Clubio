@@ -102,6 +102,7 @@ export async function POST(request: Request) {
         monto:         cuota.monto_total,
       })
         .setProtectedHeader({ alg: "HS256" })
+        .setJti(crypto.randomUUID())
         .setIssuedAt()
         .setExpirationTime("30d")
         .sign(secret);
@@ -149,7 +150,8 @@ export async function POST(request: Request) {
           monto:         cuota.monto_total,
         })
           .setProtectedHeader({ alg: "HS256" })
-          .setIssuedAt()
+          .setJti(crypto.randomUUID())
+        .setIssuedAt()
           .setExpirationTime("30d")
           .sign(secret);
         cuotasConLink.push({ mes: cuota.mes, anio: cuota.anio, monto_total: cuota.monto_total, estado: cuota.estado, pagoUrl: `${appUrl}/pagar/${token}` });
@@ -164,6 +166,7 @@ export async function POST(request: Request) {
         alumno_nombre: alumno.nombre,
       })
         .setProtectedHeader({ alg: "HS256" })
+        .setJti(crypto.randomUUID())
         .setIssuedAt()
         .setExpirationTime("30d")
         .sign(secret);

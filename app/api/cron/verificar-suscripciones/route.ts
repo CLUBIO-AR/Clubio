@@ -43,10 +43,11 @@ export async function GET(request: Request) {
   for (const lic of licencias ?? []) {
     const gym = Array.isArray(lic.gyms) ? lic.gyms[0] : lic.gyms;
     const gymNombre = gym?.nombre ?? lic.gym_id;
-    const vencimiento = new Date(lic.fecha_vencimiento);
-    const diasRestantes = Math.ceil((vencimiento.getTime() - hoy.getTime()) / 86400000);
+    // Comparación de strings YYYY-MM-DD para el check de expiración: evita edge cases
+    // de UTC vs. timezone local (new Date("2026-06-14") = medianoche UTC, no AR).
+    const diasRestantes = Math.ceil((new Date(lic.fecha_vencimiento).getTime() - hoy.getTime()) / 86400000);
 
-    if (diasRestantes < 0) {
+    if (lic.fecha_vencimiento < hoyStr) {
       // Expired — deactivate license + gym
       await admin.from("licencias").update({ activa: false }).eq("id", lic.id);
       await admin.from("gyms").update({ activo: false }).eq("id", lic.gym_id);

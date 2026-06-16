@@ -1,3 +1,4 @@
+import { createHash } from "crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getApiGymContext } from "@/lib/supabase/api-auth";
@@ -68,13 +69,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "MercadoPago no configurado" }, { status: 422 });
   }
 
+  const alumnoId = cuotas[0].alumno_id;
+  const cuotaHash = createHash("sha256")
+    .update(`${alumnoId}:${[...cuota_ids].sort().join(",")}`)
+    .digest("hex");
+
   // Crear registro del lote
   const { data: lote, error: loteError } = await admin
     .from("cuota_lotes")
     .insert({
       gym_id:      ctx.gymId,
-      alumno_id:   cuotas[0].alumno_id,
+      alumno_id:   alumnoId,
       cuota_ids:   cuota_ids,
+      cuota_hash:  cuotaHash,
       monto_total: montoTotal,
     })
     .select("id")

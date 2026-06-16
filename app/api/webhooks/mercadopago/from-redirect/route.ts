@@ -44,6 +44,11 @@ export async function POST(request: Request) {
 
   if (payment.status !== "approved") return NextResponse.json({ ok: false, status: payment.status });
 
+  // Verificar que el pago corresponde a esta cuota y no a otra del mismo gym
+  if (payment.external_reference !== cuota_id) {
+    return NextResponse.json({ ok: false, error: "external_reference mismatch" }, { status: 422 });
+  }
+
   const monto = payment.transaction_amount ?? cuota.monto_total ?? 0;
 
   const { error: pagoError } = await admin.from("pagos").insert({

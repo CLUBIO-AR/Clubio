@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   // Config del gym
   const { data: gymConfig } = await admin
     .from("gym_config")
-    .select("email_activo, whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, email_color_acento, email_templates")
+    .select("email_activo, whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, email_color_acento, email_templates, email_remitente_nombre, email_remitente_address")
     .eq("gym_id", gym_id)
     .single();
 
@@ -66,11 +66,13 @@ export async function POST(request: Request) {
   }
 
   const notifConfig: GymNotificationConfig = {
-    email_activo: gymConfig.email_activo ?? true,
-    email_templates: (gymConfig.email_templates as EmailTemplates | null) ?? null,
-    whatsapp_activo: gymConfig.whatsapp_activo ?? false,
-    whatsapp_phone_number_id: gymConfig.whatsapp_phone_number_id,
-    whatsapp_access_token: gymConfig.whatsapp_access_token,
+    email_activo:              gymConfig.email_activo ?? true,
+    email_remitente_nombre:    gymConfig.email_remitente_nombre ?? null,
+    email_remitente_address:   gymConfig.email_remitente_address ?? null,
+    email_templates:           (gymConfig.email_templates as EmailTemplates | null) ?? null,
+    whatsapp_activo:           gymConfig.whatsapp_activo ?? false,
+    whatsapp_phone_number_id:  gymConfig.whatsapp_phone_number_id,
+    whatsapp_access_token:     gymConfig.whatsapp_access_token,
   };
 
   const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
@@ -206,11 +208,13 @@ export async function POST(request: Request) {
       });
 
       if (emailOk) {
-        for (const cuota of cuotasAlumno) {
-          await admin.from("cuotas")
-            .update({ avisos_enviados: (cuota.avisos_enviados ?? 0) + 1 })
-            .eq("id", cuota.id);
-        }
+        await Promise.allSettled(
+          cuotasAlumno.map((cuota) =>
+            admin.from("cuotas")
+              .update({ avisos_enviados: (cuota.avisos_enviados ?? 0) + 1 })
+              .eq("id", cuota.id)
+          )
+        );
         enviados++;
       }
     }

@@ -5,12 +5,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Search, Download, ChevronLeft, ChevronRight, DollarSign } from "lucide-react";
 import { T } from "@/lib/theme";
 
-const METODO_LABEL: Record<string, string> = {
-  mercadopago:   "MercadoPago",
-  efectivo:      "Efectivo",
-  transferencia: "Transferencia",
-  otro:          "Otro",
-};
+import { METODO_LABEL } from "@/lib/constants";
 const MESES = ["", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 const PAGE_SIZE = 25;
 

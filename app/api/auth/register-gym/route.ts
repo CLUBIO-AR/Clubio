@@ -37,11 +37,12 @@ export async function POST(request: Request) {
     );
   }
 
-  // Verificar slug único
+  // Check slug antes de crear el auth user para no gastar un createUser innecesario
   const { data: existing } = await supabase
     .from("gyms")
     .select("id")
     .eq("slug", slug)
+    .is("deleted_at", null)
     .single();
 
   if (existing) {
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
     );
   }
 
-  // Crear usuario en Supabase Auth
+  // Crear usuario en Supabase Auth (no puede incluirse en la TX de DB)
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email: email_contacto,
     password,
@@ -65,63 +66,34 @@ export async function POST(request: Request) {
     );
   }
 
-  // Crear gym
-  const { data: gym, error: gymError } = await supabase
-    .from("gyms")
-    .insert({ nombre, slug, email_contacto })
-    .select("id")
-    .single();
+  // Crear gym + usuario + config + licencia + sucursal en una sola TX atómica.
+  // Si falla, se borra el auth user como único punto de cleanup externo.
+  const { data: gymId, error: rpcError } = await supabase.rpc("crear_gym_completo", {
+    p_user_id:      authData.user.id,
+    p_nombre:       nombre,
+    p_slug:         slug,
+    p_email:        email_contacto,
+    p_nombre_admin: nombre_admin,
+  });
 
-  if (gymError || !gym) {
+  if (rpcError || !gymId) {
     await supabase.auth.admin.deleteUser(authData.user.id);
+
+    // La función lanza 'slug_taken' con ERRCODE unique_violation (23505)
+    // ante carrera entre el check de arriba y el INSERT dentro de la TX.
+    if (rpcError?.message?.includes("slug_taken") || rpcError?.code === "23505") {
+      return NextResponse.json(
+        { error: "Ese slug ya está en uso, elegí otro" },
+        { status: 409 }
+      );
+    }
+
+    console.error("[register-gym] rpc crear_gym_completo falló:", rpcError);
     return NextResponse.json(
       { error: "Error al crear el gimnasio" },
       { status: 500 }
     );
   }
 
-  // Crear perfil del usuario owner
-  const { error: userError } = await supabase
-    .from("gym_usuarios")
-    .insert({ id: authData.user.id, gym_id: gym.id, nombre: nombre_admin, rol: "owner" });
-
-  if (userError) {
-    await supabase.auth.admin.deleteUser(authData.user.id);
-    await supabase.from("gyms").delete().eq("id", gym.id);
-    return NextResponse.json(
-      { error: "Error al configurar el perfil" },
-      { status: 500 }
-    );
-  }
-
-  // Crear gym_config con defaults (email_activo: true por defecto)
-  await supabase.from("gym_config").insert({
-    gym_id: gym.id,
-    email_activo: true,
-    whatsapp_activo: false,
-  });
-
-  // Crear licencia basic con 30 días de trial (NO setup fee)
-  const fechaInicio = new Date().toISOString().split("T")[0];
-  const fechaVencimiento = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0];
-
-  await supabase.from("licencias").insert({
-    gym_id: gym.id,
-    plan: "basic",
-    fecha_inicio: fechaInicio,
-    fecha_vencimiento: fechaVencimiento,
-    es_trial: true,
-    trial_hasta: fechaVencimiento,
-  });
-
-  // Crear sucursal principal
-  await supabase.from("sucursales").insert({
-    gym_id: gym.id,
-    nombre: "Principal",
-    es_principal: true,
-  });
-
-  return NextResponse.json({ ok: true, gym_id: gym.id }, { status: 201 });
+  return NextResponse.json({ ok: true, gym_id: gymId }, { status: 201 });
 }

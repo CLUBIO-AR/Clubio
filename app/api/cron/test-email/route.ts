@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getApiGymContext } from "@/lib/supabase/api-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { sendGymTestEmail } from "@/lib/notifications/channels/email";
 import { z } from "zod";
 
 const Schema = z.object({
@@ -43,27 +44,15 @@ export async function POST(request: Request) {
     ? `${gymConfig.email_remitente_nombre ?? gymNombre} <${gymConfig.email_remitente_address}>`
     : `${gymNombre} <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.app"}>`;
 
-  const { Resend } = await import("resend");
-  const resend = new Resend(process.env.RESEND_API_KEY);
-
-  const { data, error } = await resend.emails.send({
-    from,
-    to: toEmail,
-    subject: `[TEST] Configuración de email — ${gymNombre}`,
-    html: `
-      <p>Este es un email de prueba enviado desde <strong>${gymNombre}</strong> en CLUBIO.</p>
-      <p>Si recibiste este mensaje, la configuración de email está funcionando correctamente.</p>
-      <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0"/>
-      <p style="color:#9ca3af;font-size:12px;">Gym ID: ${ctx.gymId}<br/>Enviado a: ${toEmail}</p>
-    `,
-  });
-
-  if (error || !data?.id) {
+  let messageId: string;
+  try {
+    messageId = await sendGymTestEmail({ to: toEmail, gymNombre, from });
+  } catch (e) {
     return NextResponse.json(
-      { ok: false, error: error?.message ?? "Error desconocido de Resend" },
+      { ok: false, error: (e as Error).message ?? "Error desconocido de Resend" },
       { status: 502 }
     );
   }
 
-  return NextResponse.json({ ok: true, message_id: data.id, to: toEmail, from });
+  return NextResponse.json({ ok: true, message_id: messageId, to: toEmail, from });
 }

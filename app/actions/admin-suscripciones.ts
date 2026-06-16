@@ -5,7 +5,7 @@ import { requireSuperadmin, logAdminAction } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAdminSettings, getPlanPrecio } from "@/lib/admin/settings";
 import { createSuscripcionPreference } from "@/lib/mercadopago-suscripcion";
-import { clubioEmailHtml, clubioEmailTable } from "@/lib/email/template";
+import { sendCobroSuscripcionEmail } from "@/lib/notifications/channels/email";
 
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -77,8 +77,8 @@ export async function generarCobroAction(gymId: string): Promise<ActionResult<{ 
     prefId = pref.id;
     linkPago = pref.init_point;
   } catch (e) {
-    // Rollback: eliminar el cobro recién creado para no dejar un registro sin link
-    await admin.from("cobros_suscripcion").delete().eq("id", cobro.id);
+    // Rollback: marcar como cancelado para mantener trazabilidad del fallo
+    await admin.from("cobros_suscripcion").update({ estado: "cancelado" }).eq("id", cobro.id);
     return { ok: false, error: `Error al crear la preferencia de MP: ${(e as Error).message}` };
   }
 
@@ -93,12 +93,12 @@ export async function generarCobroAction(gymId: string): Promise<ActionResult<{ 
     .eq("id", cobro.id);
 
   // Enviar email al gym
-  await enviarEmailCobro({
-    gymNombre: gym.nombre,
+  await sendCobroSuscripcionEmail({
+    gymNombre:     gym.nombre,
     emailContacto: gym.email_contacto,
-    plan: PLAN_LABELS[licencia.plan] ?? licencia.plan,
+    plan:          PLAN_LABELS[licencia.plan] ?? licencia.plan,
     montoBase,
-    moneda: settings.moneda_suscripcion,
+    moneda:        settings.moneda_suscripcion,
     montoArs,
     periodo,
     linkPago,
@@ -155,15 +155,15 @@ export async function reenviarLinkCobroAction(cobroId: string): Promise<ActionRe
 
   await admin.from("cobros_suscripcion").update({ email_enviado_at: new Date().toISOString() }).eq("id", cobroId);
 
-  await enviarEmailCobro({
-    gymNombre: gym.nombre,
+  await sendCobroSuscripcionEmail({
+    gymNombre:     gym.nombre,
     emailContacto: gym.email_contacto,
-    plan: PLAN_LABELS[cobro.plan] ?? cobro.plan,
-    montoBase: cobro.monto_usd,
-    moneda: settings.moneda_suscripcion,
-    montoArs: cobro.monto_ars,
-    periodo: cobro.periodo,
-    linkPago: linkPago!,
+    plan:          PLAN_LABELS[cobro.plan] ?? cobro.plan,
+    montoBase:     cobro.monto_usd,
+    moneda:        settings.moneda_suscripcion,
+    montoArs:      cobro.monto_ars,
+    periodo:       cobro.periodo,
+    linkPago:      linkPago!,
   });
 
   await logAdminAction(ctx.adminId, "cobro_suscripcion_reenviado", cobro.gym_id, { cobro_id: cobroId });
@@ -189,44 +189,3 @@ export async function cancelarCobroAction(cobroId: string): Promise<ActionResult
   return { ok: true, data: undefined };
 }
 
-async function enviarEmailCobro(params: {
-  gymNombre: string;
-  emailContacto: string;
-  plan: string;
-  montoBase: number;
-  moneda: "USD" | "ARS";
-  montoArs: number;
-  periodo: string;
-  linkPago: string;
-}) {
-  const { Resend } = await import("resend");
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  const from = `CLUBIO <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.com.ar"}>`;
-
-  const [anio, mes] = params.periodo.split("-");
-  const periodoLabel = `${mes}/${anio}`;
-  const montoLabel = params.moneda === "ARS"
-    ? `$ ${params.montoBase.toLocaleString("es-AR")}`
-    : `USD ${params.montoBase}`;
-
-  await resend.emails.send({
-    from,
-    to: params.emailContacto,
-    subject: `Renovación CLUBIO ${periodoLabel} — ${params.gymNombre}`,
-    html: clubioEmailHtml(`
-      <h2 style="margin:0 0 8px;color:#f9fafb;font-size:20px">Renovación de suscripción</h2>
-      <p style="color:#9ca3af;margin:0 0 20px;font-size:14px">Hola <strong style="color:#f9fafb">${params.gymNombre}</strong>, te enviamos el link para renovar tu suscripción a CLUBIO.</p>
-      ${clubioEmailTable([
-        ["Plan", params.plan],
-        ["Período", periodoLabel],
-        ["Monto", montoLabel],
-        ...(params.moneda === "USD" ? [["Monto ARS", `$ ${params.montoArs.toLocaleString("es-AR")}`] as [string, string]] : []),
-      ])}
-      <a href="${params.linkPago}"
-        style="display:inline-block;margin-top:8px;padding:12px 28px;background:#34d399;color:#030712;font-weight:800;font-size:15px;text-decoration:none;border-radius:8px;font-family:monospace;letter-spacing:0.05em">
-        PAGAR AHORA
-      </a>
-      <p style="color:#6b7280;font-size:12px;margin:16px 0 0">Si no podés hacer clic en el botón, copiá este link: <span style="color:#9ca3af">${params.linkPago}</span></p>
-    `),
-  }).catch((e) => console.error("[admin-suscripciones] email error:", e));
-}

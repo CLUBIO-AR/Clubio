@@ -171,7 +171,8 @@ export async function crearTenantAction(input: NuevoGymForm): Promise<CrearTenan
       data: { gymId: gym.id, ownerEmail: form.owner_email, password, loginUrl, emailEnviado },
     };
   } catch (e) {
-    // Rollback explícito — limpiar todo lo que llegó a crearse para este gym
+    // Rollback explícito — physical DELETE intencionalmente. Estos registros nunca estuvieron
+    // activos, por lo que no aplica la regla de soft-delete (que protege datos de clientes en uso).
     if (ownerId) {
       await admin.from("gym_usuarios").delete().eq("id", ownerId);
       await admin.auth.admin.deleteUser(ownerId);

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logCron } from "@/lib/cron-logger";
-import { clubioEmailHtml } from "@/lib/email/template";
+import { sendSuscripcionAvisoGym } from "@/lib/notifications/channels/email";
 
 // Días antes del vencimiento en los que enviar aviso preventivo
 // (independientes del link de cobro — son emails informativos)
@@ -18,10 +18,6 @@ export async function GET(request: Request) {
   const startTime = Date.now();
   const admin = createAdminClient();
   const hoy = new Date();
-
-  const { Resend } = await import("resend");
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  const from = `CLUBIO <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.com.ar"}>`;
 
   let enviados = 0;
   let saltados = 0;
@@ -48,35 +44,13 @@ export async function GET(request: Request) {
         day: "numeric", month: "long", year: "numeric",
       });
 
-      const urgencia = dias <= 3 ? "muy pronto" : dias <= 7 ? "pronto" : "próximamente";
-      const urgenciaColor = dias <= 3 ? "#f87171" : dias <= 7 ? "#f97316" : "#fbbf24";
-
       try {
-        await resend.emails.send({
-          from,
-          to: gym.email_contacto,
-          subject: `Tu suscripción CLUBIO vence en ${dias} día${dias !== 1 ? "s" : ""} — ${gym.nombre}`,
-          html: clubioEmailHtml(`
-            <h2 style="margin:0 0 8px;color:#f9fafb;font-size:20px">
-              Tu suscripción vence ${urgencia}
-            </h2>
-            <p style="color:#9ca3af;margin:0 0 20px;font-size:14px">
-              Hola <strong style="color:#f9fafb">${gym.nombre}</strong>, te avisamos que tu suscripción a CLUBIO vence
-              <strong style="color:${urgenciaColor}"> el ${vencimientoLabel}</strong> (en ${dias} día${dias !== 1 ? "s" : ""}).
-            </p>
-            <div style="background:#111827;border:1px solid #1f2937;border-radius:8px;padding:16px 20px;margin-bottom:20px">
-              <p style="margin:0;font-size:13px;color:#9ca3af">
-                Plan: <strong style="color:#f9fafb">${planLabel}</strong>
-              </p>
-              <p style="margin:8px 0 0;font-size:13px;color:#9ca3af">
-                Vencimiento: <strong style="color:${urgenciaColor}">${vencimientoLabel}</strong>
-              </p>
-            </div>
-            <p style="color:#9ca3af;font-size:13px;margin:0">
-              Recibirás el link de pago en los próximos días. Si ya lo recibiste, podés ignorar este mensaje.
-              Ante cualquier duda, respondé este email.
-            </p>
-          `),
+        await sendSuscripcionAvisoGym({
+          to:               gym.email_contacto,
+          gymNombre:        gym.nombre,
+          planLabel,
+          diasRestantes:    dias,
+          vencimientoLabel,
         });
         enviados++;
       } catch (e) {

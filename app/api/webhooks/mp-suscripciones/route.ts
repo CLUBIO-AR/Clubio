@@ -4,6 +4,42 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getMpPayment } from "@/lib/mercadopago";
 import { getAdminSettings } from "@/lib/admin/settings";
 
+async function validateMpSignature(
+  xSignature: string | null,
+  xRequestId: string | null,
+  dataId: string | undefined,
+): Promise<boolean> {
+  const secret = process.env.MP_WEBHOOK_SECRET;
+  if (!secret) {
+    console.error("[webhook:mp-suscripciones] MP_WEBHOOK_SECRET no configurado — rechazando");
+    return false;
+  }
+  if (!xSignature) return false;
+
+  const parts: Record<string, string> = {};
+  for (const part of xSignature.split(",")) {
+    const idx = part.indexOf("=");
+    if (idx !== -1) parts[part.slice(0, idx).trim()] = part.slice(idx + 1).trim();
+  }
+  const { ts, v1 } = parts;
+  if (!ts || !v1) return false;
+
+  const manifest = `id:${dataId ?? ""};request-id:${xRequestId ?? ""};ts:${ts};`;
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(manifest));
+  const computed = Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  return computed === v1;
+}
+
 export async function POST(request: Request) {
   let body: { type?: string; data?: { id?: string } };
   try {
@@ -11,6 +47,13 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
+
+  const valid = await validateMpSignature(
+    request.headers.get("x-signature"),
+    request.headers.get("x-request-id"),
+    body.data?.id ? String(body.data.id) : undefined,
+  );
+  if (!valid) return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
 
   // MP manda múltiples tipos de notificación — solo nos interesan pagos
   if (body.type !== "payment" || !body.data?.id) {

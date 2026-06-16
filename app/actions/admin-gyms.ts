@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { revalidatePath, updateTag } from "next/cache";
 import { requireSuperadmin, logAdminAction } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendPlanCambiadoEmail } from "@/lib/notifications/channels/email";
 
 type ActionResult<T = undefined> =
   | { ok: true; data: T }
@@ -48,29 +49,12 @@ export async function cambiarPlanAction(
   // Notificar al gym por email
   if (gymRes.data?.email_contacto) {
     const PLAN_LABELS: Record<string, string> = { basic: "Basic", multi: "Multi", plus: "Plus (legacy)" };
-    const { Resend } = await import("resend");
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    const from = `CLUBIO <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.com.ar"}>`;
-    const { clubioEmailHtml, clubioEmailTable } = await import("@/lib/email/template");
-
-    await resend.emails.send({
-      from,
-      to: gymRes.data.email_contacto,
-      subject: `Tu plan CLUBIO fue actualizado — ${gymRes.data.nombre}`,
-      html: clubioEmailHtml(`
-        <h2 style="margin:0 0 8px;color:#f9fafb;font-size:20px">Actualización de plan</h2>
-        <p style="color:#9ca3af;margin:0 0 20px;font-size:14px">
-          Hola <strong style="color:#f9fafb">${gymRes.data.nombre}</strong>, tu plan de suscripción a CLUBIO fue actualizado.
-        </p>
-        ${clubioEmailTable([
-          ["Nuevo plan", PLAN_LABELS[plan] ?? plan],
-          ...(motivo ? [["Motivo", motivo] as [string, string]] : []),
-        ])}
-        <p style="color:#6b7280;font-size:12px;margin:16px 0 0">
-          Si tenés alguna duda, respondé este email o contactate con soporte.
-        </p>
-      `),
-    }).catch((e) => console.error("[admin-gyms] email cambio-plan error:", e));
+    await sendPlanCambiadoEmail({
+      to:        gymRes.data.email_contacto,
+      gymNombre: gymRes.data.nombre,
+      plan:      PLAN_LABELS[plan] ?? plan,
+      motivo,
+    });
   }
 
   revalidatePath("/admin/gyms");

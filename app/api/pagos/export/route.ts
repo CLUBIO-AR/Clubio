@@ -2,15 +2,9 @@ import { NextResponse } from "next/server";
 import { requireGymContext } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import * as XLSX from "xlsx";
+import { METODO_LABEL } from "@/lib/constants";
 
 const MESES = ["", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-
-const METODO_LABEL: Record<string, string> = {
-  mercadopago:   "MercadoPago",
-  efectivo:      "Efectivo",
-  transferencia: "Transferencia",
-  otro:          "Otro",
-};
 
 const SIN_ACTIVIDAD = "__general__";
 

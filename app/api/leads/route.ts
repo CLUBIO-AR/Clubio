@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { clubioEmailHtml, clubioEmailTable } from "@/lib/email/template";
 import { getAdminSettings } from "@/lib/admin/settings";
+import { sendLeadNotifications } from "@/lib/notifications/channels/email";
 
 const LeadSchema = z.object({
   nombre: z.string().min(2),
@@ -38,6 +38,18 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
+
+  // Rate limit: un mismo email no puede enviar más de una solicitud cada 10 minutos.
+  const hace10min = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+  const { data: reciente } = await admin
+    .from("leads")
+    .select("id")
+    .eq("email", parsed.data.email)
+    .gte("created_at", hace10min)
+    .maybeSingle();
+  if (reciente) {
+    return NextResponse.json({ ok: true }, { status: 200, headers: CORS_HEADERS });
+  }
   const { error } = await admin.from("leads").insert({
     nombre: parsed.data.nombre,
     email: parsed.data.email,
@@ -52,46 +64,8 @@ export async function POST(request: Request) {
   }
 
   // El lead ya está guardado — un fallo de email no debe devolver error al usuario.
-  await enviarNotificacionesLead(parsed.data).catch(() => {});
+  const { notification_email } = await getAdminSettings();
+  await sendLeadNotifications({ notificationTo: notification_email, lead: parsed.data }).catch(() => {});
 
   return NextResponse.json({ ok: true }, { status: 201, headers: CORS_HEADERS });
-}
-
-// Reemplaza las notificaciones por email que antes mandaba Formspree (admin.tsx).
-async function enviarNotificacionesLead(lead: z.infer<typeof LeadSchema>) {
-  const from = `CLUBIO <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.com.ar"}>`;
-  const { Resend } = await import("resend");
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  const { notification_email } = await getAdminSettings();
-
-  await resend.emails.send({
-    from,
-    to: notification_email,
-    subject: `Nuevo lead: ${lead.gym_nombre ?? lead.nombre}`,
-    html: clubioEmailHtml(`
-      <h2 style="margin:0 0 16px;color:#f9fafb;font-size:20px">Nueva solicitud de demo — Landing</h2>
-      ${clubioEmailTable([
-        ["Nombre", lead.nombre],
-        ["Email", `<a href="mailto:${lead.email}" style="color:#34d399">${lead.email}</a>`],
-        ["Teléfono", lead.telefono],
-        ["Gimnasio", lead.gym_nombre],
-        ["Alumnos", lead.cantidad_alumnos],
-        ["Cómo nos conoció", lead.como_nos_conocio],
-      ])}
-    `),
-    replyTo: lead.email,
-  });
-
-  await resend.emails.send({
-    from,
-    to: lead.email,
-    subject: "Recibimos tu solicitud de demo — CLUBIO",
-    html: clubioEmailHtml(`
-      <h2 style="margin:0 0 12px;color:#f9fafb;font-size:20px">¡Listo, ${lead.nombre}!</h2>
-      <p style="color:#9ca3af;line-height:1.6;margin:0 0 16px">
-        Recibimos tu solicitud de demo${lead.gym_nombre ? ` para <strong style="color:#f9fafb">${lead.gym_nombre}</strong>` : ""}.
-        Te contactamos a tu WhatsApp dentro de las próximas <strong style="color:#f9fafb">24 horas</strong>.
-      </p>
-    `),
-  });
 }

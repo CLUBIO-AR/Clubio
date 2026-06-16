@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getApiGymContext } from "@/lib/supabase/api-auth";
 import { getMpPayment } from "@/lib/mercadopago";
 import { z } from "zod";
 
@@ -13,13 +13,8 @@ const Schema = z.object({
 // Endpoint para registrar manualmente un pago MP cuando el webhook no llega
 // (desarrollo local, o fallback manual del admin)
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { data: gymUsuario } = await supabase
-    .from("gym_usuarios").select("gym_id").eq("id", user.id).single();
-  if (!gymUsuario) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await getApiGymContext();
+  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
   const parsed = Schema.safeParse(body);
@@ -31,7 +26,7 @@ export async function POST(request: Request) {
   // Verificar que la cuota pertenece al gym
   const { data: cuota } = await admin
     .from("cuotas").select("id, alumno_id, monto_total, estado")
-    .eq("id", cuota_id).eq("gym_id", gymUsuario.gym_id).single();
+    .eq("id", cuota_id).eq("gym_id", ctx.gymId).single();
   if (!cuota) return NextResponse.json({ error: "Cuota no encontrada" }, { status: 404 });
   if (cuota.estado === "pagada") return NextResponse.json({ ok: true, ya_pagada: true });
 
@@ -42,7 +37,7 @@ export async function POST(request: Request) {
 
   // Obtener credenciales MP del gym
   const { data: gymConfig } = await admin
-    .from("gym_config").select("mp_access_token").eq("gym_id", gymUsuario.gym_id).single();
+    .from("gym_config").select("mp_access_token").eq("gym_id", ctx.gymId).single();
   const accessToken = gymConfig?.mp_access_token ?? process.env.MP_ACCESS_TOKEN;
   if (!accessToken) return NextResponse.json({ error: "MP no configurado" }, { status: 503 });
 
@@ -61,7 +56,7 @@ export async function POST(request: Request) {
   const monto = payment.transaction_amount ?? cuota.monto_total ?? 0;
 
   const { error: pagoError } = await admin.from("pagos").insert({
-    gym_id: gymUsuario.gym_id,
+    gym_id: ctx.gymId,
     cuota_id,
     alumno_id: cuota.alumno_id,
     monto,

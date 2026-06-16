@@ -1,3 +1,4 @@
+import { createHash } from "crypto";
 import { jwtVerify } from "jose";
 import { notFound, redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -66,20 +67,48 @@ export default async function PagarLotePage({
   }
 
   const montoTotal = pendientes.reduce((acc, c) => acc + (c.monto_total ?? 0), 0);
+  const pendienteIds = pendientes.map((c) => c.id);
 
-  const { data: lote, error: loteError } = await admin
+  // Hash determinístico para deduplicar inserts concurrentes del mismo link.
+  // Dos renders simultáneos producirían el mismo hash → el segundo falla con 23505
+  // y retomamos el lote ya creado por el primero.
+  const cuotaHash = createHash("sha256")
+    .update(`${payload.alumno_id}:${[...pendienteIds].sort().join(",")}`)
+    .digest("hex");
+
+  let loteId: string;
+
+  const { data: loteInsert, error: loteError } = await admin
     .from("cuota_lotes")
     .insert({
       gym_id:      payload.gym_id,
       alumno_id:   payload.alumno_id,
-      cuota_ids:   pendientes.map((c) => c.id),
+      cuota_ids:   pendienteIds,
+      cuota_hash:  cuotaHash,
       monto_total: montoTotal,
     })
     .select("id")
     .single();
 
-  if (loteError || !lote) {
+  if (loteError) {
+    if (loteError.code === "23505") {
+      // Render concurrente del mismo link — recuperar el lote ya creado
+      const { data: existing } = await admin
+        .from("cuota_lotes")
+        .select("id")
+        .eq("alumno_id", payload.alumno_id)
+        .eq("cuota_hash", cuotaHash)
+        .eq("estado", "pendiente")
+        .single();
+      if (!existing) return <ErrorPage mensaje="Error al procesar el pago. Intentá de nuevo." />;
+      loteId = existing.id;
+    } else {
+      return <ErrorPage mensaje="Error al procesar el pago. Intentá de nuevo." />;
+    }
+  } else if (!loteInsert) {
     return <ErrorPage mensaje="Error al procesar el pago. Intentá de nuevo." />;
+  } else {
+    loteId = loteInsert.id;
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
@@ -96,7 +125,7 @@ export default async function PagarLotePage({
         unit_price:  c.monto_total ?? 0,
         currency_id: "ARS",
       })),
-      external_reference: `lote-${lote.id}`,
+      external_reference: `lote-${loteId}`,
       statement_descriptor: "CLUBIO",
       ...(local ? {} : {
         notification_url: `${appUrl}/api/webhooks/mercadopago?gym_id=${payload.gym_id}`,
@@ -110,7 +139,7 @@ export default async function PagarLotePage({
     },
   });
 
-  await admin.from("cuota_lotes").update({ mp_preference_id: result.id }).eq("id", lote.id);
+  await admin.from("cuota_lotes").update({ mp_preference_id: result.id }).eq("id", loteId);
 
   redirect(result.init_point!);
 }

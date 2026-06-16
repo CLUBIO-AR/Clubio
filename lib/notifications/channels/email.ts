@@ -1,7 +1,8 @@
-// Canal email — ÚNICO lugar donde se importa Resend.
+// Canal email — ÚNICO punto de importación de Resend en todo el proyecto.
 // Nunca importar Resend fuera de este archivo.
 import type { NotificationPayload, GymNotificationConfig } from "../index";
 import { clubioEmailHtml, clubioEmailTable, emailAccentColor, type EmailBrand } from "@/lib/email/template";
+import { METODO_LABEL } from "@/lib/constants";
 
 export async function sendEmail(
   config: GymNotificationConfig & { gym_nombre?: string },
@@ -234,13 +235,6 @@ export async function sendEmailAvisosLote(params: {
 
 // ─── Notificaciones al owner del gym (no al alumno) ──────────────────────────
 
-const METODO_LABEL: Record<string, string> = {
-  mercadopago: "MercadoPago",
-  efectivo:    "Efectivo",
-  transferencia: "Transferencia",
-  otro:        "Otro",
-};
-
 export async function sendGymOwnerPagoRecibido(params: {
   to: string;
   gymNombre: string;
@@ -351,4 +345,263 @@ export async function sendGymOwnerResumenSemanal(params: {
 
   if (error || !data?.id) throw new Error(`Resend error: ${error?.message ?? "sin id"}`);
   return data.id;
+}
+
+// ─── Emails administrativos CLUBIO (no notificaciones de alumnos) ─────────────
+
+export async function sendGymTestEmail(params: {
+  to: string;
+  gymNombre: string;
+  from: string;
+}): Promise<string> {
+  const { Resend } = await import("resend");
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
+  const { data, error } = await resend.emails.send({
+    from: params.from,
+    to:   params.to,
+    subject: `[TEST] Configuración de email — ${escapeHtml(params.gymNombre)}`,
+    html: `
+      <p>Este es un email de prueba enviado desde <strong>${escapeHtml(params.gymNombre)}</strong> en CLUBIO.</p>
+      <p>Si recibiste este mensaje, la configuración de email está funcionando correctamente.</p>
+    `,
+  });
+
+  if (error || !data?.id) throw new Error(`Resend error: ${error?.message ?? "sin id"}`);
+  return data.id;
+}
+
+export async function sendLeadNotifications(params: {
+  notificationTo: string;
+  lead: {
+    nombre: string;
+    email: string;
+    telefono?: string;
+    gym_nombre?: string;
+    cantidad_alumnos?: string;
+    como_nos_conocio?: string;
+  };
+}): Promise<void> {
+  const { Resend } = await import("resend");
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const from = `CLUBIO <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.com.ar"}>`;
+  const { lead } = params;
+
+  await resend.emails.send({
+    from,
+    to:      params.notificationTo,
+    subject: `Nuevo lead: ${lead.gym_nombre ?? lead.nombre}`,
+    replyTo: lead.email,
+    html: clubioEmailHtml(`
+      <h2 style="margin:0 0 16px;color:#f9fafb;font-size:20px">Nueva solicitud de demo — Landing</h2>
+      ${clubioEmailTable([
+        ["Nombre",          lead.nombre],
+        ["Email",           `<a href="mailto:${lead.email}" style="color:#34d399">${lead.email}</a>`],
+        ["Teléfono",        lead.telefono],
+        ["Gimnasio",        lead.gym_nombre],
+        ["Alumnos",         lead.cantidad_alumnos],
+        ["Cómo nos conoció", lead.como_nos_conocio],
+      ])}
+    `),
+  });
+
+  await resend.emails.send({
+    from,
+    to:      lead.email,
+    subject: "Recibimos tu solicitud de demo — CLUBIO",
+    html: clubioEmailHtml(`
+      <h2 style="margin:0 0 12px;color:#f9fafb;font-size:20px">¡Listo, ${escapeHtml(lead.nombre)}!</h2>
+      <p style="color:#9ca3af;line-height:1.6;margin:0 0 16px">
+        Recibimos tu solicitud de demo${lead.gym_nombre ? ` para <strong style="color:#f9fafb">${escapeHtml(lead.gym_nombre)}</strong>` : ""}.
+        Te contactamos a tu WhatsApp dentro de las próximas <strong style="color:#f9fafb">24 horas</strong>.
+      </p>
+    `),
+  });
+}
+
+export async function sendSuscripcionVerificacionReport(params: {
+  to: string;
+  hoyStr: string;
+  vencidasRows: Array<{ gymNombre: string; plan: string; fechaVencimiento: string }>;
+  avisosRows: Array<{ gymNombre: string; plan: string; diasRestantes: number; fechaVencimiento: string }>;
+}): Promise<void> {
+  const { Resend } = await import("resend");
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const from = `CLUBIO <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.com.ar"}>`;
+
+  const vencidasHtml = params.vencidasRows.length > 0
+    ? `<h3 style="color:#f87171;margin:0 0 8px;font-size:15px">⛔ Licencias vencidas — gyms desactivados (${params.vencidasRows.length})</h3>
+       ${clubioEmailTable(params.vencidasRows.map((r) => [r.gymNombre, `Plan ${r.plan} · venció ${r.fechaVencimiento}`]))}` : "";
+
+  const avisosHtml = params.avisosRows.length > 0
+    ? `<h3 style="color:#fbbf24;margin:16px 0 8px;font-size:15px">⚠️ Licencias próximas a vencer (${params.avisosRows.length})</h3>
+       ${clubioEmailTable(params.avisosRows.map((r) => [r.gymNombre, `Plan ${r.plan} · vence en ${r.diasRestantes} día${r.diasRestantes !== 1 ? "s" : ""} (${r.fechaVencimiento})`]))}` : "";
+
+  await resend.emails.send({
+    from,
+    to: params.to,
+    subject: `Suscripciones CLUBIO — ${new Date().toLocaleDateString("es-AR")}: ${params.vencidasRows.length} vencidas, ${params.avisosRows.length} por vencer`,
+    html: clubioEmailHtml(`
+      <h2 style="margin:0 0 16px;color:#f9fafb;font-size:20px">Reporte diario de suscripciones</h2>
+      <p style="color:#9ca3af;margin:0 0 20px">${params.hoyStr}</p>
+      ${vencidasHtml}
+      ${avisosHtml}
+    `),
+  }).catch((e) => console.error("[verificar-suscripciones] email error:", e));
+}
+
+export async function sendCobroSuscripcionEmail(params: {
+  gymNombre: string;
+  emailContacto: string;
+  plan: string;
+  montoBase: number;
+  moneda: "USD" | "ARS";
+  montoArs: number;
+  periodo: string;
+  linkPago: string;
+}): Promise<void> {
+  const { Resend } = await import("resend");
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const from = `CLUBIO <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.com.ar"}>`;
+
+  const [anio, mes] = params.periodo.split("-");
+  const periodoLabel = `${mes}/${anio}`;
+  const montoLabel = params.moneda === "ARS"
+    ? `$ ${params.montoBase.toLocaleString("es-AR")}`
+    : `USD ${params.montoBase}`;
+
+  await resend.emails.send({
+    from,
+    to:      params.emailContacto,
+    subject: `Renovación CLUBIO ${periodoLabel} — ${params.gymNombre}`,
+    html: clubioEmailHtml(`
+      <h2 style="margin:0 0 8px;color:#f9fafb;font-size:20px">Renovación de suscripción</h2>
+      <p style="color:#9ca3af;margin:0 0 20px;font-size:14px">Hola <strong style="color:#f9fafb">${escapeHtml(params.gymNombre)}</strong>, te enviamos el link para renovar tu suscripción a CLUBIO.</p>
+      ${clubioEmailTable([
+        ["Plan",    params.plan],
+        ["Período", periodoLabel],
+        ["Monto",   montoLabel],
+        ...(params.moneda === "USD" ? [["Monto ARS", `$ ${params.montoArs.toLocaleString("es-AR")}`] as [string, string]] : []),
+      ])}
+      <a href="${params.linkPago}"
+        style="display:inline-block;margin-top:8px;padding:12px 28px;background:#34d399;color:#030712;font-weight:800;font-size:15px;text-decoration:none;border-radius:8px;font-family:monospace;letter-spacing:0.05em">
+        PAGAR AHORA
+      </a>
+      <p style="color:#6b7280;font-size:12px;margin:16px 0 0">Si no podés hacer clic en el botón, copiá este link: <span style="color:#9ca3af">${params.linkPago}</span></p>
+    `),
+  }).catch((e) => console.error("[sendCobroSuscripcionEmail] error:", e));
+}
+
+export async function sendSuscripcionAvisoGym(params: {
+  to: string;
+  gymNombre: string;
+  planLabel: string;
+  diasRestantes: number;
+  vencimientoLabel: string;
+}): Promise<void> {
+  const { Resend } = await import("resend");
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const from = `CLUBIO <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.com.ar"}>`;
+  const { dias: dias, vencimientoLabel, planLabel, gymNombre } = { dias: params.diasRestantes, ...params };
+
+  const urgencia = dias <= 3 ? "muy pronto" : dias <= 7 ? "pronto" : "próximamente";
+  const urgenciaColor = dias <= 3 ? "#f87171" : dias <= 7 ? "#f97316" : "#fbbf24";
+
+  await resend.emails.send({
+    from,
+    to: params.to,
+    subject: `Tu suscripción CLUBIO vence en ${dias} día${dias !== 1 ? "s" : ""} — ${gymNombre}`,
+    html: clubioEmailHtml(`
+      <h2 style="margin:0 0 8px;color:#f9fafb;font-size:20px">Tu suscripción vence ${urgencia}</h2>
+      <p style="color:#9ca3af;margin:0 0 20px;font-size:14px">
+        Hola <strong style="color:#f9fafb">${escapeHtml(gymNombre)}</strong>, te avisamos que tu suscripción a CLUBIO vence
+        <strong style="color:${urgenciaColor}"> el ${vencimientoLabel}</strong> (en ${dias} día${dias !== 1 ? "s" : ""}).
+      </p>
+      <div style="background:#111827;border:1px solid #1f2937;border-radius:8px;padding:16px 20px;margin-bottom:20px">
+        <p style="margin:0;font-size:13px;color:#9ca3af">Plan: <strong style="color:#f9fafb">${escapeHtml(planLabel)}</strong></p>
+        <p style="margin:8px 0 0;font-size:13px;color:#9ca3af">Vencimiento: <strong style="color:${urgenciaColor}">${vencimientoLabel}</strong></p>
+      </div>
+      <p style="color:#9ca3af;font-size:13px;margin:0">
+        Recibirás el link de pago en los próximos días. Si ya lo recibiste, podés ignorar este mensaje.
+        Ante cualquier duda, respondé este email.
+      </p>
+    `),
+  });
+}
+
+export async function sendRegistroSolicitudEmails(params: {
+  notificationTo: string;
+  nombreGym: string;
+  nombreContacto: string;
+  email: string;
+  telefono?: string;
+  ciudad?: string;
+  mensaje?: string;
+}): Promise<void> {
+  const { Resend } = await import("resend");
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const from = `CLUBIO <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.com.ar"}>`;
+
+  const { error: errAdmin } = await resend.emails.send({
+    from,
+    to:      params.notificationTo,
+    subject: `Nueva solicitud: ${params.nombreGym}`,
+    replyTo: params.email,
+    html: clubioEmailHtml(`
+      <h2 style="margin:0 0 16px;color:#f9fafb;font-size:20px">Nueva solicitud de registro</h2>
+      ${clubioEmailTable([
+        ["Gimnasio",  params.nombreGym],
+        ["Contacto",  params.nombreContacto],
+        ["Email",     `<a href="mailto:${params.email}" style="color:#34d399">${params.email}</a>`],
+        ["Teléfono",  params.telefono],
+        ["Ciudad",    params.ciudad],
+        ["Mensaje",   params.mensaje],
+      ])}
+    `),
+  });
+
+  if (errAdmin) throw new Error("Error al enviar. Por favor escribinos directamente.");
+
+  await resend.emails.send({
+    from,
+    to:      params.email,
+    subject: "Recibimos tu solicitud — CLUBIO",
+    html: clubioEmailHtml(`
+      <h2 style="margin:0 0 12px;color:#f9fafb;font-size:20px">Hola ${escapeHtml(params.nombreContacto)},</h2>
+      <p style="color:#9ca3af;line-height:1.6;margin:0 0 16px">
+        Recibimos la solicitud de <strong style="color:#f9fafb">${escapeHtml(params.nombreGym)}</strong> para sumarse a CLUBIO.
+        Vamos a revisarla y nos ponemos en contacto con vos en las próximas <strong style="color:#f9fafb">24–48hs</strong>.
+      </p>
+    `),
+  }).catch(() => {});
+}
+
+export async function sendPlanCambiadoEmail(params: {
+  to: string;
+  gymNombre: string;
+  plan: string;
+  motivo?: string;
+}): Promise<void> {
+  const { Resend } = await import("resend");
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const from = `CLUBIO <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.com.ar"}>`;
+
+  await resend.emails.send({
+    from,
+    to:      params.to,
+    subject: `Tu plan CLUBIO fue actualizado — ${params.gymNombre}`,
+    html: clubioEmailHtml(`
+      <h2 style="margin:0 0 8px;color:#f9fafb;font-size:20px">Actualización de plan</h2>
+      <p style="color:#9ca3af;margin:0 0 20px;font-size:14px">
+        Hola <strong style="color:#f9fafb">${escapeHtml(params.gymNombre)}</strong>, tu plan de suscripción a CLUBIO fue actualizado.
+      </p>
+      ${clubioEmailTable([
+        ["Nuevo plan", params.plan],
+        ...(params.motivo ? [["Motivo", params.motivo] as [string, string]] : []),
+      ])}
+      <p style="color:#6b7280;font-size:12px;margin:16px 0 0">
+        Si tenés alguna duda, respondé este email o contactate con soporte.
+      </p>
+    `),
+  }).catch((e) => console.error("[sendPlanCambiadoEmail] error:", e));
 }

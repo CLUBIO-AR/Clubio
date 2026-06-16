@@ -12,6 +12,7 @@ import { ADMIN_ACCENT } from "./AdminSidebar";
 import { AdminBadge } from "./AdminBadge";
 import { AdminPagination } from "./AdminPagination";
 import type { Json } from "@/types/database";
+import { METODO_LABEL as METODO_LABELS } from "@/lib/constants";
 
 type GymRef = { id: string; nombre: string };
 type AlumnoRef = { id: string; nombre: string; apellido: string } | null;
@@ -53,13 +54,6 @@ const METODO_OPTS = [
   { value: "transferencia", label: "Transferencia" },
   { value: "otro", label: "Otro" },
 ];
-
-const METODO_LABELS: Record<string, string> = {
-  mercadopago: "Mercado Pago",
-  efectivo: "Efectivo",
-  transferencia: "Transferencia",
-  otro: "Otro",
-};
 
 const inp: React.CSSProperties = { background: T.card, border: `1px solid ${T.border}`, color: T.text };
 const sel: React.CSSProperties = { background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" };

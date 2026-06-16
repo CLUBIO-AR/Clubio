@@ -3,6 +3,7 @@
 import { getGymContext } from "@/lib/supabase/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { sendGymTestEmail } from "@/lib/notifications/channels/email";
 
 type ActionResult<T = undefined> =
   | { ok: true; data: T }
@@ -61,23 +62,11 @@ export async function testEmailAction(
     ? `${gymConfig.email_remitente_nombre ?? gymNombre} <${gymConfig.email_remitente_address}>`
     : `${gymNombre} <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.com.ar"}>`;
 
-  const { Resend } = await import("resend");
-  const resend = new Resend(process.env.RESEND_API_KEY);
-
-  const { data: emailData, error } = await resend.emails.send({
-    from,
-    to: destination,
-    subject: `[TEST] Configuración de email — ${gymNombre}`,
-    html: `
-      <p>Este es un email de prueba enviado desde <strong>${gymNombre}</strong> en CLUBIO.</p>
-      <p>Si recibiste este mensaje, la configuración de email está funcionando correctamente.</p>
-      <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0"/>
-      <p style="color:#9ca3af;font-size:12px;">Gym ID: ${ctx.gymId}<br/>Enviado a: ${destination}</p>
-    `,
-  });
-
-  if (error || !emailData?.id) {
-    return { ok: false, error: error?.message ?? "Error desconocido de Resend" };
+  let messageId: string;
+  try {
+    messageId = await sendGymTestEmail({ to: destination, gymNombre, from });
+  } catch (e) {
+    return { ok: false, error: (e as Error).message ?? "Error al enviar email de prueba" };
   }
 
   const { error: logError } = await admin.from("notificaciones_log").insert({
@@ -85,9 +74,9 @@ export async function testEmailAction(
     tipo: "test",
     enviado_a: destination,
     estado: "enviado",
-    provider_id: emailData.id,
+    provider_id: messageId,
   });
   if (logError) console.error("[testEmailAction] notificaciones_log insert error:", logError.message);
 
-  return { ok: true, data: { message_id: emailData.id, to: destination, from } };
+  return { ok: true, data: { message_id: messageId, to: destination, from } };
 }

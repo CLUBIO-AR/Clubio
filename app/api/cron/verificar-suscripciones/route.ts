@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logCron } from "@/lib/cron-logger";
-import { clubioEmailHtml, clubioEmailTable } from "@/lib/email/template";
 import { getAdminSettings } from "@/lib/admin/settings";
+import { sendSuscripcionVerificacionReport } from "@/lib/notifications/channels/email";
 
 const AVISO_DIAS = [7, 3, 1];
 
@@ -33,10 +33,6 @@ export async function GET(request: Request) {
   let avisos = 0;
 
   const { notification_email } = await getAdminSettings();
-  const { Resend } = await import("resend");
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  const from = `CLUBIO <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.com.ar"}>`;
-
   const vencidasRows: Array<{ gymNombre: string; plan: string; fechaVencimiento: string }> = [];
   const avisosRows: Array<{ gymNombre: string; plan: string; diasRestantes: number; fechaVencimiento: string }> = [];
 
@@ -64,25 +60,7 @@ export async function GET(request: Request) {
 
   // Send consolidated email to superadmin if there's anything to report
   if (vencidasRows.length > 0 || avisosRows.length > 0) {
-    const vencidasHtml = vencidasRows.length > 0
-      ? `<h3 style="color:#f87171;margin:0 0 8px;font-size:15px">⛔ Licencias vencidas — gyms desactivados (${vencidasRows.length})</h3>
-         ${clubioEmailTable(vencidasRows.map((r) => [r.gymNombre, `Plan ${r.plan} · venció ${r.fechaVencimiento}`]))}` : "";
-
-    const avisosHtml = avisosRows.length > 0
-      ? `<h3 style="color:#fbbf24;margin:16px 0 8px;font-size:15px">⚠️ Licencias próximas a vencer (${avisosRows.length})</h3>
-         ${clubioEmailTable(avisosRows.map((r) => [r.gymNombre, `Plan ${r.plan} · vence en ${r.diasRestantes} día${r.diasRestantes !== 1 ? "s" : ""} (${r.fechaVencimiento})`]))}` : "";
-
-    await resend.emails.send({
-      from,
-      to: notification_email,
-      subject: `Suscripciones CLUBIO — ${new Date().toLocaleDateString("es-AR")}: ${vencidasRows.length} vencidas, ${avisosRows.length} por vencer`,
-      html: clubioEmailHtml(`
-        <h2 style="margin:0 0 16px;color:#f9fafb;font-size:20px">Reporte diario de suscripciones</h2>
-        <p style="color:#9ca3af;margin:0 0 20px">${hoyStr}</p>
-        ${vencidasHtml}
-        ${avisosHtml}
-      `),
-    }).catch((e) => console.error("[verificar-suscripciones] email error:", e));
+    await sendSuscripcionVerificacionReport({ to: notification_email, hoyStr, vencidasRows, avisosRows });
   }
 
   await logCron({

@@ -49,5 +49,5 @@ export async function POST(request: Request) {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "";
   const url = `${appUrl}/pagar/${token}`;
-  return NextResponse.json({ url, token });
+  return NextResponse.json({ url });
 }

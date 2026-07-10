@@ -20,6 +20,18 @@ export async function triggerCronAction(
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) return { ok: false, error: "CRON_SECRET no configurado" };
 
+  // Verificar que el gym tiene la feature habilitada en su licencia
+  const admin = createAdminClient();
+  if (tipo === "enviar_avisos") {
+    const { data: lic } = await admin
+      .from("licencias")
+      .select("feature_avisos")
+      .eq("gym_id", ctx.gymId)
+      .eq("activa", true)
+      .single();
+    if (!lic?.feature_avisos) return { ok: false, error: "Feature de avisos no habilitada en este plan" };
+  }
+
   const workerMap: Record<string, string> = {
     enviar_avisos:  `${appUrl}/api/cron/workers/enviar-avisos-gym`,
     generar_cuotas: `${appUrl}/api/cron/workers/generar-cuotas-gym`,

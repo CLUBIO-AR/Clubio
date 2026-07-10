@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getMpPayment } from "@/lib/mercadopago";
@@ -27,6 +28,10 @@ async function validateMpSignature(
   const { ts, v1 } = parts;
   if (!ts || !v1) return false;
 
+  // Rechazar requests con timestamp fuera de ±5 min para evitar replay attacks
+  const tsSeconds = parseInt(ts, 10);
+  if (isNaN(tsSeconds) || Math.abs(Date.now() / 1000 - tsSeconds) > 300) return false;
+
   const manifest = `id:${dataId ?? ""};request-id:${xRequestId ?? ""};ts:${ts};`;
   const key = await crypto.subtle.importKey(
     "raw",
@@ -40,7 +45,9 @@ async function validateMpSignature(
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 
-  return computed === v1;
+  // Comparación en tiempo constante para prevenir timing attacks
+  if (computed.length !== v1.length) return false;
+  return timingSafeEqual(Buffer.from(computed, "hex"), Buffer.from(v1, "hex"));
 }
 
 export async function POST(request: Request) {
@@ -121,50 +128,30 @@ export async function POST(request: Request) {
     if (lote.gym_id !== gymId) return NextResponse.json({ error: "Gym mismatch" }, { status: 403 });
     if (lote.estado === "pagado") return NextResponse.json({ ok: true, already_paid: true });
 
-    // Marcar el lote primero (deduplicación ante reintentos de MP)
-    await admin.from("cuota_lotes").update({
-      estado:        "pagado",
-      mp_payment_id: paymentId,
-      paid_at:       new Date().toISOString(),
-    }).eq("id", loteId);
+    // RPC atómica: marca el lote + inserta pagos + actualiza cuotas en una transacción
+    const { data: rpcResult, error: rpcError } = await admin.rpc("procesar_pago_lote", {
+      p_lote_id:    loteId,
+      p_payment_id: paymentId,
+      p_gym_id:     gymId,
+    });
 
-    // Marcar cada cuota pendiente como pagada
-    const { data: cuotasLote } = await admin
-      .from("cuotas")
-      .select("id, alumno_id, monto_total")
-      .in("id", lote.cuota_ids as string[])
-      .eq("gym_id", gymId)
-      .neq("estado", "pagada")
-      .neq("estado", "condonada");
-
-    const ahora = new Date().toISOString();
-    for (const c of cuotasLote ?? []) {
-      await admin.from("pagos").insert({
-        gym_id:        gymId,
-        cuota_id:      c.id,
-        alumno_id:     c.alumno_id,
-        monto:         c.monto_total ?? 0,
-        metodo:        "mercadopago",
-        mp_payment_id: paymentId,
-      });
-      await admin.from("cuotas").update({
-        estado:      "pagada",
-        fecha_pago:  ahora,
-        metodo_pago: "mercadopago",
-      }).eq("id", c.id);
+    if (rpcError) {
+      console.error("[webhook:mp] procesar_pago_lote error:", rpcError.message);
+      return NextResponse.json({ error: "Error procesando pago de lote" }, { status: 500 });
     }
 
-    if (lote.alumno_id && (cuotasLote ?? []).length > 0) {
+    const result = rpcResult?.[0];
+    if (result && result.alumno_id && result.cuotas_pagadas > 0) {
       notifyGymOwnerPago({
         gymId,
-        alumnoId:       lote.alumno_id,
+        alumnoId:       result.alumno_id,
         monto:          payment.transaction_amount ?? 0,
         metodo:         "mercadopago",
-        cantidadCuotas: (cuotasLote ?? []).length,
+        cantidadCuotas: result.cuotas_pagadas,
       }).catch(console.error);
     }
 
-    return NextResponse.json({ ok: true, lote_id: loteId, cuotas_pagadas: (cuotasLote ?? []).length });
+    return NextResponse.json({ ok: true, lote_id: loteId, cuotas_pagadas: result?.cuotas_pagadas ?? 0 });
   }
 
   // --- Pago de cuota individual ---

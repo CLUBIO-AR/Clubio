@@ -37,9 +37,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400, headers: CORS_HEADERS });
   }
 
-  const admin = createAdminClient();
+  // Extraer IP del request (Vercel pone x-forwarded-for)
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim()
+    ?? request.headers.get("x-real-ip")
+    ?? null;
 
-  // Rate limit: un mismo email no puede enviar más de una solicitud cada 10 minutos.
+  const admin = createAdminClient();
+  const hace1hora = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+
+  // Rate limit por IP: máx 5 solicitudes/hora desde la misma IP
+  if (ip) {
+    const { count } = await admin
+      .from("leads")
+      .select("id", { count: "exact", head: true })
+      .eq("ip", ip)
+      .gte("created_at", hace1hora);
+    if ((count ?? 0) >= 5) {
+      return NextResponse.json({ ok: true }, { status: 200, headers: CORS_HEADERS });
+    }
+  }
+
+  // Rate limit por email: un mismo email no puede enviar más de una solicitud cada 10 minutos.
   const hace10min = new Date(Date.now() - 10 * 60 * 1000).toISOString();
   const { data: reciente } = await admin
     .from("leads")
@@ -50,6 +68,7 @@ export async function POST(request: Request) {
   if (reciente) {
     return NextResponse.json({ ok: true }, { status: 200, headers: CORS_HEADERS });
   }
+
   const { error } = await admin.from("leads").insert({
     nombre: parsed.data.nombre,
     email: parsed.data.email,
@@ -57,6 +76,7 @@ export async function POST(request: Request) {
     gym_nombre: parsed.data.gym_nombre ?? null,
     cantidad_alumnos: parsed.data.cantidad_alumnos ?? null,
     como_nos_conocio: parsed.data.como_nos_conocio ?? null,
+    ip,
   });
 
   if (error) {

@@ -1,5 +1,6 @@
 // Planes válidos: basic | multi
-// Plan 'starter', 'pro' y 'plus' NO EXISTEN (plus eliminado junio 2026).
+// Plan 'plus' ELIMINADO junio 2026 — gyms legacy siguen activos con features de multi.
+// Plan 'starter' y 'pro' NO EXISTEN — si aparecen en código es un bug crítico.
 // Alumnos ILIMITADOS en todos los planes.
 export const PLAN_FEATURES = {
   basic: {
@@ -17,6 +18,21 @@ export const PLAN_FEATURES = {
     avisos_whatsapp:    false,
   },
   multi: {
+    max_sucursales:     5,
+    max_admins:         10,
+    alumnos:            Infinity,
+    cobros_automaticos: true,
+    avisos_email:       true,
+    pago_sin_login:     true,
+    portal_alumno:      true,
+    qr_asistencia:      true,
+    clases:             true,
+    reportes_avanzados: true,
+    branding_propio:    true,
+    avisos_whatsapp:    true,
+  },
+  // Gyms legacy con plan 'plus' (eliminado junio 2026) mantienen features equivalentes a multi
+  plus: {
     max_sucursales:     5,
     max_admins:         10,
     alumnos:            Infinity,

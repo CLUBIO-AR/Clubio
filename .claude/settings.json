@@ -41,7 +41,14 @@
       "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(JSON.stringify\\(p.devDependencies, null, 2\\)\\)\")",
       "Bash(npm install *)",
       "Bash(node -e \"require\\('xlsx'\\); console.log\\('ok'\\)\")",
-      "Bash(node -e \"const {z} = require\\('zod'\\); const r = z.string\\(\\).uuid\\(\\).safeParse\\('00000000-0000-0000-0002-000000000004'\\); console.log\\(JSON.stringify\\(r\\)\\)\")"
+      "Bash(node -e \"const {z} = require\\('zod'\\); const r = z.string\\(\\).uuid\\(\\).safeParse\\('00000000-0000-0000-0002-000000000004'\\); console.log\\(JSON.stringify\\(r\\)\\)\")",
+      "Bash(git diff *)",
+      "Bash(grep -rn \"auth !== \\\\`Bearer\" app/api/cron/ --include=\"*.ts\" -l)",
+      "Bash(cat -n app/api/pagos/generar-link/route.ts)",
+      "Bash(ls app/api/pagos/)",
+      "PowerShell(cd \"c:\\\\Git\\\\Clubio\\\\Clubio\"; npx tsc --noEmit 2>&1 | Where-Object { $_ -notmatch \"\\\\.next/\" } | Select-Object -First 30)",
+      "PowerShell(cd \"c:\\\\Git\\\\Clubio\\\\Clubio\"; npx tsc --noEmit 2>&1 | Where-Object { $_ -notmatch \"\\\\.next/\" } | Select-Object -First 20)",
+      "PowerShell(cd \"c:\\\\Git\\\\Clubio\\\\Clubio\"; npx tsc --noEmit 2>&1 | Where-Object { $_ -notmatch \"\\\\.next/\" })"
     ],
     "additionalDirectories": [
       "c:\\Git\\Clubio\\Clubio\\app\\pagar",

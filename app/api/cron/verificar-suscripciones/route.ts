@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
+import { updateTag } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logCron } from "@/lib/cron-logger";
 import { getAdminSettings } from "@/lib/admin/settings";
@@ -9,7 +9,7 @@ const AVISO_DIAS = [7, 3, 1];
 
 export async function GET(request: Request) {
   const auth = request.headers.get("Authorization");
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
       await admin.from("gyms").update({ activo: false }).eq("id", lic.gym_id);
       // Invalidar cache de sesión de todos los usuarios del gym para bloqueo inmediato
       const { data: usuariosGym } = await admin.from("gym_usuarios").select("id").eq("gym_id", lic.gym_id);
-      (usuariosGym ?? []).forEach((u) => revalidateTag(`gym-ctx-${u.id}`, {}));
+      (usuariosGym ?? []).forEach((u) => updateTag(`gym-ctx-${u.id}`));
       vencidasRows.push({ gymNombre, plan: lic.plan, fechaVencimiento: lic.fecha_vencimiento });
       vencidas++;
     } else if (AVISO_DIAS.includes(diasRestantes)) {

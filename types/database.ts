@@ -613,6 +613,7 @@ export type Database = {
           gym_id: string;
           alumno_id: string;
           cuota_ids: string[];
+          cuota_hash: string | null;
           mp_preference_id: string | null;
           mp_payment_id: string | null;
           estado: string;
@@ -625,6 +626,7 @@ export type Database = {
           gym_id: string;
           alumno_id: string;
           cuota_ids: string[];
+          cuota_hash?: string | null;
           mp_preference_id?: string | null;
           mp_payment_id?: string | null;
           estado?: string;
@@ -633,6 +635,7 @@ export type Database = {
           created_at?: string;
         };
         Update: {
+          cuota_hash?: string | null;
           mp_preference_id?: string | null;
           mp_payment_id?: string | null;
           estado?: string;
@@ -935,6 +938,7 @@ export type Database = {
           estado: string;
           notas: string | null;
           gym_id: string | null;
+          ip: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -949,6 +953,7 @@ export type Database = {
           estado?: string;
           notas?: string | null;
           gym_id?: string | null;
+          ip?: string | null;
         };
         Update: {
           estado?: string;
@@ -1006,6 +1011,24 @@ export type Database = {
       get_user_gym_id: {
         Args: Record<string, never>;
         Returns: string;
+      };
+      crear_gym_completo: {
+        Args: {
+          p_user_id: string;
+          p_nombre: string;
+          p_slug: string;
+          p_email: string;
+          p_nombre_admin: string;
+        };
+        Returns: string;
+      };
+      procesar_pago_lote: {
+        Args: {
+          p_lote_id: string;
+          p_payment_id: string;
+          p_gym_id: string;
+        };
+        Returns: Array<{ cuotas_pagadas: number; alumno_id: string }>;
       };
     };
     Enums: {

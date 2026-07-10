@@ -5,7 +5,7 @@ import { logCron } from "@/lib/cron-logger";
 // Dispatcher: llama al worker una vez por gym con licencia activa + feature_avisos
 export async function GET(request: Request) {
   const auth = request.headers.get("Authorization");
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

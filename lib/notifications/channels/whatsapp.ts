@@ -9,5 +9,5 @@ export async function sendWhatsApp(
   // TODO: implementar en MVP 2.5
   // El gym conecta su propio número Meta (CLUBIO no paga por mensajes).
   // Costo: ~USD 0.007/mensaje, lo paga el gym a Meta directamente.
-  throw new Error("WhatsApp no implementado aún. Disponible en plan Plus/Multi.");
+  throw new Error("WhatsApp no implementado aún. Disponible en plan Multi.");
 }

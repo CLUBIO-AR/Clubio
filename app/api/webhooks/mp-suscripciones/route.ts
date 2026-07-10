@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { updateTag } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -24,6 +25,10 @@ async function validateMpSignature(
   const { ts, v1 } = parts;
   if (!ts || !v1) return false;
 
+  // Rechazar requests con timestamp fuera de ±5 min para evitar replay attacks
+  const tsSeconds = parseInt(ts, 10);
+  if (isNaN(tsSeconds) || Math.abs(Date.now() / 1000 - tsSeconds) > 300) return false;
+
   const manifest = `id:${dataId ?? ""};request-id:${xRequestId ?? ""};ts:${ts};`;
   const key = await crypto.subtle.importKey(
     "raw",
@@ -37,7 +42,9 @@ async function validateMpSignature(
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 
-  return computed === v1;
+  // Comparación en tiempo constante para prevenir timing attacks
+  if (computed.length !== v1.length) return false;
+  return timingSafeEqual(Buffer.from(computed, "hex"), Buffer.from(v1, "hex"));
 }
 
 export async function POST(request: Request) {

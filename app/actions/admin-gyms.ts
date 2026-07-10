@@ -167,6 +167,9 @@ export async function cambiarRolGymUsuarioAction(
   const { error } = await admin.from("gym_usuarios").update({ rol }).eq("id", usuarioId).eq("gym_id", gymId);
   if (error) return { ok: false, error: error.message };
 
+  // Invalidar cache de sesión para que el nuevo rol sea efectivo de inmediato
+  updateTag(`gym-ctx-${usuarioId}`);
+
   await logAdminAction(ctx.adminId, "gym_usuario_rol_cambiado", gymId, { usuario_id: usuarioId, rol });
   revalidatePath(`/admin/gyms/${gymId}`);
   return { ok: true, data: undefined };

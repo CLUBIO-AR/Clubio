@@ -60,7 +60,18 @@ export const getGymContext = cache(async () => {
 });
 
 export async function requireGymContext() {
-  const ctx = await getGymContext();
-  if (!ctx) redirect("/login");
-  return ctx;
+  const user = await getUser();
+  if (!user) redirect("/login");
+
+  const data = await _getCachedGymCtx(user.id);
+  // Hay sesión pero el gym está suspendido o el usuario fue desactivado
+  if (!data) redirect("/login?suspended=1");
+
+  return {
+    user,
+    gymId: data.gym_id,
+    nombre: data.nombre,
+    rol: data.rol,
+    gymNombre: data.gymNombre,
+  };
 }

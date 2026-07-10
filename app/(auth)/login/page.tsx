@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Zap } from "lucide-react";
+import { Loader2, Zap, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { T } from "@/lib/theme";
 
@@ -13,6 +13,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") ?? "/dashboard";
+  const suspended = searchParams.get("suspended") === "1";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +61,23 @@ function LoginForm() {
             Accedé al panel de gestión de tu gimnasio
           </p>
         </div>
+
+        {/* Banner suscripción vencida */}
+        {suspended && (
+          <div className="mb-6 px-4 py-4 rounded-xl flex gap-3 items-start text-sm" style={{ background: `${T.warning}12`, border: `1px solid ${T.warning}40` }}>
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: T.warning }} />
+            <div style={{ color: T.text }}>
+              <p className="font-semibold mb-0.5">Tu suscripción venció</p>
+              <p style={{ color: T.textMuted }}>
+                El acceso está suspendido. Contactate con{" "}
+                <a href="mailto:hola@clubio.com.ar" className="underline underline-offset-2" style={{ color: T.accent }}>
+                  hola@clubio.com.ar
+                </a>{" "}
+                para renovar y retomar.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Card */}
         <div className="rounded-2xl p-7 space-y-5" style={{ background: T.card, border: `1px solid ${T.border}` }}>

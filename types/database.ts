@@ -231,6 +231,7 @@ export type Database = {
           generar_cuota_al_alta: boolean;
           cuota_alta_proporcional: boolean;
           dias_minimos_para_cuota_alta: number;
+          dias_mora_desactivacion: number | null;
           color_primario: string;
           color_secundario: string;
           created_at: string;
@@ -263,6 +264,7 @@ export type Database = {
           generar_cuota_al_alta?: boolean;
           cuota_alta_proporcional?: boolean;
           dias_minimos_para_cuota_alta?: number;
+          dias_mora_desactivacion?: number | null;
           color_primario?: string;
           color_secundario?: string;
         };
@@ -291,6 +293,7 @@ export type Database = {
           generar_cuota_al_alta?: boolean;
           cuota_alta_proporcional?: boolean;
           dias_minimos_para_cuota_alta?: number;
+          dias_mora_desactivacion?: number | null;
           color_primario?: string;
           color_secundario?: string;
           updated_at?: string;
@@ -355,6 +358,7 @@ export type Database = {
           fecha_alta: string;
           fecha_baja: string | null;
           activo: boolean;
+          desactivado_por_mora: boolean;
           auth_user_id: string | null;
           monto_cuota_personalizado: number | null;
           notas: string | null;
@@ -375,6 +379,7 @@ export type Database = {
           fecha_alta?: string;
           fecha_baja?: string | null;
           activo?: boolean;
+          desactivado_por_mora?: boolean;
           auth_user_id?: string | null;
           monto_cuota_personalizado?: number | null;
           notas?: string | null;
@@ -390,6 +395,7 @@ export type Database = {
           fecha_alta?: string;
           fecha_baja?: string | null;
           activo?: boolean;
+          desactivado_por_mora?: boolean;
           auth_user_id?: string | null;
           monto_cuota_personalizado?: number | null;
           notas?: string | null;
@@ -520,6 +526,7 @@ export type Database = {
           fecha_vencimiento: string;
           recargo_aplicado_en: string | null;
           recargo_nivel: number | null;
+          desactivo_alumno: boolean;
           mp_preference_id: string | null;
           mp_payment_id: string | null;
           fecha_pago: string | null;
@@ -550,6 +557,7 @@ export type Database = {
           fecha_vencimiento: string;
           recargo_aplicado_en?: string | null;
           recargo_nivel?: number | null;
+          desactivo_alumno?: boolean;
           mp_preference_id?: string | null;
           mp_payment_id?: string | null;
           fecha_pago?: string | null;
@@ -571,6 +579,7 @@ export type Database = {
           fecha_vencimiento?: string;
           recargo_aplicado_en?: string | null;
           recargo_nivel?: number | null;
+          desactivo_alumno?: boolean;
           mp_preference_id?: string | null;
           mp_payment_id?: string | null;
           fecha_pago?: string | null;

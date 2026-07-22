@@ -41,6 +41,12 @@ const TIPOS = [
   },
 ] as const;
 
+const HOY = new Date();
+const PERIODO_ACTUAL = { mes: HOY.getMonth() + 1, anio: HOY.getFullYear() };
+const MES_SIGUIENTE_DATE = new Date(HOY.getFullYear(), HOY.getMonth() + 1, 1);
+const PERIODO_SIGUIENTE = { mes: MES_SIGUIENTE_DATE.getMonth() + 1, anio: MES_SIGUIENTE_DATE.getFullYear() };
+const NOMBRES_MES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
 export function CronsActions() {
   const [loading, setLoading] = useState<string | null>(null);
   const [results, setResults] = useState<Record<string, TriggerResult>>({});
@@ -48,11 +54,15 @@ export function CronsActions() {
   const [testEmail, setTestEmail] = useState("");
   const [testEmailResult, setTestEmailResult] = useState<TestEmailResult | null>(null);
   const [testEmailLoading, setTestEmailLoading] = useState(false);
+  const [periodoCuotas, setPeriodoCuotas] = useState<"actual" | "siguiente">("actual");
 
   async function trigger(tipo: "enviar_avisos" | "generar_cuotas") {
     setLoading(tipo);
     try {
-      const result = await triggerCronAction(tipo);
+      const periodo = tipo === "generar_cuotas"
+        ? (periodoCuotas === "siguiente" ? PERIODO_SIGUIENTE : PERIODO_ACTUAL)
+        : undefined;
+      const result = await triggerCronAction(tipo, periodo);
       setResults((prev) => ({
         ...prev,
         [tipo]: {
@@ -127,6 +137,27 @@ export function CronsActions() {
                       <p className="text-xs mt-0.5" style={{ color: T.textDim }}>{desc}</p>
                     </div>
                   </div>
+
+                  {key === "generar_cuotas" && (
+                    <div className="flex rounded-lg overflow-hidden" style={{ border: `1px solid ${T.border}` }}>
+                      {(["actual", "siguiente"] as const).map((opt) => (
+                        <button
+                          key={opt}
+                          onClick={() => setPeriodoCuotas(opt)}
+                          className="flex-1 h-8 text-[11px] font-bold uppercase tracking-wide transition-colors"
+                          style={{
+                            background: periodoCuotas === opt ? `${color}20` : "transparent",
+                            color: periodoCuotas === opt ? color : T.textDim,
+                            fontFamily: "var(--font-barlow-condensed)",
+                          }}
+                        >
+                          {opt === "actual"
+                            ? `${NOMBRES_MES[PERIODO_ACTUAL.mes - 1]} (actual)`
+                            : `${NOMBRES_MES[PERIODO_SIGUIENTE.mes - 1]} (simular)`}
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                   <button
                     onClick={() => trigger(key)}

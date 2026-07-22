@@ -228,6 +228,25 @@ export async function generarCuotaAlta(
     .eq("id", alumnoId)
     .single();
 
+  const { data: actividadesActivas } = await supabase
+    .from("alumno_actividades")
+    .select("actividad_id, fecha_inicio")
+    .eq("alumno_id", alumnoId)
+    .eq("gym_id", gymId)
+    .eq("activa", true);
+
+  const hoyStr = hoy.toISOString().split("T")[0];
+  const actividadesVigentes = (actividadesActivas ?? []).filter(
+    (a) => !a.fecha_inicio || a.fecha_inicio <= hoyStr
+  );
+
+  if (!actividadesActivas?.length) {
+    return { generada: false, motivo: "sin_actividad" };
+  }
+  if (!actividadesVigentes.length) {
+    return { generada: false, motivo: "fecha_inicio_futura" };
+  }
+
   const montoBase = alumno?.monto_cuota_personalizado ?? config.monto_base_defecto ?? 0;
   if (!montoBase) {
     return { generada: false, motivo: "monto_cero" };
@@ -294,14 +313,19 @@ export async function generarCuotasMes(
   const fechaVto = `${anio}-${String(mes).padStart(2, "0")}-${String(diaVto).padStart(2, "0")}`;
 
   // Precargar todas las inscripciones activas del gym en una sola query (evita N+1)
+  const finDePeriodo = new Date(anio, mes, 0).toISOString().split("T")[0];
+
   const { data: todasInscripciones } = await supabase
     .from("alumno_actividades")
-    .select("alumno_id, actividad_id, monto_personalizado, actividades(monto_base)")
+    .select("alumno_id, actividad_id, monto_personalizado, fecha_inicio, actividades(monto_base)")
     .eq("gym_id", gymId)
     .eq("activa", true);
 
+  const alumnosConActividad = new Set<string>();
   const inscripcionesPorAlumno = new Map<string, NonNullable<typeof todasInscripciones>>();
   for (const ins of todasInscripciones ?? []) {
+    alumnosConActividad.add(ins.alumno_id);
+    if (ins.fecha_inicio && ins.fecha_inicio > finDePeriodo) continue; // actividad arranca después del período a facturar
     const list = inscripcionesPorAlumno.get(ins.alumno_id) ?? [];
     list.push(ins);
     inscripcionesPorAlumno.set(ins.alumno_id, list);
@@ -311,6 +335,11 @@ export async function generarCuotasMes(
 
   for (const alumno of alumnos) {
     const inscripciones = inscripcionesPorAlumno.get(alumno.id) ?? [];
+
+    if (alumnosConActividad.has(alumno.id) && inscripciones.length === 0) {
+      // Todas sus actividades arrancan después de este período: no facturar todavía
+      continue;
+    }
 
     if (inscripciones.length > 0) {
       // Generar una cuota por cada actividad
@@ -370,56 +399,106 @@ export async function aplicarRecargosGym(
     .eq("estado", "pendiente")
     .lt("fecha_vencimiento", hoy);
 
-  // 2. Obtener config de recargos
+  // 2. Obtener config de recargos y de desactivación por mora
   const { data: config } = await supabase
     .from("gym_config")
-    .select("recargo_1_dias, recargo_1_porcentaje, recargo_2_dias, recargo_2_porcentaje")
+    .select("recargo_1_dias, recargo_1_porcentaje, recargo_2_dias, recargo_2_porcentaje, dias_mora_desactivacion")
     .eq("gym_id", gymId)
     .single();
 
-  if (!config?.recargo_1_dias) return;
-
-  // 3. Cuotas vencidas sin recargo nivel 1
-  const { data: vencidas1 } = await supabase
-    .from("cuotas")
-    .select("id, monto_base, fecha_vencimiento, recargo_nivel")
-    .eq("gym_id", gymId)
-    .eq("estado", "vencida")
-    .or("recargo_nivel.is.null,recargo_nivel.lt.1");
-
-  for (const c of vencidas1 ?? []) {
-    const diasVencida = Math.floor(
-      (Date.now() - new Date(c.fecha_vencimiento).getTime()) / 86_400_000
-    );
-    if (diasVencida >= config.recargo_1_dias) {
-      await supabase.from("cuotas").update({
-        monto_recargo: (c.monto_base * config.recargo_1_porcentaje) / 100,
-        recargo_nivel: 1,
-        recargo_aplicado_en: new Date().toISOString(),
-      }).eq("id", c.id);
-    }
-  }
-
-  // 4. Recargo nivel 2 (si configurado)
-  if (config.recargo_2_dias && config.recargo_2_porcentaje) {
-    const { data: vencidas2 } = await supabase
+  if (config?.recargo_1_dias) {
+    // 3. Cuotas vencidas sin recargo nivel 1
+    const { data: vencidas1 } = await supabase
       .from("cuotas")
       .select("id, monto_base, fecha_vencimiento, recargo_nivel")
       .eq("gym_id", gymId)
       .eq("estado", "vencida")
-      .eq("recargo_nivel", 1);
+      .or("recargo_nivel.is.null,recargo_nivel.lt.1");
 
-    for (const c of vencidas2 ?? []) {
+    for (const c of vencidas1 ?? []) {
       const diasVencida = Math.floor(
         (Date.now() - new Date(c.fecha_vencimiento).getTime()) / 86_400_000
       );
-      if (diasVencida >= config.recargo_2_dias!) {
+      if (diasVencida >= config.recargo_1_dias) {
         await supabase.from("cuotas").update({
-          monto_recargo: (c.monto_base * config.recargo_2_porcentaje!) / 100,
-          recargo_nivel: 2,
+          monto_recargo: (c.monto_base * config.recargo_1_porcentaje) / 100,
+          recargo_nivel: 1,
           recargo_aplicado_en: new Date().toISOString(),
         }).eq("id", c.id);
       }
     }
+
+    // 4. Recargo nivel 2 (si configurado)
+    if (config.recargo_2_dias && config.recargo_2_porcentaje) {
+      const { data: vencidas2 } = await supabase
+        .from("cuotas")
+        .select("id, monto_base, fecha_vencimiento, recargo_nivel")
+        .eq("gym_id", gymId)
+        .eq("estado", "vencida")
+        .eq("recargo_nivel", 1);
+
+      for (const c of vencidas2 ?? []) {
+        const diasVencida = Math.floor(
+          (Date.now() - new Date(c.fecha_vencimiento).getTime()) / 86_400_000
+        );
+        if (diasVencida >= config.recargo_2_dias!) {
+          await supabase.from("cuotas").update({
+            monto_recargo: (c.monto_base * config.recargo_2_porcentaje!) / 100,
+            recargo_nivel: 2,
+            recargo_aplicado_en: new Date().toISOString(),
+          }).eq("id", c.id);
+        }
+      }
+    }
+  }
+
+  // 5. Desactivación automática de alumnos morosos (si el gym la configuró)
+  if (config?.dias_mora_desactivacion) {
+    const { data: candidatas } = await supabase
+      .from("cuotas")
+      .select("id, alumno_id, fecha_vencimiento")
+      .eq("gym_id", gymId)
+      .eq("estado", "vencida")
+      .eq("desactivo_alumno", false);
+
+    for (const c of candidatas ?? []) {
+      const diasVencida = Math.floor(
+        (Date.now() - new Date(c.fecha_vencimiento).getTime()) / 86_400_000
+      );
+      if (diasVencida < config.dias_mora_desactivacion) continue;
+
+      const { data: alumno } = await supabase
+        .from("alumnos")
+        .select("activo")
+        .eq("id", c.alumno_id)
+        .single();
+
+      if (alumno?.activo) {
+        await supabase.from("alumnos")
+          .update({ activo: false, desactivado_por_mora: true })
+          .eq("id", c.alumno_id);
+      }
+      // Marcamos la cuota igual, esté o no ya inactivo el alumno, para no re-evaluarla en cada corrida.
+      await supabase.from("cuotas").update({ desactivo_alumno: true }).eq("id", c.id);
+    }
+  }
+}
+
+// --- Reactivación automática al pagar (solo si la baja fue por mora, no manual) ---
+
+export async function reactivarAlumnoSiCorresponde(
+  supabase: SupabaseClient<Database>,
+  alumnoId: string
+) {
+  const { data: alumno } = await supabase
+    .from("alumnos")
+    .select("desactivado_por_mora")
+    .eq("id", alumnoId)
+    .single();
+
+  if (alumno?.desactivado_por_mora) {
+    await supabase.from("alumnos")
+      .update({ activo: true, desactivado_por_mora: false })
+      .eq("id", alumnoId);
   }
 }

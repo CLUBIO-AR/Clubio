@@ -48,7 +48,9 @@
       "Bash(ls app/api/pagos/)",
       "PowerShell(cd \"c:\\\\Git\\\\Clubio\\\\Clubio\"; npx tsc --noEmit 2>&1 | Where-Object { $_ -notmatch \"\\\\.next/\" } | Select-Object -First 30)",
       "PowerShell(cd \"c:\\\\Git\\\\Clubio\\\\Clubio\"; npx tsc --noEmit 2>&1 | Where-Object { $_ -notmatch \"\\\\.next/\" } | Select-Object -First 20)",
-      "PowerShell(cd \"c:\\\\Git\\\\Clubio\\\\Clubio\"; npx tsc --noEmit 2>&1 | Where-Object { $_ -notmatch \"\\\\.next/\" })"
+      "PowerShell(cd \"c:\\\\Git\\\\Clubio\\\\Clubio\"; npx tsc --noEmit 2>&1 | Where-Object { $_ -notmatch \"\\\\.next/\" })",
+      "Bash(git stash *)",
+      "Bash(npx eslint *)"
     ],
     "additionalDirectories": [
       "c:\\Git\\Clubio\\Clubio\\app\\pagar",

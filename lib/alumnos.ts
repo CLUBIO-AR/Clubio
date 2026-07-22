@@ -130,9 +130,16 @@ export async function updateAlumno(
   alumnoId: string,
   data: AlumnoUpdate
 ) {
+  // Reactivación manual: limpiamos el flag de mora para que no vuelva a
+  // desactivarse solo por la misma cuota ya vencida en la próxima corrida del cron.
+  const payload: AlumnoUpdate & { desactivado_por_mora?: boolean } = { ...data };
+  if (data.activo === true) {
+    payload.desactivado_por_mora = false;
+  }
+
   return supabase
     .from("alumnos")
-    .update(data)
+    .update(payload)
     .eq("id", alumnoId)
     .eq("gym_id", gymId)
     .is("deleted_at", null)

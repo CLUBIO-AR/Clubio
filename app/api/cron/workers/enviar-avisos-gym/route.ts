@@ -51,9 +51,10 @@ export async function POST(request: Request) {
     .from("cuotas")
     .select(`
       id, alumno_id, mes, anio, monto_total, estado, fecha_vencimiento, avisos_enviados,
-      alumnos!alumno_id(nombre, email, telefono)
+      alumnos!inner(nombre, email, telefono, activo)
     `)
     .eq("gym_id", gym_id)
+    .eq("alumnos.activo", true)
     .in("estado", ["pendiente", "vencida"])
     .or(
       `and(estado.eq.pendiente,fecha_vencimiento.lte.${limiteStr}),` +

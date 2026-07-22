@@ -24,10 +24,10 @@ describe("generarCuotasMes — dataset de escenarios del cron mensual", () => {
   it("a. alumno con actividades activas → genera una cuota por cada actividad inscripta", async () => {
     const alumno = { id: "alumno-1", monto_cuota_personalizado: null };
     const inscripcionConPersonalizado = {
-      actividad_id: "act-1", monto_personalizado: 9000, actividades: { monto_base: 8000 },
+      alumno_id: "alumno-1", actividad_id: "act-1", monto_personalizado: 9000, fecha_inicio: null, actividades: { monto_base: 8000 },
     };
     const inscripcionSinPersonalizado = {
-      actividad_id: "act-2", monto_personalizado: null, actividades: { monto_base: 6000 },
+      alumno_id: "alumno-1", actividad_id: "act-2", monto_personalizado: null, fecha_inicio: null, actividades: { monto_base: 6000 },
     };
 
     const configChain = chain({ data: CONFIG_BASE, error: null });
@@ -140,6 +140,57 @@ describe("generarCuotasMes — dataset de escenarios del cron mensual", () => {
     const result = await generarCuotasMes({ from: fromMock } as never, "gym-uuid", 6, 2026);
 
     expect(result).toEqual({ creadas: 0, error: "Sin configuración" });
+  });
+
+  it("h. actividad con fecha_inicio futura (posterior al período) → no genera cuota para ese mes ni cae en flujo legacy", async () => {
+    const alumno = { id: "alumno-5", monto_cuota_personalizado: null };
+    const inscripcionFutura = {
+      alumno_id: "alumno-5", actividad_id: "act-1", monto_personalizado: null, fecha_inicio: "2026-08-01",
+      actividades: { monto_base: 10000 },
+    };
+
+    const configChain = chain({ data: CONFIG_BASE, error: null });
+    const alumnosChain = chain({ data: [alumno], error: null });
+    const actividadesChain = chain({ data: [inscripcionFutura], error: null });
+    const insertSpy = vi.fn().mockResolvedValue({ error: null });
+
+    // Generando cuotas de julio 2026 (período previo al fecha_inicio de agosto)
+    const fromMock = vi.fn()
+      .mockReturnValueOnce(configChain)
+      .mockReturnValueOnce(alumnosChain)
+      .mockReturnValueOnce(actividadesChain)
+      .mockReturnValueOnce({ insert: insertSpy });
+
+    const { generarCuotasMes } = await import("@/lib/cuotas");
+    const result = await generarCuotasMes({ from: fromMock } as never, "gym-uuid", 7, 2026);
+
+    expect(result).toEqual({ creadas: 0, error: null });
+    expect(insertSpy).not.toHaveBeenCalled();
+  });
+
+  it("i. actividad con fecha_inicio dentro del período (agosto) → genera cuota al correr el cron de agosto", async () => {
+    const alumno = { id: "alumno-5", monto_cuota_personalizado: null };
+    const inscripcionVigente = {
+      alumno_id: "alumno-5", actividad_id: "act-1", monto_personalizado: null, fecha_inicio: "2026-08-01",
+      actividades: { monto_base: 10000 },
+    };
+
+    const configChain = chain({ data: CONFIG_BASE, error: null });
+    const alumnosChain = chain({ data: [alumno], error: null });
+    const actividadesChain = chain({ data: [inscripcionVigente], error: null });
+    const insertSpy = vi.fn().mockResolvedValue({ error: null });
+
+    const fromMock = vi.fn()
+      .mockReturnValueOnce(configChain)
+      .mockReturnValueOnce(alumnosChain)
+      .mockReturnValueOnce(actividadesChain)
+      .mockReturnValueOnce({ insert: insertSpy });
+
+    const { generarCuotasMes } = await import("@/lib/cuotas");
+    const result = await generarCuotasMes({ from: fromMock } as never, "gym-uuid", 8, 2026);
+
+    expect(result).toEqual({ creadas: 1, error: null });
+    expect(insertSpy.mock.calls[0]?.[0]).toMatchObject({ actividad_id: "act-1", monto_base: 10000, mes: 8, anio: 2026 });
   });
 
   it("g. gym sin alumnos activos → no genera nada", async () => {

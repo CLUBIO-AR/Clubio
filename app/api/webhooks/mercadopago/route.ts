@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getMpPayment } from "@/lib/mercadopago";
 import { notifyGymOwnerPago } from "@/lib/notifications/gym-owner";
+import { reactivarAlumnoSiCorresponde } from "@/lib/cuotas";
 
 // MercadoPago envía notificaciones tipo "payment" a esta URL.
 // La URL se configura en la preference como notification_url.
@@ -142,6 +143,7 @@ export async function POST(request: Request) {
 
     const result = rpcResult?.[0];
     if (result && result.alumno_id && result.cuotas_pagadas > 0) {
+      reactivarAlumnoSiCorresponde(admin, result.alumno_id).catch(console.error);
       notifyGymOwnerPago({
         gymId,
         alumnoId:       result.alumno_id,
@@ -195,6 +197,8 @@ export async function POST(request: Request) {
     fecha_pago:  new Date().toISOString(),
     metodo_pago: "mercadopago",
   }).eq("id", cuotaId);
+
+  reactivarAlumnoSiCorresponde(admin, cuota.alumno_id).catch(console.error);
 
   notifyGymOwnerPago({
     gymId,

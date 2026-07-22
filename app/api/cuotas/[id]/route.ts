@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getApiGymContext } from "@/lib/supabase/api-auth";
-import { getCuotaById, marcarPagadaManual, condonarCuota, CuotaUpdateSchema } from "@/lib/cuotas";
+import { getCuotaById, marcarPagadaManual, condonarCuota, reactivarAlumnoSiCorresponde, CuotaUpdateSchema } from "@/lib/cuotas";
 import { notifyGymOwnerPago } from "@/lib/notifications/gym-owner";
 
 export async function GET(
@@ -54,6 +54,7 @@ export async function PATCH(
         .eq("gym_id", ctx.gymId)
         .single();
       if (!c) return;
+      reactivarAlumnoSiCorresponde(supabase, c.alumno_id).catch(console.error);
       notifyGymOwnerPago({
         gymId:    ctx.gymId,
         alumnoId: c.alumno_id,

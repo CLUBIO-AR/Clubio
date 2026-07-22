@@ -10,7 +10,8 @@ type ActionResult<T = undefined> =
   | { ok: false; error: string };
 
 export async function triggerCronAction(
-  tipo: "enviar_avisos" | "generar_cuotas"
+  tipo: "enviar_avisos" | "generar_cuotas",
+  periodo?: { mes: number; anio: number }
 ): Promise<ActionResult<{ enviados?: number; creadas?: number }>> {
   const ctx = await getGymContext();
   if (!ctx) return { ok: false, error: "Unauthorized" };
@@ -43,7 +44,11 @@ export async function triggerCronAction(
       "Content-Type": "application/json",
       Authorization: `Bearer ${cronSecret}`,
     },
-    body: JSON.stringify({ gym_id: ctx.gymId }),
+    body: JSON.stringify(
+      tipo === "generar_cuotas" && periodo
+        ? { gym_id: ctx.gymId, mes: periodo.mes, anio: periodo.anio }
+        : { gym_id: ctx.gymId }
+    ),
   });
 
   const data = await res.json().catch(() => ({}));

@@ -61,6 +61,7 @@ export default async function ConfiguracionPage() {
         recargo1Porcentaje={config?.recargo_1_porcentaje ?? 10}
         recargo2Dias={config?.recargo_2_dias ?? null}
         recargo2Porcentaje={config?.recargo_2_porcentaje ?? null}
+        diasMoraDesactivacion={config?.dias_mora_desactivacion ?? null}
       />
 
       <ConfigNotificaciones

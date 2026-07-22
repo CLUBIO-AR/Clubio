@@ -4,7 +4,11 @@ import { generarCuotasMes } from "@/lib/cuotas";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logCron } from "@/lib/cron-logger";
 
-const BodySchema = z.object({ gym_id: z.string().uuid() });
+const BodySchema = z.object({
+  gym_id: z.string().uuid(),
+  mes: z.number().int().min(1).max(12).optional(),
+  anio: z.number().int().min(2020).max(2100).optional(),
+});
 
 // WORKER: procesa la generación de cuotas de UN solo gym.
 // Llamado en paralelo por el dispatcher.
@@ -20,13 +24,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "gym_id inválido" }, { status: 400 });
   }
 
-  const { gym_id } = parsed.data;
+  const { gym_id, mes: mesOverride, anio: anioOverride } = parsed.data;
   const now = new Date();
+  const mes = mesOverride ?? now.getMonth() + 1;
+  const anio = anioOverride ?? now.getFullYear();
   const startTime = Date.now();
 
   try {
     const supabase = createAdminClient();
-    const { creadas, error } = await generarCuotasMes(supabase, gym_id, now.getMonth() + 1, now.getFullYear());
+    const { creadas, error } = await generarCuotasMes(supabase, gym_id, mes, anio);
 
     if (error) {
       console.error(`[worker:generar-cuotas] gym=${gym_id} error=${error}`);

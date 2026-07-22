@@ -19,21 +19,36 @@ function makeAlumnoChain(alumno: unknown) {
   return c;
 }
 
-function makeCuotasInsertChain(result: { error: { code?: string; message?: string } | null }) {
-  return {
-    insert: vi.fn().mockResolvedValue(result),
-  };
+function makeCuotasInsertChain(result: { error: { code?: string; message?: string } | null; data?: { id: string } | null }) {
+  const c: Record<string, unknown> = {};
+  c.insert = vi.fn().mockReturnValue(c);
+  c.select = vi.fn().mockReturnValue(c);
+  c.single = vi.fn().mockResolvedValue({ data: result.data ?? { id: "cuota-uuid" }, error: result.error ?? null });
+  return c;
 }
+
+function makeActividadesChain(actividades: unknown[]) {
+  const c: Record<string, unknown> = {};
+  c.select = vi.fn().mockReturnValue(c);
+  c.eq = vi.fn().mockReturnValue(c);
+  c.then = (resolve: (v: { data: unknown; error: null }) => unknown) =>
+    resolve({ data: actividades, error: null });
+  return c;
+}
+
+const ACTIVIDAD_VIGENTE = [{ actividad_id: "act-1", fecha_inicio: null }];
 
 function setupAdminMock(opts: {
   config: unknown;
   alumno: unknown;
   insertResult: { error: { code?: string; message?: string } | null };
+  actividades?: unknown[];
 }) {
   vi.mocked(createAdminClient).mockReturnValue({
     from: vi.fn()
       .mockReturnValueOnce(makeGymConfigChain(opts.config))
       .mockReturnValueOnce(makeAlumnoChain(opts.alumno))
+      .mockReturnValueOnce(makeActividadesChain(opts.actividades ?? ACTIVIDAD_VIGENTE))
       .mockReturnValueOnce(makeCuotasInsertChain(opts.insertResult)),
   } as never);
 }
@@ -106,6 +121,7 @@ describe("generarCuotaAlta", () => {
       from: vi.fn()
         .mockReturnValueOnce(makeGymConfigChain({ ...BASE_CONFIG, cuota_alta_proporcional: true }))
         .mockReturnValueOnce(makeAlumnoChain(BASE_ALUMNO))
+        .mockReturnValueOnce(makeActividadesChain(ACTIVIDAD_VIGENTE))
         .mockReturnValueOnce(cuotasChain),
     } as never);
 
@@ -130,6 +146,7 @@ describe("generarCuotaAlta", () => {
       from: vi.fn()
         .mockReturnValueOnce(makeGymConfigChain(BASE_CONFIG))
         .mockReturnValueOnce(makeAlumnoChain(BASE_ALUMNO))
+        .mockReturnValueOnce(makeActividadesChain(ACTIVIDAD_VIGENTE))
         .mockReturnValueOnce(makeCuotasInsertChain({ error: null })),
     } as never);
 
@@ -138,6 +155,7 @@ describe("generarCuotaAlta", () => {
       from: vi.fn()
         .mockReturnValueOnce(makeGymConfigChain(BASE_CONFIG))
         .mockReturnValueOnce(makeAlumnoChain(BASE_ALUMNO))
+        .mockReturnValueOnce(makeActividadesChain(ACTIVIDAD_VIGENTE))
         .mockReturnValueOnce(makeCuotasInsertChain({ error: { code: "23505", message: "unique violation" } })),
     } as never);
 
@@ -190,7 +208,8 @@ describe("generarCuotaAlta", () => {
     vi.mocked(createAdminClient).mockReturnValue({
       from: vi.fn()
         .mockReturnValueOnce(makeGymConfigChain({ ...BASE_CONFIG, monto_base_defecto: null }))
-        .mockReturnValueOnce(makeAlumnoChain({ monto_cuota_personalizado: null })),
+        .mockReturnValueOnce(makeAlumnoChain({ monto_cuota_personalizado: null }))
+        .mockReturnValueOnce(makeActividadesChain(ACTIVIDAD_VIGENTE)),
     } as never);
 
     const { generarCuotaAlta } = await import("@/lib/cuotas");
@@ -198,5 +217,34 @@ describe("generarCuotaAlta", () => {
 
     expect(result.generada).toBe(false);
     expect(result.motivo).toBe("monto_cero");
+  });
+
+  it("sin_actividad → no crea cuota si el alumno no tiene ninguna actividad asignada", async () => {
+    vi.setSystemTime(new Date("2026-06-05T10:00:00Z"));
+
+    setupAdminMock({ config: BASE_CONFIG, alumno: BASE_ALUMNO, insertResult: { error: null }, actividades: [] });
+
+    const { generarCuotaAlta } = await import("@/lib/cuotas");
+    const result = await generarCuotaAlta("alumno-uuid", "gym-uuid");
+
+    expect(result.generada).toBe(false);
+    expect(result.motivo).toBe("sin_actividad");
+  });
+
+  it("fecha_inicio_futura → no crea cuota si la única actividad arranca después de hoy", async () => {
+    vi.setSystemTime(new Date("2026-06-05T10:00:00Z"));
+
+    setupAdminMock({
+      config: BASE_CONFIG,
+      alumno: BASE_ALUMNO,
+      insertResult: { error: null },
+      actividades: [{ actividad_id: "act-1", fecha_inicio: "2026-08-01" }],
+    });
+
+    const { generarCuotaAlta } = await import("@/lib/cuotas");
+    const result = await generarCuotaAlta("alumno-uuid", "gym-uuid");
+
+    expect(result.generada).toBe(false);
+    expect(result.motivo).toBe("fecha_inicio_futura");
   });
 });

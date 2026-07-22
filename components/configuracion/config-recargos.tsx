@@ -9,15 +9,20 @@ interface Props {
   recargo1Porcentaje: number;
   recargo2Dias: number | null;
   recargo2Porcentaje: number | null;
+  diasMoraDesactivacion: number | null;
 }
 
-export function ConfigRecargos({ recargo1Dias, recargo1Porcentaje, recargo2Dias, recargo2Porcentaje }: Props) {
+export function ConfigRecargos({
+  recargo1Dias, recargo1Porcentaje, recargo2Dias, recargo2Porcentaje, diasMoraDesactivacion,
+}: Props) {
   const [form, setForm] = useState({
     r1dias: recargo1Dias.toString(),
     r1pct: recargo1Porcentaje.toString(),
     r2activo: recargo2Dias !== null,
     r2dias: recargo2Dias?.toString() ?? "",
     r2pct: recargo2Porcentaje?.toString() ?? "",
+    desactivarActivo: diasMoraDesactivacion !== null,
+    diasDesactivar: diasMoraDesactivacion?.toString() ?? "",
   });
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -31,6 +36,7 @@ export function ConfigRecargos({ recargo1Dias, recargo1Porcentaje, recargo2Dias,
         recargo_1_porcentaje: parseFloat(form.r1pct),
         recargo_2_dias: form.r2activo && form.r2dias ? parseInt(form.r2dias) : null,
         recargo_2_porcentaje: form.r2activo && form.r2pct ? parseFloat(form.r2pct) : null,
+        dias_mora_desactivacion: form.desactivarActivo && form.diasDesactivar ? parseInt(form.diasDesactivar) : null,
       }),
     });
     if (!res.ok) throw new Error((await res.json()).error ?? "Error");
@@ -73,6 +79,32 @@ export function ConfigRecargos({ recargo1Dias, recargo1Porcentaje, recargo2Dias,
             </Field>
           </div>
         )}
+      </div>
+
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <input
+            type="checkbox"
+            id="desactivarActivo"
+            checked={form.desactivarActivo}
+            onChange={(e) => setForm((f) => ({ ...f, desactivarActivo: e.target.checked }))}
+            style={{ accentColor: T.accent }}
+          />
+          <label htmlFor="desactivarActivo" className="text-xs" style={{ color: T.textDim }}>
+            Desactivar alumno automáticamente si acumula mora
+          </label>
+        </div>
+        {form.desactivarActivo && (
+          <Field label="Días de mora para desactivar">
+            <div className="flex items-center gap-2">
+              <NumberInput value={form.diasDesactivar} onChange={set("diasDesactivar")} min={1} />
+              <span className="text-sm whitespace-nowrap" style={{ color: T.textDim }}>días vencida la cuota</span>
+            </div>
+          </Field>
+        )}
+        <p className="text-xs mt-2" style={{ color: T.textDim }}>
+          Se reactiva solo al pagar la cuota pendiente, o manualmente desde la ficha del alumno. No se le vuelven a enviar avisos mientras esté desactivado.
+        </p>
       </div>
     </ConfigSection>
   );

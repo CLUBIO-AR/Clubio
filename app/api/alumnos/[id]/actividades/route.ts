@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getApiGymId } from "@/lib/supabase/api-auth";
+import { generarCuotaAlta } from "@/lib/cuotas";
 import { z } from "zod";
 
 export async function GET(
@@ -57,6 +58,13 @@ export async function POST(
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  if (parsed.data.activa !== false) {
+    generarCuotaAlta(alumnoId, gymId).catch((err) =>
+      console.error(`[api:alumnos:actividades:post] generarCuotaAlta alumno=${alumnoId} error:`, err)
+    );
+  }
+
   return NextResponse.json(data);
 }
 

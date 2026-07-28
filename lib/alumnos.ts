@@ -18,7 +18,7 @@ const fechaAltaSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato YYYY-MM
 export const AlumnoInsertSchema = z.object({
   nombre: z.string().min(1, "Requerido"),
   apellido: z.string().min(1, "Requerido"),
-  dni: z.string().min(1, "Requerido"),
+  dni: z.string().min(1).nullable().optional(),
   email: z.string().email("Email inválido").nullable().optional(),
   telefono: z.string().nullable().optional(),
   fecha_nacimiento: z.string().nullable().optional(),

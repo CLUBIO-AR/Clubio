@@ -5,7 +5,7 @@
 export type NotificationChannel = "email" | "whatsapp";
 
 export type NotificationPayload = {
-  type: "aviso_vencimiento" | "recordatorio_vencido" | "confirmacion_pago" | "bienvenida";
+  type: "aviso_vencimiento" | "recordatorio_vencido" | "aviso_vence_hoy_aumento" | "confirmacion_pago" | "bienvenida";
   alumno: {
     nombre: string;
     email?: string | null;
@@ -16,6 +16,9 @@ export type NotificationPayload = {
     anio: number;
     monto_total: number;
     pago_url: string;
+    // Monto que va a regir desde mañana (con el recargo por mora ya aplicado).
+    // Solo se usa en el tipo "aviso_vence_hoy_aumento".
+    monto_incrementado?: number;
   };
   gym: {
     nombre: string;
@@ -28,7 +31,7 @@ export type NotificationPayload = {
 // con variables {nombre}/{gym}/{monto}/{mes}/{anio}/{link} — ver renderTemplate
 // en channels/email.ts). Solo cubre los tipos que realmente se disparan.
 export type EmailTemplates = Partial<
-  Record<"aviso_vencimiento" | "recordatorio_vencido", { subject?: string; body?: string }>
+  Record<"aviso_vencimiento" | "recordatorio_vencido" | "aviso_vence_hoy_aumento", { subject?: string; body?: string }>
 >;
 
 export type GymNotificationConfig = {

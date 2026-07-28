@@ -78,7 +78,7 @@ export async function sendGymWelcomeEmail(params: {
 // para los 2 únicos tipos de notificación que realmente se disparan — ver
 // app/api/cron/workers/enviar-avisos-gym/route.ts. Los gyms pueden personalizarlas
 // desde Configuración (gym_config.email_templates), guardando subject/body propios.
-const DEFAULT_TEMPLATES: Record<"aviso_vencimiento" | "recordatorio_vencido", { subject: string; body: string }> = {
+const DEFAULT_TEMPLATES: Record<"aviso_vencimiento" | "recordatorio_vencido" | "aviso_vence_hoy_aumento", { subject: string; body: string }> = {
   aviso_vencimiento: {
     subject: "{gym} · Tu cuota de {mes}/{anio} vence pronto · ${monto}",
     body: "Hola {nombre}, tu cuota de {mes} {anio} en {gym} por ${monto} está por vencer.",
@@ -86,6 +86,10 @@ const DEFAULT_TEMPLATES: Record<"aviso_vencimiento" | "recordatorio_vencido", { 
   recordatorio_vencido: {
     subject: "{gym} · Tu cuota de {mes}/{anio} está vencida",
     body: "Hola {nombre}, tu cuota de {mes} {anio} en {gym} por ${monto} está vencida.",
+  },
+  aviso_vence_hoy_aumento: {
+    subject: "{gym} · Tu cuota vence HOY · ${monto}",
+    body: "Hola {nombre}, tu cuota de {mes} {anio} en {gym} por ${monto} vence hoy. A partir de mañana el valor pasa a ${monto_aumentado}.",
   },
 };
 
@@ -109,7 +113,7 @@ function escapeHtml(value: string): string {
 function buildSubject(payload: NotificationPayload, config: GymNotificationConfig): string {
   const { type, cuota, gym } = payload;
 
-  if ((type === "aviso_vencimiento" || type === "recordatorio_vencido") && cuota) {
+  if ((type === "aviso_vencimiento" || type === "recordatorio_vencido" || type === "aviso_vence_hoy_aumento") && cuota) {
     const tpl = config.email_templates?.[type]?.subject ?? DEFAULT_TEMPLATES[type].subject;
     return renderTemplate(tpl, cuotaVars(payload, cuota));
   }
@@ -127,7 +131,7 @@ function buildHtml(payload: NotificationPayload, config: GymNotificationConfig):
   const brand: EmailBrand = { logoUrl: gym.logo_url, colorAccent: gym.color_acento };
   const accent = emailAccentColor(brand);
 
-  if ((type === "aviso_vencimiento" || type === "recordatorio_vencido") && cuota) {
+  if ((type === "aviso_vencimiento" || type === "recordatorio_vencido" || type === "aviso_vence_hoy_aumento") && cuota) {
     const tpl = config.email_templates?.[type]?.body ?? DEFAULT_TEMPLATES[type].body;
     const message = escapeHtml(renderTemplate(tpl, cuotaVars(payload, cuota))).replace(/\n/g, "<br/>");
 
@@ -157,6 +161,7 @@ function cuotaVars(payload: NotificationPayload, cuota: NonNullable<Notification
     nombre: payload.alumno.nombre,
     gym: payload.gym.nombre,
     monto: cuota.monto_total.toLocaleString("es-AR"),
+    monto_aumentado: (cuota.monto_incrementado ?? cuota.monto_total).toLocaleString("es-AR"),
     mes: mesNombre(cuota.mes),
     anio: String(cuota.anio),
   };

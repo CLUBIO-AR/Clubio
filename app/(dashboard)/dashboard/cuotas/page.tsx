@@ -28,13 +28,13 @@ export default async function CuotasPage({
 
   const actividades = actividadesRes.data ?? [];
 
-  type Row = NonNullable<typeof cuotasRes.data>[0] & { alumnos?: { nombre: string; apellido: string; dni: string } | null };
+  type Row = NonNullable<typeof cuotasRes.data>[0] & { alumnos?: { nombre: string; apellido: string; dni: string | null } | null };
   let rows = (cuotasRes.data ?? []) as Row[];
   if (search.trim()) {
     const term = search.toLowerCase();
     rows = rows.filter((c) => {
-      const a = c.alumnos as { nombre: string; apellido: string; dni: string } | null;
-      return a?.nombre.toLowerCase().includes(term) || a?.apellido.toLowerCase().includes(term) || a?.dni.includes(term);
+      const a = c.alumnos as { nombre: string; apellido: string; dni: string | null } | null;
+      return a?.nombre.toLowerCase().includes(term) || a?.apellido.toLowerCase().includes(term) || a?.dni?.includes(term);
     });
   }
 

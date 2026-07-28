@@ -24,7 +24,7 @@ type Cuota = {
   estado: string; fecha_vencimiento: string; fecha_pago?: string | null;
   metodo_pago?: string | null; pagado_por?: string | null;
   recargo_nivel?: number | null; notas?: string | null;
-  alumnos?: { nombre: string; apellido: string; dni: string; email?: string | null; telefono?: string | null } | null;
+  alumnos?: { nombre: string; apellido: string; dni: string | null; email?: string | null; telefono?: string | null } | null;
 };
 
 type Pago = {

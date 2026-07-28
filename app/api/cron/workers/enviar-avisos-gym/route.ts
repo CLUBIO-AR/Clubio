@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   // Config del gym
   const { data: gymConfig } = await admin
     .from("gym_config")
-    .select("email_activo, whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, email_color_acento, email_templates, email_remitente_nombre, email_remitente_address")
+    .select("email_activo, whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, email_color_acento, email_templates, email_remitente_nombre, email_remitente_address, dias_aviso_fijos, dia_vencimiento_mensual, recargo_1_porcentaje")
     .eq("gym_id", gym_id)
     .single();
 
@@ -39,6 +39,10 @@ export async function POST(request: Request) {
     .single();
 
   if (!gymConfig || !gym) return NextResponse.json({ error: "Gym no encontrado" }, { status: 404 });
+
+  if (gymConfig.dias_aviso_fijos?.length) {
+    return enviarAvisosFechaFija({ admin, gym_id, gym, gymConfig, startTime });
+  }
 
   const hoy = new Date();
   const limite = new Date(hoy);
@@ -218,6 +222,124 @@ export async function POST(request: Request) {
         );
         enviados++;
       }
+    }
+  }
+
+  await logCron({ tipo: "enviar_avisos", gymId: gym_id, itemsCreados: enviados, duracionMs: Date.now() - startTime });
+  return NextResponse.json({ ok: true, enviados });
+}
+
+// --- Modo "fechas fijas de calendario" (ej: días 1, 5 y 10 de cada mes) ---
+// El gym que configura gym_config.dias_aviso_fijos deja de usar la ventana relativa
+// (DIAS_PREVIOS) de arriba: solo se manda aviso los días exactos configurados, y
+// el mensaje del día de vencimiento incluye el monto con el recargo del día siguiente.
+async function enviarAvisosFechaFija(params: {
+  admin: ReturnType<typeof createAdminClient>;
+  gym_id: string;
+  gym: { nombre: string; logo_url: string | null };
+  gymConfig: {
+    email_activo: boolean | null;
+    whatsapp_activo: boolean | null;
+    whatsapp_phone_number_id: string | null;
+    whatsapp_access_token: string | null;
+    email_color_acento: string | null;
+    email_templates: unknown;
+    email_remitente_nombre: string | null;
+    email_remitente_address: string | null;
+    dias_aviso_fijos: number[] | null;
+    dia_vencimiento_mensual: number;
+    recargo_1_porcentaje: number;
+  };
+  startTime: number;
+}) {
+  const { admin, gym_id, gym, gymConfig, startTime } = params;
+
+  const hoy = new Date();
+  const hoyDia = hoy.getDate();
+  const hoyStr = hoy.toISOString().split("T")[0];
+
+  if (!gymConfig.dias_aviso_fijos!.includes(hoyDia)) {
+    await logCron({ tipo: "enviar_avisos", gymId: gym_id, itemsCreados: 0, duracionMs: Date.now() - startTime });
+    return NextResponse.json({ ok: true, enviados: 0, motivo: "no_es_dia_de_aviso" });
+  }
+
+  const esDiaVencimiento = hoyDia === gymConfig.dia_vencimiento_mensual;
+
+  // El día de vencimiento solo avisamos a las cuotas que efectivamente vencen hoy
+  // (evita re-avisar con "vence hoy" cuotas de otro período que quedaron pendientes).
+  const { data: cuotas } = await admin
+    .from("cuotas")
+    .select(`
+      id, alumno_id, mes, anio, monto_total, monto_base, avisos_enviados,
+      alumnos!inner(nombre, email, telefono, activo),
+      actividades(recargo_1_porcentaje)
+    `)
+    .eq("gym_id", gym_id)
+    .eq("alumnos.activo", true)
+    .eq("estado", "pendiente")
+    .lte("fecha_vencimiento", esDiaVencimiento ? hoyStr : "9999-12-31");
+
+  if (!cuotas?.length) {
+    await logCron({ tipo: "enviar_avisos", gymId: gym_id, itemsCreados: 0, duracionMs: Date.now() - startTime });
+    return NextResponse.json({ ok: true, enviados: 0 });
+  }
+
+  const notifConfig: GymNotificationConfig = {
+    email_activo:              gymConfig.email_activo ?? true,
+    email_remitente_nombre:    gymConfig.email_remitente_nombre,
+    email_remitente_address:   gymConfig.email_remitente_address,
+    email_templates:           (gymConfig.email_templates as EmailTemplates | null) ?? null,
+    whatsapp_activo:           gymConfig.whatsapp_activo ?? false,
+    whatsapp_phone_number_id:  gymConfig.whatsapp_phone_number_id,
+    whatsapp_access_token:     gymConfig.whatsapp_access_token,
+  };
+
+  const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
+  let enviados = 0;
+
+  for (const cuota of cuotas) {
+    const alumno = cuota.alumnos as unknown as { nombre: string; email: string | null; telefono: string | null } | null;
+    if (!alumno?.email) continue;
+
+    const token = await new SignJWT({
+      cuota_id: cuota.id, gym_id, alumno_nombre: alumno.nombre, mes: cuota.mes, anio: cuota.anio, monto: cuota.monto_total,
+    })
+      .setProtectedHeader({ alg: "HS256" })
+      .setJti(crypto.randomUUID())
+      .setIssuedAt()
+      .setExpirationTime("30d")
+      .sign(secret);
+    const pagoUrl = `${appUrl}/pagar/${token}`;
+
+    const actividadRecargo = cuota.actividades as { recargo_1_porcentaje: number | null } | null;
+    const pct = actividadRecargo?.recargo_1_porcentaje ?? gymConfig.recargo_1_porcentaje ?? 0;
+    const montoIncrementado = esDiaVencimiento
+      ? Math.round((cuota.monto_base ?? cuota.monto_total ?? 0) * (1 + pct / 100))
+      : undefined;
+
+    const tipo = esDiaVencimiento ? "aviso_vence_hoy_aumento" : "aviso_vencimiento";
+
+    const resultados = await sendNotification(notifConfig, {
+      type: tipo,
+      alumno: { nombre: alumno.nombre, email: alumno.email, telefono: alumno.telefono },
+      cuota: { mes: cuota.mes, anio: cuota.anio, monto_total: cuota.monto_total ?? 0, pago_url: pagoUrl, monto_incrementado: montoIncrementado },
+      gym: { nombre: gym.nombre, logo_url: gym.logo_url, color_acento: gymConfig.email_color_acento },
+    });
+
+    for (const r of resultados) {
+      const destino = r.canal === "email" ? (alumno.email ?? "") : (alumno.telefono ?? "");
+      await admin.from("notificaciones_log").insert({
+        gym_id, alumno_id: cuota.alumno_id, cuota_id: cuota.id,
+        tipo, enviado_a: destino || r.canal,
+        estado: r.ok ? "enviado" : "error",
+        provider_id: r.provider_id ?? null,
+      });
+    }
+
+    if (resultados.some((r) => r.ok)) {
+      await admin.from("cuotas").update({ avisos_enviados: (cuota.avisos_enviados ?? 0) + 1 }).eq("id", cuota.id);
+      enviados++;
     }
   }
 

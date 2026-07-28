@@ -44,7 +44,7 @@ export function AlumnoForm({ sucursales, mode, alumno, onCreated }: AlumnoFormPr
     setError(null);
     setLoading(true);
     const payload = {
-      nombre: form.nombre, apellido: form.apellido, dni: form.dni,
+      nombre: form.nombre, apellido: form.apellido, dni: form.dni || null,
       email: form.email || null, telefono: form.telefono || null,
       fecha_nacimiento: form.fecha_nacimiento || null,
       fecha_alta: form.fecha_alta || undefined,
@@ -85,7 +85,7 @@ export function AlumnoForm({ sucursales, mode, alumno, onCreated }: AlumnoFormPr
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5"><Label style={labelStyle}>Nombre *</Label><Input name="nombre" required value={form.nombre} onChange={handleChange} placeholder="Juan" style={inp} className="placeholder:opacity-20" /></div>
           <div className="space-y-1.5"><Label style={labelStyle}>Apellido *</Label><Input name="apellido" required value={form.apellido} onChange={handleChange} placeholder="Pérez" style={inp} className="placeholder:opacity-20" /></div>
-          <div className="space-y-1.5"><Label style={labelStyle}>DNI *</Label><Input name="dni" required value={form.dni} onChange={handleChange} placeholder="30123456" style={inp} className="placeholder:opacity-20 font-mono" /></div>
+          <div className="space-y-1.5"><Label style={labelStyle}>DNI</Label><Input name="dni" value={form.dni} onChange={handleChange} placeholder="30123456 (opcional)" style={inp} className="placeholder:opacity-20 font-mono" /></div>
           <div className="space-y-1.5"><Label style={labelStyle}>Fecha de nacimiento</Label><Input name="fecha_nacimiento" type="date" value={form.fecha_nacimiento} onChange={handleChange} style={inp} /></div>
           <div className="space-y-1.5"><Label style={labelStyle}>Email</Label><Input name="email" type="email" value={form.email} onChange={handleChange} placeholder="juan@email.com" style={inp} className="placeholder:opacity-20" /></div>
           <div className="space-y-1.5"><Label style={labelStyle}>Teléfono</Label><Input name="telefono" value={form.telefono} onChange={handleChange} placeholder="+54 11 1234-5678" style={inp} className="placeholder:opacity-20" /></div>

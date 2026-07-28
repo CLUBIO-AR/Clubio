@@ -13,7 +13,7 @@ export async function GET() {
     supabase.from("gym_config").select(
       "gym_id, monto_base_defecto, dia_vencimiento_mensual, dias_gracia, " +
       "recargo_1_dias, recargo_1_porcentaje, recargo_2_dias, recargo_2_porcentaje, " +
-      "email_activo, dias_aviso_antes, aviso_post_vencimiento_dias, max_avisos_post, " +
+      "email_activo, dias_aviso_antes, dias_aviso_fijos, aviso_post_vencimiento_dias, max_avisos_post, " +
       "email_remitente_nombre, email_remitente_address, email_color_acento, email_templates, " +
       "mp_public_key, whatsapp_activo, whatsapp_phone_number_id, " +
       "generar_cuota_al_alta, cuota_alta_proporcional, dias_minimos_para_cuota_alta, " +
@@ -46,6 +46,7 @@ const PatchSchema = z.object({
   // Config: notificaciones
   email_activo: z.boolean().optional(),
   dias_aviso_antes: z.array(z.number().int().min(0)).optional(),
+  dias_aviso_fijos: z.array(z.number().int().min(1).max(28)).nullable().optional(),
   aviso_post_vencimiento_dias: z.number().int().min(0).optional(),
   max_avisos_post: z.number().int().min(0).optional(),
   email_remitente_nombre: z.string().nullable().optional(),
@@ -113,6 +114,7 @@ export async function PATCH(request: Request) {
     dias_mora_desactivacion: number | null;
     email_activo: boolean;
     dias_aviso_antes: number[];
+    dias_aviso_fijos: number[] | null;
     aviso_post_vencimiento_dias: number;
     max_avisos_post: number;
     email_remitente_nombre: string | null;
@@ -131,7 +133,7 @@ export async function PATCH(request: Request) {
     "monto_base_defecto", "dia_vencimiento_mensual", "dias_gracia",
     "recargo_1_dias", "recargo_1_porcentaje", "recargo_2_dias", "recargo_2_porcentaje",
     "dias_mora_desactivacion",
-    "email_activo", "dias_aviso_antes", "aviso_post_vencimiento_dias", "max_avisos_post",
+    "email_activo", "dias_aviso_antes", "dias_aviso_fijos", "aviso_post_vencimiento_dias", "max_avisos_post",
     "email_remitente_nombre", "email_remitente_address",
     "email_color_acento", "email_templates",
     "mp_access_token", "mp_public_key",

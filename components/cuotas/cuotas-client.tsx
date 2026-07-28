@@ -42,7 +42,7 @@ interface CuotasClientProps {
     alumno_id?: string | null;
     actividad_id?: string | null;
     actividades?: { nombre: string; color: string } | null;
-    alumnos?: { nombre: string; apellido: string; dni: string } | null;
+    alumnos?: { nombre: string; apellido: string; dni: string | null } | null;
   }>;
   mes: number;
   anio: number;

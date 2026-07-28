@@ -21,15 +21,15 @@ export async function GET(request: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // Filtrar por búsqueda de alumno en memoria (join result)
-  let result = (data ?? []) as Array<typeof data[0] & { alumnos?: { nombre: string; apellido: string; dni: string } | null }>;
+  let result = (data ?? []) as Array<typeof data[0] & { alumnos?: { nombre: string; apellido: string; dni: string | null } | null }>;
   if (search?.trim()) {
     const term = search.toLowerCase();
     result = result.filter((c) => {
-      const a = c.alumnos as { nombre: string; apellido: string; dni: string } | null;
+      const a = c.alumnos as { nombre: string; apellido: string; dni: string | null } | null;
       return (
         a?.nombre.toLowerCase().includes(term) ||
         a?.apellido.toLowerCase().includes(term) ||
-        a?.dni.toLowerCase().includes(term)
+        a?.dni?.toLowerCase().includes(term)
       );
     });
   }

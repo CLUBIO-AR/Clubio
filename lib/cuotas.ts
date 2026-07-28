@@ -402,70 +402,86 @@ export async function aplicarRecargosGym(
   // 2. Obtener config de recargos y de desactivación por mora
   const { data: config } = await supabase
     .from("gym_config")
-    .select("recargo_1_dias, recargo_1_porcentaje, recargo_2_dias, recargo_2_porcentaje, dias_mora_desactivacion")
+    .select("recargo_1_dias, recargo_1_porcentaje, recargo_2_dias, recargo_2_porcentaje, dias_mora_desactivacion, mora_desactivar_mes_siguiente")
     .eq("gym_id", gymId)
     .single();
 
-  if (config?.recargo_1_dias) {
-    // 3. Cuotas vencidas sin recargo nivel 1
-    const { data: vencidas1 } = await supabase
-      .from("cuotas")
-      .select("id, monto_base, fecha_vencimiento, recargo_nivel")
-      .eq("gym_id", gymId)
-      .eq("estado", "vencida")
-      .or("recargo_nivel.is.null,recargo_nivel.lt.1");
+  // 3. Cuotas vencidas sin recargo nivel 1 — usa el recargo propio de la actividad
+  // (permite % distinto por actividad) y si no está seteado cae al recargo general del gym.
+  const { data: vencidas1 } = await supabase
+    .from("cuotas")
+    .select("id, monto_base, fecha_vencimiento, recargo_nivel, actividades(recargo_1_dias, recargo_1_porcentaje)")
+    .eq("gym_id", gymId)
+    .eq("estado", "vencida")
+    .or("recargo_nivel.is.null,recargo_nivel.lt.1");
 
-    for (const c of vencidas1 ?? []) {
-      const diasVencida = Math.floor(
-        (Date.now() - new Date(c.fecha_vencimiento).getTime()) / 86_400_000
-      );
-      if (diasVencida >= config.recargo_1_dias) {
-        await supabase.from("cuotas").update({
-          monto_recargo: (c.monto_base * config.recargo_1_porcentaje) / 100,
-          recargo_nivel: 1,
-          recargo_aplicado_en: new Date().toISOString(),
-        }).eq("id", c.id);
-      }
+  for (const c of vencidas1 ?? []) {
+    const actividadRecargo = c.actividades as { recargo_1_dias: number | null; recargo_1_porcentaje: number | null } | null;
+    const dias1 = actividadRecargo?.recargo_1_dias ?? config?.recargo_1_dias ?? null;
+    const pct1 = actividadRecargo?.recargo_1_porcentaje ?? config?.recargo_1_porcentaje ?? null;
+    if (!dias1 || !pct1) continue;
+
+    const diasVencida = Math.floor(
+      (Date.now() - new Date(c.fecha_vencimiento).getTime()) / 86_400_000
+    );
+    if (diasVencida >= dias1) {
+      await supabase.from("cuotas").update({
+        monto_recargo: (c.monto_base * pct1) / 100,
+        recargo_nivel: 1,
+        recargo_aplicado_en: new Date().toISOString(),
+      }).eq("id", c.id);
     }
+  }
 
-    // 4. Recargo nivel 2 (si configurado)
-    if (config.recargo_2_dias && config.recargo_2_porcentaje) {
-      const { data: vencidas2 } = await supabase
-        .from("cuotas")
-        .select("id, monto_base, fecha_vencimiento, recargo_nivel")
-        .eq("gym_id", gymId)
-        .eq("estado", "vencida")
-        .eq("recargo_nivel", 1);
+  // 4. Recargo nivel 2 — mismo criterio actividad > gym
+  const { data: vencidas2 } = await supabase
+    .from("cuotas")
+    .select("id, monto_base, fecha_vencimiento, recargo_nivel, actividades(recargo_2_dias, recargo_2_porcentaje)")
+    .eq("gym_id", gymId)
+    .eq("estado", "vencida")
+    .eq("recargo_nivel", 1);
 
-      for (const c of vencidas2 ?? []) {
-        const diasVencida = Math.floor(
-          (Date.now() - new Date(c.fecha_vencimiento).getTime()) / 86_400_000
-        );
-        if (diasVencida >= config.recargo_2_dias!) {
-          await supabase.from("cuotas").update({
-            monto_recargo: (c.monto_base * config.recargo_2_porcentaje!) / 100,
-            recargo_nivel: 2,
-            recargo_aplicado_en: new Date().toISOString(),
-          }).eq("id", c.id);
-        }
-      }
+  for (const c of vencidas2 ?? []) {
+    const actividadRecargo = c.actividades as { recargo_2_dias: number | null; recargo_2_porcentaje: number | null } | null;
+    const dias2 = actividadRecargo?.recargo_2_dias ?? config?.recargo_2_dias ?? null;
+    const pct2 = actividadRecargo?.recargo_2_porcentaje ?? config?.recargo_2_porcentaje ?? null;
+    if (!dias2 || !pct2) continue;
+
+    const diasVencida = Math.floor(
+      (Date.now() - new Date(c.fecha_vencimiento).getTime()) / 86_400_000
+    );
+    if (diasVencida >= dias2) {
+      await supabase.from("cuotas").update({
+        monto_recargo: (c.monto_base * pct2) / 100,
+        recargo_nivel: 2,
+        recargo_aplicado_en: new Date().toISOString(),
+      }).eq("id", c.id);
     }
   }
 
   // 5. Desactivación automática de alumnos morosos (si el gym la configuró)
-  if (config?.dias_mora_desactivacion) {
+  if (config?.dias_mora_desactivacion || config?.mora_desactivar_mes_siguiente) {
     const { data: candidatas } = await supabase
       .from("cuotas")
-      .select("id, alumno_id, fecha_vencimiento")
+      .select("id, alumno_id, mes, anio, fecha_vencimiento")
       .eq("gym_id", gymId)
       .eq("estado", "vencida")
       .eq("desactivo_alumno", false);
 
+    const hoy2 = new Date();
+
     for (const c of candidatas ?? []) {
-      const diasVencida = Math.floor(
-        (Date.now() - new Date(c.fecha_vencimiento).getTime()) / 86_400_000
-      );
-      if (diasVencida < config.dias_mora_desactivacion) continue;
+      let cumpleUmbral: boolean;
+      if (config.mora_desactivar_mes_siguiente) {
+        // Recién arrancó el mes siguiente al de esta cuota (sin importar cuántos días tenga el mes).
+        cumpleUmbral = hoy2.getFullYear() > c.anio || (hoy2.getFullYear() === c.anio && hoy2.getMonth() + 1 > c.mes);
+      } else {
+        const diasVencida = Math.floor(
+          (Date.now() - new Date(c.fecha_vencimiento).getTime()) / 86_400_000
+        );
+        cumpleUmbral = diasVencida >= config.dias_mora_desactivacion!;
+      }
+      if (!cumpleUmbral) continue;
 
       const { data: alumno } = await supabase
         .from("alumnos")

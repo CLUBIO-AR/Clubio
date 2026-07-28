@@ -218,6 +218,7 @@ export type Database = {
           recargo_2_dias: number | null;
           recargo_2_porcentaje: number | null;
           dias_aviso_antes: number[];
+          dias_aviso_fijos: number[] | null;
           aviso_post_vencimiento_dias: number;
           max_avisos_post: number;
           email_activo: boolean;
@@ -232,6 +233,7 @@ export type Database = {
           cuota_alta_proporcional: boolean;
           dias_minimos_para_cuota_alta: number;
           dias_mora_desactivacion: number | null;
+          mora_desactivar_mes_siguiente: boolean;
           color_primario: string;
           color_secundario: string;
           created_at: string;
@@ -251,6 +253,7 @@ export type Database = {
           recargo_2_dias?: number | null;
           recargo_2_porcentaje?: number | null;
           dias_aviso_antes?: number[];
+          dias_aviso_fijos?: number[] | null;
           aviso_post_vencimiento_dias?: number;
           max_avisos_post?: number;
           email_activo?: boolean;
@@ -265,6 +268,7 @@ export type Database = {
           cuota_alta_proporcional?: boolean;
           dias_minimos_para_cuota_alta?: number;
           dias_mora_desactivacion?: number | null;
+          mora_desactivar_mes_siguiente?: boolean;
           color_primario?: string;
           color_secundario?: string;
         };
@@ -280,6 +284,7 @@ export type Database = {
           recargo_2_dias?: number | null;
           recargo_2_porcentaje?: number | null;
           dias_aviso_antes?: number[];
+          dias_aviso_fijos?: number[] | null;
           aviso_post_vencimiento_dias?: number;
           max_avisos_post?: number;
           email_activo?: boolean;
@@ -294,6 +299,7 @@ export type Database = {
           cuota_alta_proporcional?: boolean;
           dias_minimos_para_cuota_alta?: number;
           dias_mora_desactivacion?: number | null;
+          mora_desactivar_mes_siguiente?: boolean;
           color_primario?: string;
           color_secundario?: string;
           updated_at?: string;
@@ -351,7 +357,7 @@ export type Database = {
           sucursal_id: string | null;
           nombre: string;
           apellido: string;
-          dni: string;
+          dni: string | null;
           email: string | null;
           telefono: string | null;
           fecha_nacimiento: string | null;
@@ -372,7 +378,7 @@ export type Database = {
           sucursal_id?: string | null;
           nombre: string;
           apellido: string;
-          dni: string;
+          dni?: string | null;
           email?: string | null;
           telefono?: string | null;
           fecha_nacimiento?: string | null;
@@ -388,7 +394,7 @@ export type Database = {
           sucursal_id?: string | null;
           nombre?: string;
           apellido?: string;
-          dni?: string;
+          dni?: string | null;
           email?: string | null;
           telefono?: string | null;
           fecha_nacimiento?: string | null;

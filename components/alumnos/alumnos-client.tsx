@@ -21,7 +21,7 @@ interface AlumnoRow {
   id?: string;
   nombre?: string;
   apellido?: string;
-  dni?: string;
+  dni?: string | null;
   email?: string | null;
   telefono?: string | null;
   activo?: boolean;

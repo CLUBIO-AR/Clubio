@@ -17,7 +17,7 @@ export async function GET() {
       "email_remitente_nombre, email_remitente_address, email_color_acento, email_templates, " +
       "mp_public_key, whatsapp_activo, whatsapp_phone_number_id, " +
       "generar_cuota_al_alta, cuota_alta_proporcional, dias_minimos_para_cuota_alta, " +
-      "dias_mora_desactivacion"
+      "dias_mora_desactivacion, mora_desactivar_mes_siguiente"
     ).eq("gym_id", ctx.gymId).single(),
   ]);
 
@@ -43,6 +43,7 @@ const PatchSchema = z.object({
   recargo_2_dias: z.number().int().min(0).nullable().optional(),
   recargo_2_porcentaje: z.number().min(0).nullable().optional(),
   dias_mora_desactivacion: z.number().int().min(1).nullable().optional(),
+  mora_desactivar_mes_siguiente: z.boolean().optional(),
   // Config: notificaciones
   email_activo: z.boolean().optional(),
   dias_aviso_antes: z.array(z.number().int().min(0)).optional(),
@@ -112,6 +113,7 @@ export async function PATCH(request: Request) {
     recargo_2_dias: number | null;
     recargo_2_porcentaje: number | null;
     dias_mora_desactivacion: number | null;
+    mora_desactivar_mes_siguiente: boolean;
     email_activo: boolean;
     dias_aviso_antes: number[];
     dias_aviso_fijos: number[] | null;
@@ -132,7 +134,7 @@ export async function PATCH(request: Request) {
   const configKeys = [
     "monto_base_defecto", "dia_vencimiento_mensual", "dias_gracia",
     "recargo_1_dias", "recargo_1_porcentaje", "recargo_2_dias", "recargo_2_porcentaje",
-    "dias_mora_desactivacion",
+    "dias_mora_desactivacion", "mora_desactivar_mes_siguiente",
     "email_activo", "dias_aviso_antes", "dias_aviso_fijos", "aviso_post_vencimiento_dias", "max_avisos_post",
     "email_remitente_nombre", "email_remitente_address",
     "email_color_acento", "email_templates",

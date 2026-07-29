@@ -62,11 +62,13 @@ export default async function ConfiguracionPage() {
         recargo2Dias={config?.recargo_2_dias ?? null}
         recargo2Porcentaje={config?.recargo_2_porcentaje ?? null}
         diasMoraDesactivacion={config?.dias_mora_desactivacion ?? null}
+        moraDesactivarMesSiguiente={config?.mora_desactivar_mes_siguiente ?? false}
       />
 
       <ConfigNotificaciones
         emailActivo={config?.email_activo ?? true}
         diasAvisoAntes={config?.dias_aviso_antes ?? [7, 3, 1]}
+        diasAvisoFijos={config?.dias_aviso_fijos ?? null}
         avisoPostVencimientoDias={config?.aviso_post_vencimiento_dias ?? 3}
         maxAvisosPost={config?.max_avisos_post ?? 3}
         emailRemitenteNombre={config?.email_remitente_nombre ?? ""}

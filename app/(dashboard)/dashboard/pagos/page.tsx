@@ -50,7 +50,7 @@ export default async function PagosPage({
 
   const stats = [
     { label: "Cobrado este mes",     value: `$${totalMes.toLocaleString("es-AR")}`,       icon: TrendingUp, color: T.accent, bg: T.accentBg },
-    { label: "Pagos este mes",       value: pagosMes.length,                               icon: CreditCard, color: T.lime,   bg: `${T.lime}15` },
+    { label: "Pagos este mes",       value: pagosMes.length,                               icon: CreditCard, color: T.limeText, bg: T.lime },
     { label: "Total en el período",  value: `$${totalPeriodo.toLocaleString("es-AR")}`,    icon: DollarSign, color: T.blue,   bg: `${T.blue}15` },
   ];
 

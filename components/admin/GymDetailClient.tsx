@@ -145,7 +145,7 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
 
   const stats = [
     { label: "Alumnos activos",  value: totalAlumnos.toLocaleString("es-AR"),       icon: Users,     color: ADMIN_ACCENT, bg: "#F9731620" },
-    { label: "Cobrado este mes", value: `$${cobradoMes.toLocaleString("es-AR")}`,   icon: DollarSign, color: T.lime,      bg: `${T.lime}15` },
+    { label: "Cobrado este mes", value: `$${cobradoMes.toLocaleString("es-AR")}`,   icon: DollarSign, color: T.limeText,  bg: T.lime },
     { label: "Sucursales",       value: sucursales.length,                          icon: Building2,  color: T.blue,      bg: `${T.blue}15` },
   ];
 

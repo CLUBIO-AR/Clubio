@@ -38,10 +38,11 @@ export default async function DashboardPage() {
   const cobrosAutoMonto = cobrosAutoRes.data?.reduce((acc, p) => acc + p.monto, 0) ?? 0;
 
   const stats = [
-    { label: "Socios activos",  value: alumnosRes.count ?? 0,                         icon: Users,          href: "/dashboard/alumnos?activo=true",      color: T.accent,   glow: T.accentBg },
-    { label: "Deudores",        value: cuotasVencidasRes.count ?? 0,                   icon: AlertTriangle,  href: "/dashboard/cuotas?estado=vencida",    color: T.danger,   glow: `${T.danger}15` },
-    { label: "Pendientes",      value: pendientesRes.count ?? 0,                       icon: Clock,          href: "/dashboard/cuotas?estado=pendiente",  color: T.warning,  glow: `${T.warning}15` },
-    { label: "Caja del mes",    value: `$${totalCobros.toLocaleString("es-AR")}`,      icon: TrendingUp,     href: "/dashboard/pagos",                    color: T.lime,     glow: `${T.lime}15` },
+    { label: "Socios activos",  value: alumnosRes.count ?? 0,                         icon: Users,          href: "/dashboard/alumnos?activo=true",      color: T.accent,   glow: T.accentBg,               solid: false },
+    { label: "Deudores",        value: cuotasVencidasRes.count ?? 0,                   icon: AlertTriangle,  href: "/dashboard/cuotas?estado=vencida",    color: T.danger,   glow: `${T.danger}15`,          solid: false },
+    { label: "Pendientes",      value: pendientesRes.count ?? 0,                       icon: Clock,          href: "/dashboard/cuotas?estado=pendiente",  color: T.warning,  glow: `${T.warning}15`,         solid: false },
+    // Lima: no funciona como color de texto/ícono fino sobre blanco (poco contraste) — se usa como relleno sólido con texto oscuro encima.
+    { label: "Caja del mes",    value: `$${totalCobros.toLocaleString("es-AR")}`,      icon: TrendingUp,     href: "/dashboard/pagos",                    color: T.lime,     glow: T.lime,                    solid: true },
   ];
 
   const pasos = [
@@ -114,9 +115,16 @@ export default async function DashboardPage() {
             className="group relative rounded-xl p-5 transition-all duration-200 overflow-hidden"
             style={{ background: T.card, border: `1px solid ${T.border}` }}
           >
-            <stat.icon className="absolute -bottom-2 -right-2 w-20 h-20 opacity-[0.04]" style={{ color: stat.color }} />
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-4" style={{ background: stat.glow, border: `1px solid ${stat.color}25` }}>
-              <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
+            <stat.icon className="absolute -bottom-2 -right-2 w-20 h-20 opacity-[0.06]" style={{ color: stat.color }} />
+            <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center mb-4"
+              style={
+                stat.solid
+                  ? { background: stat.color, border: "none" }
+                  : { background: stat.glow, border: `1px solid ${stat.color}25` }
+              }
+            >
+              <stat.icon className="w-4 h-4" style={{ color: stat.solid ? T.limeText : stat.color }} />
             </div>
             <p className="text-3xl font-black leading-none mb-1" style={{ fontFamily: "var(--font-fredoka)", color: T.text }}>
               {stat.value}
@@ -124,7 +132,7 @@ export default async function DashboardPage() {
             <p className="text-xs uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>
               {stat.label}
             </p>
-            <div className="absolute bottom-0 left-0 h-0.5 w-full" style={{ background: `linear-gradient(90deg, ${stat.color}60, transparent)` }} />
+            <div className="absolute bottom-0 left-0 h-0.5 w-full" style={{ background: stat.solid ? stat.color : `linear-gradient(90deg, ${stat.color}60, transparent)` }} />
           </Link>
         ))}
       </div>

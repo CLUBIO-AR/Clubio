@@ -110,12 +110,12 @@ export default async function AdminDashboardPage() {
     { label: "Gyms activos",      value: gymsActivosRes.count ?? 0,                                  icon: Building2,  color: ADMIN_ACCENT, bg: "#F9731620" },
     { label: "En trial",          value: licenciasTrialRes.count ?? 0,                               icon: Hourglass,  color: T.blue,       bg: `${T.blue}15` },
     { label: "Vencen ≤ 7 días",   value: licenciasVencen.length,                                     icon: AlertTriangle, color: T.warning, bg: `${T.warning}15` },
-    { label: "MRR estimado",      value: `US$ ${mrr.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`, icon: DollarSign, color: T.lime, bg: `${T.lime}15` },
+    { label: "MRR estimado",      value: `US$ ${mrr.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`, icon: DollarSign, color: T.limeText, bg: T.lime },
     { label: "Alumnos totales",   value: (alumnosRes.count ?? 0).toLocaleString("es-AR"),            icon: Users,      color: T.accent,     bg: T.accentBg },
     { label: "Emails hoy",        value: emailsHoyRes.count ?? 0,                                    icon: Mail,       color: T.blue,       bg: `${T.blue}15` },
-    { label: "Pagos hoy",         value: pagosHoyRes.count ?? 0,                                     icon: Wallet,     color: T.lime,       bg: `${T.lime}15` },
+    { label: "Pagos hoy",         value: pagosHoyRes.count ?? 0,                                     icon: Wallet,     color: T.limeText,   bg: T.lime },
     { label: "Leads nuevos",      value: leadsNuevosRes.count ?? 0,                                  icon: Inbox,      color: T.danger,     bg: `${T.danger}15` },
-    { label: "Cobrado en suscr.", value: `$ ${ingresosMes.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`, icon: TrendingUp, color: T.lime, bg: `${T.lime}15` },
+    { label: "Cobrado en suscr.", value: `$ ${ingresosMes.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`, icon: TrendingUp, color: T.limeText, bg: T.lime },
     { label: "Tasa cobros",       value: `${tasaConversion}%`,                                       icon: BarChart2,  color: T.blue,       bg: `${T.blue}15` },
   ];
 

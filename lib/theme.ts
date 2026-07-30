@@ -5,10 +5,10 @@
 export const T = {
   // Fondos
   bgDeep:   "#160B33",      // sidebar — violeta muy oscuro (se mantiene oscuro por diseño)
-  bg:       "#FFFFFF",      // fondo principal — blanco
-  card:     "#FFFFFF",      // cards
-  cardHover:"#F6F4FC",      // hover
-  inputBg:  "#F8F7FC",      // inputs
+  bg:       "#F7F6FB",      // fondo principal — blanco suavizado, no blanco puro (menos contraste duro)
+  card:     "#FFFFFF",      // cards — blanco puro, se despegan levemente del fondo
+  cardHover:"#F1EFF8",      // hover
+  inputBg:  "#F7F6FB",      // inputs
 
   // Bordes
   border:    "#E4E0F1",
@@ -36,7 +36,11 @@ export const T = {
   // Semánticos
   danger:  "oklch(0.65 0.19 27)",
   warning: "oklch(0.80 0.15 85)",
-  lime:    "#D7FF3D",        // segundo acento de marca — usar con texto oscuro encima
-  limeText:"#16112B",        // texto sobre fondo lime
+  // Lima — SIEMPRE como relleno sólido (chip/franja/dot), nunca como texto o
+  // ícono fino sobre blanco: su luminancia es casi igual a la del fondo y
+  // queda invisible como trazo. Usar lime + limeText juntos.
+  lime:       "#D7FF3D",
+  limeText:   "#16112B",        // texto oscuro sobre fondo lime
+  limeBorder: "rgba(215, 255, 61, 0.55)",
   blue:    "oklch(0.65 0.15 220)",
 } as const;

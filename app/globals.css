@@ -47,8 +47,8 @@
 }
 
 :root {
-  /* Marca CLUBIO — fondo blanco, acentos violeta/lima. Sidebar se mantiene oscuro. */
-  --background: #FFFFFF;
+  /* Marca CLUBIO — fondo blanco suavizado, acentos violeta/lima. Sidebar se mantiene oscuro. */
+  --background: #F7F6FB;
   --foreground: #16112B;             /* casi negro, tinte violeta */
 
   --card: #FFFFFF;

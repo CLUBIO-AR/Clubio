@@ -226,7 +226,11 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
         {paginados.map((p) => {
           const alumno = p.alumnos;
           const cuota  = p.cuotas;
-          const metodoColor = p.metodo === "mercadopago" ? T.accent : p.metodo === "efectivo" ? T.lime : T.blue;
+          const esEfectivo = p.metodo === "efectivo";
+          const metodoColor = p.metodo === "mercadopago" ? T.accent : esEfectivo ? T.lime : T.blue;
+          // Lima no funciona como texto sobre su propio fondo pálido (poco contraste) — se usa como chip sólido.
+          const metodoBg   = esEfectivo ? T.lime     : `${metodoColor}15`;
+          const metodoText = esEfectivo ? T.limeText : metodoColor;
           const periodo = !cuota
             ? "—"
             : cuota.tipo !== "mensual" && cuota.descripcion
@@ -264,7 +268,7 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
               </div>
               <div>
                 <span className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider whitespace-nowrap"
-                  style={{ fontFamily: "var(--font-fredoka)", background: `${metodoColor}15`, color: metodoColor, border: `1px solid ${metodoColor}30` }}>
+                  style={{ fontFamily: "var(--font-fredoka)", background: metodoBg, color: metodoText, border: `1px solid ${metodoColor}30` }}>
                   {METODO_LABEL[p.metodo] ?? p.metodo}
                 </span>
               </div>

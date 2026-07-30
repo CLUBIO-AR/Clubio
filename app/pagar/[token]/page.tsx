@@ -96,7 +96,7 @@ function ErrorPage({ mensaje }: { mensaje: string }) {
   return (
     <div style={{ minHeight: "100vh", background: T.bgDeep, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ textAlign: "center", padding: "2rem", maxWidth: 400 }}>
-        <p style={{ color: T.danger, fontFamily: "var(--font-barlow-condensed)", fontSize: "1.1rem", fontWeight: 700 }}>
+        <p style={{ color: T.danger, fontFamily: "var(--font-fredoka)", fontSize: "1.1rem", fontWeight: 700 }}>
           {mensaje}
         </p>
       </div>

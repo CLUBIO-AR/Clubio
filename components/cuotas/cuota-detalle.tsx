@@ -122,7 +122,7 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
   }
 
   const labelStyle: React.CSSProperties = {
-    color: T.textMuted, fontFamily: "var(--font-barlow-condensed)",
+    color: T.textMuted, fontFamily: "var(--font-fredoka)",
     fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
   };
   const inp: React.CSSProperties = { background: T.inputBg, border: `1px solid ${T.border}`, color: T.text };
@@ -132,15 +132,15 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
       {/* Estado badge + periodo */}
       <div className="flex items-center gap-3 flex-wrap">
         <span className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold uppercase tracking-wider text-sm"
-          style={{ fontFamily: "var(--font-barlow-condensed)", background: est.bg, color: est.color, border: `1px solid ${est.color}25` }}>
+          style={{ fontFamily: "var(--font-fredoka)", background: est.bg, color: est.color, border: `1px solid ${est.color}25` }}>
           <EstIcon className="w-4 h-4" />
           {est.label}
         </span>
-        <span className="font-bold uppercase tracking-widest" style={{ fontFamily: "var(--font-barlow-condensed)", color: T.textMuted, fontSize: "0.85rem" }}>
+        <span className="font-bold uppercase tracking-widest" style={{ fontFamily: "var(--font-fredoka)", color: T.textMuted, fontSize: "0.85rem" }}>
           {MESES[cuota.mes]} {cuota.anio}
         </span>
         {cuota.recargo_nivel && (
-          <span className="px-3 py-1 rounded-lg text-xs font-bold uppercase" style={{ background: `${T.danger}12`, color: T.danger, border: `1px solid ${T.danger}25`, fontFamily: "var(--font-barlow-condensed)" }}>
+          <span className="px-3 py-1 rounded-lg text-xs font-bold uppercase" style={{ background: `${T.danger}12`, color: T.danger, border: `1px solid ${T.danger}25`, fontFamily: "var(--font-fredoka)" }}>
             Recargo nivel {cuota.recargo_nivel}
           </span>
         )}
@@ -155,7 +155,7 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
               <User className="w-4 h-4" style={{ color: T.accent }} />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wider mb-0.5" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Alumno</p>
+              <p className="text-xs uppercase tracking-wider mb-0.5" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>Alumno</p>
               <p className="font-bold" style={{ color: T.text }}>{cuota.alumnos.apellido}, {cuota.alumnos.nombre}</p>
               <p className="text-xs font-mono" style={{ color: T.textMuted }}>DNI {cuota.alumnos.dni}</p>
             </div>
@@ -166,9 +166,9 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
         <div className="p-4 rounded-xl" style={{ background: T.card, border: `1px solid ${T.border}` }}>
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="w-4 h-4" style={{ color: T.accent }} />
-            <p className="text-xs uppercase tracking-wider" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Monto</p>
+            <p className="text-xs uppercase tracking-wider" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>Monto</p>
           </div>
-          <p className="text-3xl font-black font-mono" style={{ fontFamily: "var(--font-barlow-condensed)", color: T.text }}>
+          <p className="text-3xl font-black font-mono" style={{ fontFamily: "var(--font-fredoka)", color: T.text }}>
             ${cuota.monto_total?.toLocaleString("es-AR")}
           </p>
           {cuota.monto_recargo > 0 && (
@@ -182,7 +182,7 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
         <div className="p-4 rounded-xl" style={{ background: T.card, border: `1px solid ${T.border}` }}>
           <div className="flex items-center gap-2 mb-2">
             <Calendar className="w-4 h-4" style={{ color: cuota.estado === "vencida" ? T.danger : T.accent }} />
-            <p className="text-xs uppercase tracking-wider" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Vencimiento</p>
+            <p className="text-xs uppercase tracking-wider" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>Vencimiento</p>
           </div>
           <p className="text-xl font-bold" style={{ color: cuota.estado === "vencida" ? T.danger : T.text }}>
             {new Date(cuota.fecha_vencimiento).toLocaleDateString("es-AR")}
@@ -196,7 +196,7 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
 
         {cuota.notas && (
           <div className="col-span-2 p-4 rounded-xl" style={{ background: T.card, border: `1px solid ${T.border}` }}>
-            <p className="text-xs uppercase tracking-wider mb-1" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Notas</p>
+            <p className="text-xs uppercase tracking-wider mb-1" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>Notas</p>
             <p className="text-sm" style={{ color: T.textMuted }}>{cuota.notas}</p>
           </div>
         )}
@@ -208,21 +208,21 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
           {canPay && (
             <button onClick={() => setAccion("pagar")}
               className="flex items-center gap-2 h-10 px-5 rounded-lg font-bold uppercase tracking-widest text-sm transition-all hover:opacity-90"
-              style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accent, color: T.bgDeep, boxShadow: T.accentGlow }}>
+              style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep, boxShadow: T.accentGlow }}>
               <CheckCircle className="w-4 h-4" /> Registrar pago
             </button>
           )}
           {canPay && (
             <button onClick={handleGenerarLink} disabled={linkLoading}
               className="flex items-center gap-2 h-10 px-5 rounded-lg font-bold uppercase tracking-widest text-sm transition-all hover:opacity-90 disabled:opacity-50"
-              style={{ fontFamily: "var(--font-barlow-condensed)", background: T.card, color: T.text, border: `1px solid ${T.border}` }}>
+              style={{ fontFamily: "var(--font-fredoka)", background: T.card, color: T.text, border: `1px solid ${T.border}` }}>
               {linkLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : linkCopiado ? <><Check className="w-4 h-4" style={{ color: T.accent }} /> Link copiado</> : <><Link2 className="w-4 h-4" /> Enviar link MP</>}
             </button>
           )}
           {canCondonar && (
             <button onClick={() => setAccion("condonar")}
               className="flex items-center gap-2 h-10 px-5 rounded-lg font-bold uppercase tracking-widest text-sm transition-all hover:opacity-80"
-              style={{ fontFamily: "var(--font-barlow-condensed)", background: `${T.danger}12`, color: T.danger, border: `1px solid ${T.danger}25` }}>
+              style={{ fontFamily: "var(--font-fredoka)", background: `${T.danger}12`, color: T.danger, border: `1px solid ${T.danger}25` }}>
               <XCircle className="w-4 h-4" /> Condonar cuota
             </button>
           )}
@@ -242,7 +242,7 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
             onClick={handleVerificarPago}
             disabled={verificarLoading || !verificarInput.trim()}
             className="flex items-center gap-1.5 h-9 px-4 rounded-lg font-bold uppercase tracking-widest text-xs transition-all hover:opacity-90 disabled:opacity-40 shrink-0"
-            style={{ fontFamily: "var(--font-barlow-condensed)", background: T.card, color: T.textMuted, border: `1px solid ${T.border}` }}>
+            style={{ fontFamily: "var(--font-fredoka)", background: T.card, color: T.textMuted, border: `1px solid ${T.border}` }}>
             {verificarLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
             Verificar MP
           </button>
@@ -263,7 +263,7 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
       {/* Form pago manual */}
       {accion === "pagar" && (
         <div className="rounded-xl p-5 space-y-4" style={{ background: T.card, border: `1px solid ${T.accentBorder}` }}>
-          <h3 className="text-sm font-bold uppercase tracking-[0.12em]" style={{ color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
+          <h3 className="text-sm font-bold uppercase tracking-[0.12em]" style={{ color: T.accent, fontFamily: "var(--font-fredoka)" }}>
             — Registrar pago manual
           </h3>
           <div className="grid grid-cols-2 gap-3">
@@ -291,7 +291,7 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
           <div className="flex gap-3">
             <button onClick={handlePagar} disabled={loading}
               className="h-9 px-5 rounded-lg font-bold uppercase tracking-widest text-sm flex items-center gap-2 disabled:opacity-50 hover:opacity-90 transition-all"
-              style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accent, color: T.bgDeep }}>
+              style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep }}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle className="w-4 h-4" /> Confirmar pago</>}
             </button>
             <button onClick={() => setAccion("none")} className="h-9 px-4 rounded-lg text-sm hover:opacity-75 transition-all" style={{ color: T.textMuted }}>
@@ -304,7 +304,7 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
       {/* Form condonar */}
       {accion === "condonar" && (
         <div className="rounded-xl p-5 space-y-4" style={{ background: T.card, border: `1px solid ${T.danger}30` }}>
-          <h3 className="text-sm font-bold uppercase tracking-[0.12em]" style={{ color: T.danger, fontFamily: "var(--font-barlow-condensed)" }}>
+          <h3 className="text-sm font-bold uppercase tracking-[0.12em]" style={{ color: T.danger, fontFamily: "var(--font-fredoka)" }}>
             — Condonar cuota
           </h3>
           <p className="text-sm" style={{ color: T.textMuted }}>La cuota quedará marcada como condonada y no se cobrará.</p>
@@ -316,7 +316,7 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
           <div className="flex gap-3">
             <button onClick={handleCondonar} disabled={loading}
               className="h-9 px-5 rounded-lg font-bold uppercase tracking-widest text-sm flex items-center gap-2 disabled:opacity-50 hover:opacity-80 transition-all"
-              style={{ fontFamily: "var(--font-barlow-condensed)", background: `${T.danger}15`, color: T.danger, border: `1px solid ${T.danger}30` }}>
+              style={{ fontFamily: "var(--font-fredoka)", background: `${T.danger}15`, color: T.danger, border: `1px solid ${T.danger}30` }}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><XCircle className="w-4 h-4" /> Condonar</>}
             </button>
             <button onClick={() => setAccion("none")} className="h-9 px-4 rounded-lg text-sm hover:opacity-75 transition-all" style={{ color: T.textMuted }}>
@@ -330,7 +330,7 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
       {pagos.length > 0 && (
         <div className="rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
           <div className="px-5 py-4 border-b" style={{ borderColor: T.borderSub }}>
-            <h3 className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
+            <h3 className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.accent, fontFamily: "var(--font-fredoka)" }}>
               — Historial de pagos
             </h3>
           </div>

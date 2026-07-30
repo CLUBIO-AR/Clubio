@@ -105,7 +105,7 @@ export function ConfigBranding({ logoUrl, colorAcento }: Props) {
               type="button"
               onClick={() => setColor("")}
               className="text-xs font-bold uppercase tracking-wider hover:opacity-80"
-              style={{ color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}
+              style={{ color: T.accent, fontFamily: "var(--font-fredoka)" }}
             >
               Usar el de CLUBIO
             </button>

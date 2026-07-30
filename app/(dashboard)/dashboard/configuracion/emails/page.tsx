@@ -50,7 +50,7 @@ export default async function EmailsMonitoreoPage({
         <div>
           <h1
             className="text-4xl leading-none"
-            style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}
+            style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}
           >
             EMAILS ENVIADOS
           </h1>

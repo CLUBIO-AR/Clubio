@@ -61,7 +61,7 @@ const ALCANCE_OPTS = [
   { value: "worker", label: "Solo workers" },
 ];
 
-const sel: React.CSSProperties = { background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" };
+const sel: React.CSSProperties = { background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" };
 
 function formatDuracion(ms: number | null) {
   if (!ms) return "—";
@@ -127,12 +127,12 @@ export function CronsLogClient({ logs, total, page, totalPages, filters, gyms }:
     <div className="space-y-6">
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>LOGS · CRONS</h1>
+          <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>LOGS · CRONS</h1>
           <p className="text-sm mt-1" style={{ color: T.textDim }}>{total.toLocaleString("es-AR")} ejecución{total !== 1 ? "es" : ""} registrada{total !== 1 ? "s" : ""}</p>
         </div>
         {ES_DEV && (
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Ejecutar manualmente para:</span>
+            <span className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>Ejecutar manualmente para:</span>
             <select value={gymEjecucion} onChange={(e) => setGymEjecucion(e.target.value)} className="h-9 px-3 rounded-lg text-sm" style={sel}>
               <option value="">Seleccionar gym...</option>
               {gyms.map((g) => <option key={g.id} value={g.id}>{g.nombre}</option>)}
@@ -140,7 +140,7 @@ export function CronsLogClient({ logs, total, page, totalPages, filters, gyms }:
             {Object.entries(TIPO_CONFIG).map(([tipo, cfg]) => (
               <button key={tipo} onClick={() => ejecutar(tipo)} disabled={!!ejecutando || !gymEjecucion}
                 className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80 inline-flex items-center gap-1.5 disabled:opacity-40"
-                style={{ fontFamily: "var(--font-barlow-condensed)", background: `${cfg.color}15`, border: `1px solid ${cfg.color}40`, color: cfg.color }}>
+                style={{ fontFamily: "var(--font-fredoka)", background: `${cfg.color}15`, border: `1px solid ${cfg.color}40`, color: cfg.color }}>
                 {ejecutando === tipo ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />} {cfg.label}
               </button>
             ))}
@@ -176,7 +176,7 @@ export function CronsLogClient({ logs, total, page, totalPages, filters, gyms }:
           <input type="date" value={filters.hasta} onChange={(e) => applyFilters({ hasta: e.target.value })} className="h-9 px-3 rounded-lg text-sm" style={sel} />
           {hayFiltroFecha && (
             <button onClick={() => applyFilters({ desde: "", hasta: "" })} className="text-xs font-bold uppercase tracking-widest px-2.5 py-1.5 rounded-md transition-opacity hover:opacity-75"
-              style={{ fontFamily: "var(--font-barlow-condensed)", color: T.textDim, border: `1px solid ${T.border}` }}>
+              style={{ fontFamily: "var(--font-fredoka)", color: T.textDim, border: `1px solid ${T.border}` }}>
               Limpiar
             </button>
           )}
@@ -196,7 +196,7 @@ export function CronsLogClient({ logs, total, page, totalPages, filters, gyms }:
             <TableHeader>
               <TableRow style={{ background: T.bg, borderColor: T.border }}>
                 {["Fecha", "Tipo", "Alcance", "Gym", "Items", "Errores", "Duración", "Estado", ""].map((h) => (
-                  <TableHead key={h} className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)", borderColor: T.border }}>
+                  <TableHead key={h} className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)", borderColor: T.border }}>
                     {h}
                   </TableHead>
                 ))}
@@ -281,7 +281,7 @@ export function CronsLogClient({ logs, total, page, totalPages, filters, gyms }:
                 {detalle.triggered_by && <p style={{ color: T.textMuted }}>Disparado por: <span style={{ color: T.text }}>{detalle.triggered_by}</span></p>}
                 {detalle.error_detalle && (
                   <div className="pt-1">
-                    <p className="text-xs uppercase tracking-widest font-bold mb-1" style={{ color: T.danger, fontFamily: "var(--font-barlow-condensed)" }}>Error</p>
+                    <p className="text-xs uppercase tracking-widest font-bold mb-1" style={{ color: T.danger, fontFamily: "var(--font-fredoka)" }}>Error</p>
                     <p className="rounded-lg p-3 text-xs font-mono leading-relaxed whitespace-pre-wrap" style={{ background: `${T.danger}10`, border: `1px solid ${T.danger}30`, color: T.danger }}>{detalle.error_detalle}</p>
                   </div>
                 )}

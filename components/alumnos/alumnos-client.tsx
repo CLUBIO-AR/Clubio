@@ -108,7 +108,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-4xl text-white leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900 }}>ALUMNOS</h1>
+          <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>ALUMNOS</h1>
           <p className="text-sm mt-1" style={{ color: T.textDim }}>
             {alumnos.length} alumno{alumnos.length !== 1 ? "s" : ""} encontrado{alumnos.length !== 1 ? "s" : ""}
             {totalPages > 1 && ` · página ${page} de ${totalPages}`}
@@ -123,7 +123,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
               window.location.href = `/api/alumnos/export?${params.toString()}`;
             }}
             className="inline-flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-widest transition-opacity hover:opacity-80"
-            style={{ fontFamily: "var(--font-barlow-condensed)", background: "transparent", color: T.textMuted, border: `1px solid ${T.border}` }}
+            style={{ fontFamily: "var(--font-fredoka)", background: "transparent", color: T.textMuted, border: `1px solid ${T.border}` }}
           >
             <Download className="w-3.5 h-3.5" />
             Exportar
@@ -131,7 +131,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
           <Link
             href="/dashboard/alumnos/nuevo"
             className={buttonVariants({ className: "gap-2 font-bold uppercase tracking-widest text-sm hover:opacity-90" })}
-            style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accent, color: T.bgDeep, border: "none", boxShadow: T.accentGlow }}
+            style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep, border: "none", boxShadow: T.accentGlow }}
           >
             <Plus className="w-4 h-4" /> Nuevo alumno
           </Link>
@@ -155,7 +155,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
           onClick={() => applyFilters(search, activo, actividad)}
           disabled={isPending}
           className="h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-all hover:opacity-80"
-          style={{ fontFamily: "var(--font-barlow-condensed)", background: T.card, border: `1px solid ${T.border}`, color: T.accent }}
+          style={{ fontFamily: "var(--font-fredoka)", background: T.card, border: `1px solid ${T.border}`, color: T.accent }}
         >
           {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Buscar"}
         </button>
@@ -166,7 +166,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
               onClick={() => { setActivo(tab.value); applyFilters(search, tab.value, actividad); }}
               className="px-3 py-1.5 text-xs rounded-md font-bold uppercase tracking-widest transition-all"
               style={{
-                fontFamily: "var(--font-barlow-condensed)",
+                fontFamily: "var(--font-fredoka)",
                 background: activo === tab.value ? T.accent : "transparent",
                 color:      activo === tab.value ? T.bgDeep : T.textMuted,
               }}
@@ -179,7 +179,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
           value={actividad}
           onChange={(e) => { setActividad(e.target.value); applyFilters(search, activo, e.target.value); }}
           className="h-9 px-3 rounded-lg text-sm"
-          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" }}
+          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" }}
         >
           <option value="">Todas las actividades</option>
           {actividades.map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
@@ -193,7 +193,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
             <TableHeader>
               <TableRow style={{ background: T.bg, borderColor: T.border }}>
                 {["Alumno", "DNI", "Contacto", "Alta", "Estado", "Cuota actual", ""].map((h) => (
-                  <TableHead key={h} className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)", borderColor: T.border }}>
+                  <TableHead key={h} className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)", borderColor: T.border }}>
                     {h}
                   </TableHead>
                 ))}
@@ -216,7 +216,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold"
-                          style={{ background: T.accentBg, border: `1px solid ${T.accentBorder}`, color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
+                          style={{ background: T.accentBg, border: `1px solid ${T.accentBorder}`, color: T.accent, fontFamily: "var(--font-fredoka)" }}>
                           {(alumno.nombre?.[0] ?? "")}{(alumno.apellido?.[0] ?? "")}
                         </div>
                         <p className="font-semibold text-sm" style={{ color: T.text }}>{alumno.apellido}, {alumno.nombre}</p>
@@ -232,7 +232,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
                     <TableCell>
                       <span className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider"
                         style={{
-                          fontFamily: "var(--font-barlow-condensed)",
+                          fontFamily: "var(--font-fredoka)",
                           background: alumno.activo ? T.accentBg : `${T.textDim}15`,
                           color:      alumno.activo ? T.accent   : T.textDim,
                           border:     `1px solid ${alumno.activo ? T.accentBorder : T.borderSub}`,
@@ -244,14 +244,14 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
                       <div className="flex items-center gap-1.5">
                         {cuotaStyle ? (
                           <span className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider"
-                            style={{ fontFamily: "var(--font-barlow-condensed)", background: cuotaStyle.bg, color: cuotaStyle.color, border: `1px solid ${cuotaStyle.border}` }}>
+                            style={{ fontFamily: "var(--font-fredoka)", background: cuotaStyle.bg, color: cuotaStyle.color, border: `1px solid ${cuotaStyle.border}` }}>
                             {cuotaStyle.label}
                           </span>
                         ) : (
                           <button
                             onClick={(e) => { e.stopPropagation(); setModalAlumno({ id: alumno.id!, nombre: `${alumno.apellido}, ${alumno.nombre}` }); }}
                             className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider transition-colors hover:opacity-80"
-                            style={{ fontFamily: "var(--font-barlow-condensed)", background: `${T.textDim}12`, color: T.textDim, border: `1px solid ${T.borderSub}` }}
+                            style={{ fontFamily: "var(--font-fredoka)", background: `${T.textDim}12`, color: T.textDim, border: `1px solid ${T.borderSub}` }}
                           >
                             <Plus className="w-3 h-3" /> Generar
                           </button>
@@ -364,7 +364,7 @@ function EmptyState({ search }: { search: string }) {
         <Users className="w-7 h-7" style={{ color: T.accent }} />
       </div>
       <div>
-        <p className="font-bold text-lg uppercase" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
+        <p className="font-bold text-lg uppercase" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>
           {search ? `Sin resultados para "${search}"` : "Todavía no hay alumnos"}
         </p>
         <p className="text-sm mt-1" style={{ color: T.textDim }}>

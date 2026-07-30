@@ -83,13 +83,13 @@ export function AlumnoActividades({ alumnoId, inscripciones: inicial, actividade
   return (
     <div className="rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
       <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: T.borderSub }}>
-        <h2 className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
+        <h2 className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.accent, fontFamily: "var(--font-fredoka)" }}>
           — Actividades inscriptas
         </h2>
         {!agregando && disponibles.length > 0 && (
           <button onClick={() => setAgregando(true)}
             className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider"
-            style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accentBg, color: T.accent, border: `1px solid ${T.accentBorder}` }}
+            style={{ fontFamily: "var(--font-fredoka)", background: T.accentBg, color: T.accent, border: `1px solid ${T.accentBorder}` }}
           >
             <Plus className="w-3 h-3" /> Agregar
           </button>
@@ -102,7 +102,7 @@ export function AlumnoActividades({ alumnoId, inscripciones: inicial, actividade
           <div className="p-3 rounded-xl space-y-3" style={{ background: T.bgDeep, border: `1px solid ${T.accentBorder}` }}>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Actividad</label>
+                <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textOnDarkDim, fontFamily: "var(--font-fredoka)" }}>Actividad</label>
                 <select
                   value={selectedId}
                   onChange={e => setSelectedId(e.target.value)}
@@ -115,7 +115,7 @@ export function AlumnoActividades({ alumnoId, inscripciones: inicial, actividade
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+                <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textOnDarkDim, fontFamily: "var(--font-fredoka)" }}>
                   Precio personalizado ($)
                 </label>
                 <input
@@ -127,7 +127,7 @@ export function AlumnoActividades({ alumnoId, inscripciones: inicial, actividade
               </div>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+              <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textOnDarkDim, fontFamily: "var(--font-fredoka)" }}>
                 Fecha de inicio
               </label>
               <input
@@ -139,12 +139,12 @@ export function AlumnoActividades({ alumnoId, inscripciones: inicial, actividade
             </div>
             {error && <p className="text-xs" style={{ color: T.danger }}>{error}</p>}
             <div className="flex gap-2 justify-end">
-              <button onClick={() => { setAgregando(false); setError(null); }} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+              <button onClick={() => { setAgregando(false); setError(null); }} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider" style={{ color: T.textOnDarkDim, fontFamily: "var(--font-fredoka)" }}>
                 Cancelar
               </button>
               <button onClick={handleAgregar} disabled={!selectedId || loading}
                 className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 disabled:opacity-50"
-                style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accent, color: T.bgDeep }}
+                style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep }}
               >
                 {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
                 Agregar
@@ -166,7 +166,7 @@ export function AlumnoActividades({ alumnoId, inscripciones: inicial, actividade
             <div key={ins.id} className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: T.bg, border: `1px solid ${T.border}`, opacity: ins.activa ? 1 : 0.5 }}>
               <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: act?.color ?? T.accent }} />
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
+                <p className="font-bold text-sm" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>
                   {act?.nombre.toUpperCase() ?? "—"}
                 </p>
                 <p className="text-xs font-mono" style={{ color: T.textDim }}>
@@ -177,7 +177,7 @@ export function AlumnoActividades({ alumnoId, inscripciones: inicial, actividade
               <button
                 onClick={() => handleToggle(ins)}
                 className="px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider"
-                style={{ fontFamily: "var(--font-barlow-condensed)", background: ins.activa ? T.accentBg : `${T.textDim}15`, color: ins.activa ? T.accent : T.textDim }}
+                style={{ fontFamily: "var(--font-fredoka)", background: ins.activa ? T.accentBg : `${T.textDim}15`, color: ins.activa ? T.accent : T.textDim }}
               >
                 {ins.activa ? "Activa" : "Inactiva"}
               </button>

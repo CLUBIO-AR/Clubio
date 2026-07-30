@@ -23,7 +23,7 @@ const inp: React.CSSProperties = {
 const labelStyle: React.CSSProperties = {
   display: "block", marginBottom: 4, fontSize: "0.7rem", fontWeight: 700,
   letterSpacing: "0.12em", textTransform: "uppercase",
-  fontFamily: "var(--font-barlow-condensed)", color: T.textDim,
+  fontFamily: "var(--font-fredoka)", color: T.textDim,
 };
 
 interface Props {
@@ -91,7 +91,7 @@ export function NuevaCuotaModal({ open, onClose, alumnoId, alumnoNombre, mesDefa
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent style={{ background: T.card, border: `1px solid ${T.border}`, maxWidth: 480 }}>
         <DialogHeader>
-          <DialogTitle style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)", fontSize: "1.4rem", fontWeight: 900 }}>
+          <DialogTitle style={{ color: T.text, fontFamily: "var(--font-fredoka)", fontSize: "1.4rem", fontWeight: 900 }}>
             NUEVA CUOTA
             {alumnoNombre && <span className="ml-2 text-sm font-normal" style={{ color: T.textDim }}>— {alumnoNombre}</span>}
           </DialogTitle>
@@ -171,7 +171,7 @@ export function NuevaCuotaModal({ open, onClose, alumnoId, alumnoNombre, mesDefa
             </button>
             <button type="submit" disabled={loading || !alumnoId}
               className="h-9 px-5 rounded-lg text-sm font-bold uppercase tracking-wider flex items-center gap-2 disabled:opacity-50"
-              style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accent, color: T.bgDeep, boxShadow: T.accentGlow }}>
+              style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep, boxShadow: T.accentGlow }}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
               Crear cuota
             </button>

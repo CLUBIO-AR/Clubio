@@ -70,14 +70,14 @@ export function ConfigPlantillas({ templates }: Props) {
       {TIPOS.map(({ key, label, defaultSubject, defaultBody }) => (
         <div key={key} className="space-y-3 pt-2 border-t" style={{ borderColor: T.borderSub }}>
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
+            <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>
               {label}
             </h3>
             <button
               type="button"
               onClick={() => reset(key)}
               className="text-xs font-bold uppercase tracking-wider hover:opacity-80"
-              style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}
+              style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}
             >
               Restablecer
             </button>

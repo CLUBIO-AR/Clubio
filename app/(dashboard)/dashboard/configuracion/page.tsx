@@ -29,7 +29,7 @@ export default async function ConfiguracionPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>
+        <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>
           CONFIGURACIÓN
         </h1>
         <p className="text-sm mt-1" style={{ color: T.textDim }}>Ajustes del gimnasio</p>
@@ -88,7 +88,7 @@ export default async function ConfiguracionPage() {
 
       {(ctx.rol === "owner" || ctx.rol === "admin") && (
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.12em] mb-3" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+          <p className="text-xs font-bold uppercase tracking-[0.12em] mb-3" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>
             — Avanzado
           </p>
           <Link
@@ -100,7 +100,7 @@ export default async function ConfiguracionPage() {
               <Activity className="w-4 h-4" style={{ color: T.accent }} />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
+              <p className="text-sm font-bold" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>
                 MONITOREO DE CRONS
               </p>
               <p className="text-xs" style={{ color: T.textDim }}>Estado de tareas automáticas</p>
@@ -117,7 +117,7 @@ export default async function ConfiguracionPage() {
               <Mail className="w-4 h-4" style={{ color: T.blue }} />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
+              <p className="text-sm font-bold" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>
                 EMAILS ENVIADOS
               </p>
               <p className="text-xs" style={{ color: T.textDim }}>Historial de avisos y recordatorios</p>

@@ -27,7 +27,7 @@ const PASOS = ["Datos del gym", "Owner", "Comercial", "Configuración"];
 const PLAN_PRECIOS: Record<string, number> = { basic: 28, multi: 75 };
 
 const labelStyle: React.CSSProperties = {
-  color: T.textMuted, fontFamily: "var(--font-barlow-condensed)",
+  color: T.textMuted, fontFamily: "var(--font-fredoka)",
   fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
 };
 const inp: React.CSSProperties = { background: T.inputBg, border: `1px solid ${T.border}`, color: T.text };
@@ -168,14 +168,14 @@ export function NuevoGymWizard({ lead }: NuevoGymWizardProps) {
       <div className="max-w-xl mx-auto space-y-6">
         <div className="rounded-xl p-6 text-center" style={{ background: T.accentBg, border: `1px solid ${T.accentBorder}` }}>
           <CheckCircle2 className="w-10 h-10 mx-auto mb-2" style={{ color: T.accent }} />
-          <h2 className="text-2xl font-black" style={{ fontFamily: "var(--font-barlow-condensed)", color: T.text }}>Gym creado exitosamente</h2>
+          <h2 className="text-2xl font-black" style={{ fontFamily: "var(--font-fredoka)", color: T.text }}>Gym creado exitosamente</h2>
           <p className="text-sm mt-1" style={{ color: T.textDim }}>
             {resultado.emailEnviado ? "Le enviamos las credenciales por email al owner." : "No pudimos enviar el email — copiá las credenciales y enviáselas manualmente."}
           </p>
         </div>
 
         <div className="rounded-xl p-5 space-y-3" style={{ background: T.card, border: `1px solid ${T.border}` }}>
-          <h3 className="text-sm font-extrabold uppercase tracking-widest" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>Credenciales para enviar al cliente</h3>
+          <h3 className="text-sm font-extrabold uppercase tracking-widest" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>Credenciales para enviar al cliente</h3>
           <div className="space-y-1.5 text-sm font-mono">
             <p style={{ color: T.textMuted }}>URL: <span style={{ color: T.text }}>{resultado.loginUrl}</span></p>
             <p style={{ color: T.textMuted }}>Email: <span style={{ color: T.text }}>{resultado.ownerEmail}</span></p>
@@ -183,15 +183,15 @@ export function NuevoGymWizard({ lead }: NuevoGymWizardProps) {
           </div>
           <div className="flex items-center gap-2 pt-1">
             <button onClick={copiarCredenciales} className="h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-all hover:opacity-80 inline-flex items-center gap-2"
-              style={{ fontFamily: "var(--font-barlow-condensed)", background: "#F9731620", border: "1px solid #F9731648", color: ADMIN_ACCENT }}>
+              style={{ fontFamily: "var(--font-fredoka)", background: "#F9731620", border: "1px solid #F9731648", color: ADMIN_ACCENT }}>
               {copiado ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />} {copiado ? "Copiado" : "Copiar credenciales"}
             </button>
             <Link href="/admin/gyms" className="h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-all hover:opacity-80 inline-flex items-center"
-              style={{ fontFamily: "var(--font-barlow-condensed)", background: T.card, border: `1px solid ${T.border}`, color: T.text }}>
+              style={{ fontFamily: "var(--font-fredoka)", background: T.card, border: `1px solid ${T.border}`, color: T.text }}>
               Ver gyms
             </Link>
             <button onClick={() => { setResultado(null); setStep(0); setForm(initialForm(null)); }} className="h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-all hover:opacity-80"
-              style={{ fontFamily: "var(--font-barlow-condensed)", background: "transparent", border: `1px solid ${T.border}`, color: T.textMuted }}>
+              style={{ fontFamily: "var(--font-fredoka)", background: "transparent", border: `1px solid ${T.border}`, color: T.textMuted }}>
               Nuevo gym
             </button>
           </div>
@@ -205,10 +205,10 @@ export function NuevoGymWizard({ lead }: NuevoGymWizardProps) {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <Link href="/admin/gyms" className="inline-flex items-center gap-1.5 text-xs uppercase tracking-widest font-bold transition-opacity hover:opacity-70" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+        <Link href="/admin/gyms" className="inline-flex items-center gap-1.5 text-xs uppercase tracking-widest font-bold transition-opacity hover:opacity-70" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>
           <ArrowLeft className="w-3.5 h-3.5" /> Volver a gyms
         </Link>
-        <h1 className="text-4xl leading-none mt-2" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>NUEVO GYM</h1>
+        <h1 className="text-4xl leading-none mt-2" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>NUEVO GYM</h1>
         {lead && <p className="text-sm mt-1" style={{ color: T.textDim }}>Convirtiendo lead: {lead.nombre} ({lead.email})</p>}
       </div>
 
@@ -219,14 +219,14 @@ export function NuevoGymWizard({ lead }: NuevoGymWizardProps) {
             <div className="flex items-center gap-2 flex-1">
               <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                 style={{
-                  fontFamily: "var(--font-barlow-condensed)",
+                  fontFamily: "var(--font-fredoka)",
                   background: i < step ? T.accent : i === step ? ADMIN_ACCENT : T.card,
                   color: i <= step ? T.bgDeep : T.textDim,
                   border: `1px solid ${i <= step ? "transparent" : T.border}`,
                 }}>
                 {i < step ? <Check className="w-3.5 h-3.5" /> : i + 1}
               </div>
-              <span className="text-xs uppercase tracking-widest font-bold hidden sm:inline" style={{ fontFamily: "var(--font-barlow-condensed)", color: i <= step ? T.text : T.textDim }}>{label}</span>
+              <span className="text-xs uppercase tracking-widest font-bold hidden sm:inline" style={{ fontFamily: "var(--font-fredoka)", color: i <= step ? T.text : T.textDim }}>{label}</span>
             </div>
             {i < PASOS.length - 1 && <div className="flex-1 h-px" style={{ background: i < step ? T.accent : T.border }} />}
           </div>
@@ -284,7 +284,7 @@ export function NuevoGymWizard({ lead }: NuevoGymWizardProps) {
                   <button key={p} type="button" onClick={() => setPlan(p)}
                     className="flex-1 px-3 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wider transition-all"
                     style={{
-                      fontFamily: "var(--font-barlow-condensed)",
+                      fontFamily: "var(--font-fredoka)",
                       background: form.plan === p ? "#F9731620" : T.inputBg,
                       border: `1px solid ${form.plan === p ? "#F9731648" : T.border}`,
                       color: form.plan === p ? ADMIN_ACCENT : T.textMuted,
@@ -301,7 +301,7 @@ export function NuevoGymWizard({ lead }: NuevoGymWizardProps) {
                   <button key={m} type="button" onClick={() => setMeses(m)}
                     className="flex-1 px-3 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wider transition-all"
                     style={{
-                      fontFamily: "var(--font-barlow-condensed)",
+                      fontFamily: "var(--font-fredoka)",
                       background: form.meses_licencia === m ? T.accentBg : T.inputBg,
                       border: `1px solid ${form.meses_licencia === m ? T.accentBorder : T.border}`,
                       color: form.meses_licencia === m ? T.accent : T.textMuted,
@@ -350,18 +350,18 @@ export function NuevoGymWizard({ lead }: NuevoGymWizardProps) {
 
       <div className="flex items-center justify-between">
         <button onClick={back} disabled={step === 0 || loading} className="h-10 px-5 rounded-lg text-sm font-bold uppercase tracking-wider transition-all hover:opacity-80 inline-flex items-center gap-2 disabled:opacity-30"
-          style={{ fontFamily: "var(--font-barlow-condensed)", background: "transparent", border: `1px solid ${T.border}`, color: T.textMuted }}>
+          style={{ fontFamily: "var(--font-fredoka)", background: "transparent", border: `1px solid ${T.border}`, color: T.textMuted }}>
           <ArrowLeft className="w-4 h-4" /> Atrás
         </button>
 
         {step < PASOS.length - 1 ? (
           <button onClick={next} className={buttonVariants({ className: "gap-2 h-10 px-5 font-bold uppercase tracking-wider text-sm hover:opacity-90" })}
-            style={{ fontFamily: "var(--font-barlow-condensed)", background: ADMIN_ACCENT, color: T.bgDeep, border: "none" }}>
+            style={{ fontFamily: "var(--font-fredoka)", background: ADMIN_ACCENT, color: T.bgDeep, border: "none" }}>
             Siguiente <ArrowRight className="w-4 h-4" />
           </button>
         ) : (
           <button onClick={handleSubmit} disabled={loading} className={buttonVariants({ className: "gap-2 h-10 px-5 font-bold uppercase tracking-wider text-sm hover:opacity-90" })}
-            style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accent, color: T.bgDeep, border: "none" }}>
+            style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep, border: "none" }}>
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Crear gym
           </button>
         )}

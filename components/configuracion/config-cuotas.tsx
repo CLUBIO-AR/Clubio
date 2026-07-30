@@ -91,7 +91,7 @@ export function ConfigCuotas({
           <div className="space-y-3 pt-1 border-t" style={{ borderColor: T.borderSub }}>
             {/* Tipo de cuota al alta */}
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Tipo de cuota al alta</p>
+              <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>Tipo de cuota al alta</p>
               <div className="space-y-2">
                 {[
                   { val: false, label: "Cuota completa siempre", desc: "Se cobra el monto base completo independientemente del día" },

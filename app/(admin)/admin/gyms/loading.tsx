@@ -27,7 +27,7 @@ export default function AdminGymsLoading() {
           <div
             key={i}
             className="px-5 py-3 flex items-center gap-4 border-b"
-            style={{ borderColor: T.borderSub, background: i % 2 === 0 ? T.bgDeep : T.card }}
+            style={{ borderColor: T.borderSub, background: i % 2 === 0 ? T.cardHover : T.card }}
           >
             <Skeleton h="32px" w="32px" />
             <Skeleton h="14px" w="160px" />

@@ -113,7 +113,7 @@ export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, 
           value={filtros.estado}
           onChange={(e) => setFiltro("estado", e.target.value)}
           className="h-9 px-3 rounded-lg text-sm"
-          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" }}
+          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" }}
         >
           <option value="">Todos los estados</option>
           {["pendiente", "vencida", "pagada", "condonada", "pagada_parcial"].map((e) => (
@@ -125,7 +125,7 @@ export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, 
           value={filtros.mes}
           onChange={(e) => setFiltro("mes", e.target.value)}
           className="h-9 px-3 rounded-lg text-sm"
-          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" }}
+          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" }}
         >
           <option value="">Todos los meses</option>
           {meses.map((m) => (
@@ -137,7 +137,7 @@ export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, 
           value={filtros.anio}
           onChange={(e) => setFiltro("anio", e.target.value)}
           className="h-9 px-3 rounded-lg text-sm"
-          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" }}
+          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" }}
         >
           <option value="">Todos los años</option>
           {años.map((a) => <option key={a} value={a}>{a}</option>)}
@@ -150,7 +150,7 @@ export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, 
             onClick={pagarTodo}
             disabled={loadingLote}
             className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-opacity hover:opacity-80 disabled:opacity-40"
-            style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accentBg, color: T.accent, border: `1px solid ${T.accentBorder}` }}
+            style={{ fontFamily: "var(--font-fredoka)", background: T.accentBg, color: T.accent, border: `1px solid ${T.accentBorder}` }}
           >
             <CreditCard className="w-3.5 h-3.5" />
             {loadingLote ? "Generando..." : `Cobrar todo a ${alumnoNombre} (${nonPaidIds.length})`}
@@ -168,7 +168,7 @@ export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, 
               <tr style={{ borderBottom: `1px solid ${T.border}` }}>
                 {["Período", "Actividad", "Monto", "Vencimiento", "Estado", ""].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-extrabold uppercase tracking-wider"
-                    style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+                    style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>
                     {h}
                   </th>
                 ))}
@@ -185,7 +185,7 @@ export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, 
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <div className="w-10 h-10 rounded-lg flex flex-col items-center justify-center shrink-0" style={{ background: T.bg, border: `1px solid ${T.border}` }}>
-                          <span className="text-xs font-bold leading-none" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>{MESES_CORTO[c.mes]}</span>
+                          <span className="text-xs font-bold leading-none" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>{MESES_CORTO[c.mes]}</span>
                           <span className="text-xs leading-none mt-0.5" style={{ color: T.textDim }}>{c.anio}</span>
                         </div>
                         {c.descripcion && (
@@ -213,7 +213,7 @@ export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, 
                     </td>
                     <td className="px-4 py-3">
                       <span className="px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider"
-                        style={{ fontFamily: "var(--font-barlow-condensed)", background: s.bg, color: s.color, border: `1px solid ${s.color}30` }}>
+                        style={{ fontFamily: "var(--font-fredoka)", background: s.bg, color: s.color, border: `1px solid ${s.color}30` }}>
                         {c.estado.replace("_", " ")}
                       </span>
                     </td>
@@ -223,7 +223,7 @@ export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, 
                           onClick={() => generarLink(c.id, label)}
                           disabled={loadingId === c.id}
                           className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-opacity hover:opacity-70 disabled:opacity-40"
-                          style={{ fontFamily: "var(--font-barlow-condensed)", color: T.accent }}
+                          style={{ fontFamily: "var(--font-fredoka)", color: T.accent }}
                         >
                           <Link2 className="w-3.5 h-3.5" />
                           {loadingId === c.id ? "..." : "Link pago"}
@@ -276,7 +276,7 @@ export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, 
             style={{ background: T.card, border: `1px solid ${T.border}` }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="font-bold text-base" style={{ fontFamily: "var(--font-barlow-condensed)", color: T.text }}>
+            <h3 className="font-bold text-base" style={{ fontFamily: "var(--font-fredoka)", color: T.text }}>
               Link de pago — {linkModal.cuotaLabel}
             </h3>
             <p className="text-xs break-all rounded-lg px-3 py-2.5" style={{ background: T.bg, color: T.textMuted, border: `1px solid ${T.borderSub}`, fontFamily: "monospace" }}>
@@ -286,7 +286,7 @@ export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, 
               <button
                 onClick={() => copiar(linkModal.url)}
                 className="flex-1 flex items-center justify-center gap-2 h-9 rounded-lg text-sm font-bold uppercase tracking-wider transition-opacity hover:opacity-80"
-                style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accentBg, color: T.accent, border: `1px solid ${T.accentBorder}` }}
+                style={{ fontFamily: "var(--font-fredoka)", background: T.accentBg, color: T.accent, border: `1px solid ${T.accentBorder}` }}
               >
                 <Copy className="w-3.5 h-3.5" />
                 {copied ? "Copiado!" : "Copiar"}
@@ -296,7 +296,7 @@ export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-opacity hover:opacity-80"
-                style={{ fontFamily: "var(--font-barlow-condensed)", background: T.card, color: T.textMuted, border: `1px solid ${T.border}` }}
+                style={{ fontFamily: "var(--font-fredoka)", background: T.card, color: T.textMuted, border: `1px solid ${T.border}` }}
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 Abrir

@@ -156,7 +156,7 @@ export default async function AdminDashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>
+        <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>
           DASHBOARD
         </h1>
         <p className="text-sm mt-1" style={{ color: T.textDim }}>
@@ -171,10 +171,10 @@ export default async function AdminDashboardPage() {
             <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3" style={{ background: k.bg, border: `1px solid ${k.color}25` }}>
               <k.icon className="w-4 h-4" style={{ color: k.color }} />
             </div>
-            <p className="text-2xl font-black leading-none mb-1" style={{ fontFamily: "var(--font-barlow-condensed)", color: T.text }}>
+            <p className="text-2xl font-black leading-none mb-1" style={{ fontFamily: "var(--font-fredoka)", color: T.text }}>
               {k.value}
             </p>
-            <p className="text-xs uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+            <p className="text-xs uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>
               {k.label}
             </p>
           </div>
@@ -192,7 +192,7 @@ export default async function AdminDashboardPage() {
           >
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle className="w-4 h-4" style={{ color: a.items.length ? a.color : T.textDim }} />
-              <h3 className="text-sm font-extrabold uppercase tracking-widest" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
+              <h3 className="text-sm font-extrabold uppercase tracking-widest" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>
                 {a.titulo}
               </h3>
               {a.items.length > 0 && (

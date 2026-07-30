@@ -37,7 +37,7 @@ export function NuevoAlumnoFlow({ sucursales, actividadesDisponibles }: Props) {
           <Check className="w-4 h-4" style={{ color: T.bgDeep }} />
         </div>
         <div>
-          <p className="text-sm font-bold uppercase tracking-wider" style={{ fontFamily: "var(--font-barlow-condensed)", color: T.accent }}>
+          <p className="text-sm font-bold uppercase tracking-wider" style={{ fontFamily: "var(--font-fredoka)", color: T.accent }}>
             Alumno creado
           </p>
           <p className="text-xs" style={{ color: T.textDim }}>
@@ -56,7 +56,7 @@ export function NuevoAlumnoFlow({ sucursales, actividadesDisponibles }: Props) {
         <button
           onClick={() => router.push(`/dashboard/alumnos/${alumnoId}`)}
           className="flex items-center gap-2 h-10 px-6 rounded-lg font-bold uppercase tracking-widest text-sm transition-all hover:opacity-90"
-          style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accent, color: T.bgDeep, boxShadow: T.accentGlow }}
+          style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep, boxShadow: T.accentGlow }}
         >
           Ver ficha completa <ArrowRight className="w-4 h-4" />
         </button>

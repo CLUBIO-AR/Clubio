@@ -103,7 +103,7 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>CUOTAS</h1>
+          <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>CUOTAS</h1>
           <p className="text-sm mt-1" style={{ color: T.textDim }}>{cuotas.length} cuota{cuotas.length !== 1 ? "s" : ""} en vista</p>
           {totalPages > 1 && <p className="text-xs" style={{ color: T.textDim }}>Página {page} de {totalPages}</p>}
         </div>
@@ -112,7 +112,7 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
           <button onClick={prevMes} disabled={isPending} className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:opacity-75" style={{ background: T.card, border: `1px solid ${T.border}`, color: T.textMuted }}>
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="font-bold uppercase tracking-widest text-sm min-w-36 text-center" style={{ fontFamily: "var(--font-barlow-condensed)", color: T.text }}>
+          <span className="font-bold uppercase tracking-widest text-sm min-w-36 text-center" style={{ fontFamily: "var(--font-fredoka)", color: T.text }}>
             {MESES_LARGO[curMes]} {curAnio}
           </span>
           <button onClick={nextMes} disabled={isPending} className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:opacity-75" style={{ background: T.card, border: `1px solid ${T.border}`, color: T.textMuted }}>
@@ -125,8 +125,8 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
       <div className="grid grid-cols-4 gap-3">
         {STAT_CARDS.map((s) => (
           <div key={s.label} className="rounded-xl px-4 py-3" style={{ background: T.card, border: `1px solid ${T.border}` }}>
-            <p className="text-xs uppercase tracking-widest mb-1" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>{s.label}</p>
-            <p className="text-2xl font-black" style={{ fontFamily: "var(--font-barlow-condensed)", color: s.color }}>{s.value}</p>
+            <p className="text-xs uppercase tracking-widest mb-1" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>{s.label}</p>
+            <p className="text-2xl font-black" style={{ fontFamily: "var(--font-fredoka)", color: s.color }}>{s.value}</p>
           </div>
         ))}
       </div>
@@ -146,7 +146,7 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
         </div>
         <button onClick={() => navigate(curMes, curAnio, estado, search)} disabled={isPending}
           className="h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider hover:opacity-80 transition-all"
-          style={{ fontFamily: "var(--font-barlow-condensed)", background: T.card, border: `1px solid ${T.border}`, color: T.accent }}>
+          style={{ fontFamily: "var(--font-fredoka)", background: T.card, border: `1px solid ${T.border}`, color: T.accent }}>
           {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Buscar"}
         </button>
 
@@ -156,7 +156,7 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
             <button key={tab.value}
               onClick={() => { setEstado(tab.value); navigate(curMes, curAnio, tab.value, search); }}
               className="px-3 py-1.5 text-xs rounded-md font-bold uppercase tracking-widest transition-all"
-              style={{ fontFamily: "var(--font-barlow-condensed)", background: estado === tab.value ? T.accent : "transparent", color: estado === tab.value ? T.bgDeep : T.textMuted }}>
+              style={{ fontFamily: "var(--font-fredoka)", background: estado === tab.value ? T.accent : "transparent", color: estado === tab.value ? T.bgDeep : T.textMuted }}>
               {tab.label}
             </button>
           ))}
@@ -168,7 +168,7 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
             value={actividad}
             onChange={(e) => { setActividad(e.target.value); navigate(curMes, curAnio, estado, search, e.target.value); }}
             className="h-9 px-3 rounded-lg text-xs font-bold uppercase tracking-wider"
-            style={{ fontFamily: "var(--font-barlow-condensed)", background: actividad ? T.accentBg : T.card, border: `1px solid ${actividad ? T.accentBorder : T.border}`, color: actividad ? T.accent : T.textMuted }}
+            style={{ fontFamily: "var(--font-fredoka)", background: actividad ? T.accentBg : T.card, border: `1px solid ${actividad ? T.accentBorder : T.border}`, color: actividad ? T.accent : T.textMuted }}
           >
             <option value="">Todas las actividades</option>
             {actividades.map((a) => (
@@ -186,7 +186,7 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
               <TableRow style={{ background: T.bg, borderColor: T.border }}>
                 {["Alumno", "DNI", "Período", "Actividad", "Monto", "Vencimiento", "Estado", ""].map((h) => (
                   <TableHead key={h} className="text-xs uppercase tracking-widest font-bold"
-                    style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)", borderColor: T.border }}>
+                    style={{ color: T.textDim, fontFamily: "var(--font-fredoka)", borderColor: T.border }}>
                     {h}
                   </TableHead>
                 ))}
@@ -204,14 +204,14 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
                     <TableCell>
                       <div className="flex items-center gap-2.5">
                         <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
-                          style={{ background: T.accentBg, border: `1px solid ${T.accentBorder}`, color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
+                          style={{ background: T.accentBg, border: `1px solid ${T.accentBorder}`, color: T.accent, fontFamily: "var(--font-fredoka)" }}>
                           {(a?.nombre?.[0] ?? "")}{(a?.apellido?.[0] ?? "")}
                         </div>
                         <span className="font-medium text-sm" style={{ color: T.text }}>{a?.apellido}, {a?.nombre}</span>
                       </div>
                     </TableCell>
                     <TableCell className="font-mono text-sm" style={{ color: T.textMuted }}>{a?.dni}</TableCell>
-                    <TableCell className="font-bold text-sm" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
+                    <TableCell className="font-bold text-sm" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>
                       {MESES_LARGO[c.mes]?.slice(0, 3).toUpperCase()} {c.anio}
                     </TableCell>
                     <TableCell>
@@ -239,7 +239,7 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
                     </TableCell>
                     <TableCell>
                       <span className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider"
-                        style={{ fontFamily: "var(--font-barlow-condensed)", background: est.bg, color: est.color, border: `1px solid ${est.color}25` }}>
+                        style={{ fontFamily: "var(--font-fredoka)", background: est.bg, color: est.color, border: `1px solid ${est.color}25` }}>
                         {est.label}
                       </span>
                     </TableCell>
@@ -332,7 +332,7 @@ function EmptyState() {
         <Receipt className="w-7 h-7" style={{ color: T.accent }} />
       </div>
       <div>
-        <p className="font-bold text-lg uppercase" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
+        <p className="font-bold text-lg uppercase" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>
           Sin cuotas para este período
         </p>
         <p className="text-sm mt-1" style={{ color: T.textDim }}>

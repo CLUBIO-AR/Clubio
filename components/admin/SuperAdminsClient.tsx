@@ -55,12 +55,12 @@ export function SuperAdminsClient({ admins }: Props) {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>SUPERADMINS</h1>
+          <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>SUPERADMINS</h1>
           <p className="text-sm mt-1" style={{ color: T.textDim }}>{admins.length} cuenta{admins.length !== 1 ? "s" : ""} de administración</p>
         </div>
         <button onClick={() => { setForm({ nombre: "", email: "" }); setCredenciales(null); setError(null); setDialogOpen(true); }}
           className="h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider inline-flex items-center gap-2 hover:opacity-80 transition-opacity"
-          style={{ fontFamily: "var(--font-barlow-condensed)", background: "#F9731620", border: "1px solid #F9731648", color: ADMIN_ACCENT }}>
+          style={{ fontFamily: "var(--font-fredoka)", background: "#F9731620", border: "1px solid #F9731648", color: ADMIN_ACCENT }}>
           <UserPlus className="w-4 h-4" /> Nuevo superadmin
         </button>
       </div>
@@ -87,7 +87,7 @@ export function SuperAdminsClient({ admins }: Props) {
                   <AdminBadge label={a.activo ? "Activo" : "Inactivo"} color={a.activo ? T.accent : T.textDim} />
                   <button onClick={() => handleToggle(a.id, !a.activo)} disabled={loading}
                     className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
-                    style={{ fontFamily: "var(--font-barlow-condensed)", background: a.activo ? `${T.danger}15` : T.accentBg, border: `1px solid ${a.activo ? T.danger + "40" : T.accentBorder}`, color: a.activo ? T.danger : T.accent }}>
+                    style={{ fontFamily: "var(--font-fredoka)", background: a.activo ? `${T.danger}15` : T.accentBg, border: `1px solid ${a.activo ? T.danger + "40" : T.accentBorder}`, color: a.activo ? T.danger : T.accent }}>
                     {a.activo ? "Desactivar" : "Activar"}
                   </button>
                 </div>
@@ -114,7 +114,7 @@ export function SuperAdminsClient({ admins }: Props) {
                   await navigator.clipboard.writeText(`Email: ${credenciales.email}\nPassword: ${credenciales.password}`);
                   setCopiado(true); setTimeout(() => setCopiado(false), 2000);
                 }} className="h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider inline-flex items-center gap-2 hover:opacity-80"
-                  style={{ fontFamily: "var(--font-barlow-condensed)", background: "#F9731620", border: "1px solid #F9731648", color: ADMIN_ACCENT }}>
+                  style={{ fontFamily: "var(--font-fredoka)", background: "#F9731620", border: "1px solid #F9731648", color: ADMIN_ACCENT }}>
                   {copiado ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />} {copiado ? "Copiado" : "Copiar"}
                 </button>
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>Cerrar</Button>
@@ -129,11 +129,11 @@ export function SuperAdminsClient({ admins }: Props) {
               {error && <div className="rounded-lg px-3 py-2 text-xs" style={{ background: `${T.danger}15`, border: `1px solid ${T.danger}40`, color: T.danger }}>{error}</div>}
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Nombre</label>
+                  <label className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>Nombre</label>
                   <Input value={form.nombre} onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))} style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text }} />
                 </div>
                 <div>
-                  <label className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Email</label>
+                  <label className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>Email</label>
                   <Input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text }} />
                 </div>
               </div>

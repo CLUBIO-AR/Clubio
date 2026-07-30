@@ -25,7 +25,7 @@ export default function AlumnosLoading() {
           <div
             key={i}
             className="px-5 py-3 flex items-center gap-4 border-b"
-            style={{ borderColor: T.borderSub, background: i % 2 === 0 ? T.bgDeep : T.card }}
+            style={{ borderColor: T.borderSub, background: i % 2 === 0 ? T.cardHover : T.card }}
           >
             <div style={{ width: 36, height: 36, borderRadius: "50%", background: T.card, border: `1px solid ${T.border}`, flexShrink: 0 }} />
             <Skeleton h="16px" w="180px" />

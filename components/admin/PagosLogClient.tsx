@@ -56,7 +56,7 @@ const METODO_OPTS = [
 ];
 
 const inp: React.CSSProperties = { background: T.card, border: `1px solid ${T.border}`, color: T.text };
-const sel: React.CSSProperties = { background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" };
+const sel: React.CSSProperties = { background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" };
 
 function uno<T>(v: T[] | T | null): T | null {
   if (Array.isArray(v)) return v[0] ?? null;
@@ -107,7 +107,7 @@ export function PagosLogClient({ pagos, total, page, totalPages, filters, gyms, 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>LOGS · PAGOS</h1>
+        <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>LOGS · PAGOS</h1>
         <p className="text-sm mt-1" style={{ color: T.textDim }}>{total.toLocaleString("es-AR")} pago{total !== 1 ? "s" : ""} registrado{total !== 1 ? "s" : ""}</p>
       </div>
 
@@ -118,12 +118,12 @@ export function PagosLogClient({ pagos, total, page, totalPages, filters, gyms, 
             <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3" style={{ background: s.bg, border: `1px solid ${s.color}25` }}>
               <s.icon className="w-4 h-4" style={{ color: s.color }} />
             </div>
-            <p className="text-2xl font-black leading-none mb-1" style={{ fontFamily: "var(--font-barlow-condensed)", color: T.text }}>{s.value}</p>
-            <p className="text-xs uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>{s.label}</p>
+            <p className="text-2xl font-black leading-none mb-1" style={{ fontFamily: "var(--font-fredoka)", color: T.text }}>{s.value}</p>
+            <p className="text-xs uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>{s.label}</p>
           </div>
         ))}
         <div className="rounded-xl p-5 sm:col-span-3" style={{ background: T.card, border: `1px solid ${T.border}` }}>
-          <p className="text-xs uppercase tracking-widest font-bold mb-3" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Por método (este mes)</p>
+          <p className="text-xs uppercase tracking-widest font-bold mb-3" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>Por método (este mes)</p>
           <div className="flex items-center gap-4 flex-wrap">
             {Object.entries(stats.porMetodo).length === 0 ? (
               <p className="text-sm" style={{ color: T.textDim }}>Sin pagos este mes.</p>
@@ -154,7 +154,7 @@ export function PagosLogClient({ pagos, total, page, totalPages, filters, gyms, 
           onClick={() => applyFilters({ search })}
           disabled={isPending}
           className="h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-all hover:opacity-80"
-          style={{ fontFamily: "var(--font-barlow-condensed)", background: T.card, border: `1px solid ${T.border}`, color: ADMIN_ACCENT }}
+          style={{ fontFamily: "var(--font-fredoka)", background: T.card, border: `1px solid ${T.border}`, color: ADMIN_ACCENT }}
         >
           {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Buscar"}
         </button>
@@ -171,7 +171,7 @@ export function PagosLogClient({ pagos, total, page, totalPages, filters, gyms, 
           <input type="date" value={filters.hasta} onChange={(e) => applyFilters({ hasta: e.target.value })} className="h-9 px-3 rounded-lg text-sm" style={sel} />
           {hayFiltroFecha && (
             <button onClick={() => applyFilters({ desde: "", hasta: "" })} className="text-xs font-bold uppercase tracking-widest px-2.5 py-1.5 rounded-md transition-opacity hover:opacity-75"
-              style={{ fontFamily: "var(--font-barlow-condensed)", color: T.textDim, border: `1px solid ${T.border}` }}>
+              style={{ fontFamily: "var(--font-fredoka)", color: T.textDim, border: `1px solid ${T.border}` }}>
               Limpiar
             </button>
           )}
@@ -190,7 +190,7 @@ export function PagosLogClient({ pagos, total, page, totalPages, filters, gyms, 
             <TableHeader>
               <TableRow style={{ background: T.bg, borderColor: T.border }}>
                 {["Fecha", "Gym", "Alumno", "Monto", "Método", "MP Payment ID", "Estado MP", ""].map((h) => (
-                  <TableHead key={h} className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)", borderColor: T.border }}>
+                  <TableHead key={h} className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)", borderColor: T.border }}>
                     {h}
                   </TableHead>
                 ))}
@@ -249,7 +249,7 @@ export function PagosLogClient({ pagos, total, page, totalPages, filters, gyms, 
                 {detalle.mp_status && <p style={{ color: T.textMuted }}>Estado MP: <span style={{ color: T.text }}>{detalle.mp_status}</span></p>}
                 {detalle.mp_detail !== null && (
                   <div className="pt-1">
-                    <p className="text-xs uppercase tracking-widest font-bold mb-1" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>mp_detail</p>
+                    <p className="text-xs uppercase tracking-widest font-bold mb-1" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>mp_detail</p>
                     <pre className="rounded-lg p-3 text-xs font-mono leading-relaxed overflow-x-auto max-h-64 overflow-y-auto" style={{ background: T.bg, border: `1px solid ${T.borderSub}`, color: T.textMuted }}>
                       {JSON.stringify(detalle.mp_detail, null, 2)}
                     </pre>

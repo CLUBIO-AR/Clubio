@@ -29,10 +29,10 @@ export function AdminNavbar({ nombre, email, onMenuClick }: AdminNavbarProps) {
 
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4" style={{ color: ADMIN_ACCENT }} />
-          <span className="hidden sm:inline text-xs uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+          <span className="hidden sm:inline text-xs uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>
             Panel interno — visible solo para superadmins
           </span>
-          <span className="sm:hidden text-xs uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+          <span className="sm:hidden text-xs uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>
             Panel admin
           </span>
         </div>
@@ -49,7 +49,7 @@ export function AdminNavbar({ nombre, email, onMenuClick }: AdminNavbarProps) {
             background: "#F9731620",
             border: `1px solid #F9731648`,
             color: ADMIN_ACCENT,
-            fontFamily: "var(--font-barlow-condensed)",
+            fontFamily: "var(--font-fredoka)",
           }}
         >
           {initials}

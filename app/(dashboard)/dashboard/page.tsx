@@ -55,16 +55,16 @@ export default async function DashboardPage() {
       {/* Hero */}
       <div className="relative rounded-2xl overflow-hidden px-8 py-10" style={{ background: T.card, border: `1px solid ${T.border}` }}>
         <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full blur-3xl pointer-events-none" style={{ background: `${T.accent}10` }} />
-        <p className="text-xs uppercase tracking-[0.2em] mb-3" style={{ color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
+        <p className="text-xs uppercase tracking-[0.2em] mb-3" style={{ color: T.accent, fontFamily: "var(--font-fredoka)" }}>
           ▶ CLUBIO / GESTIÓN
         </p>
-        <h1 className="text-5xl leading-none mb-1" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>
+        <h1 className="text-5xl leading-none mb-1" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>
           ¡HOLA,
         </h1>
-        <h1 className="text-5xl leading-none mb-4" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.accent }}>
+        <h1 className="text-5xl leading-none mb-4" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.accent }}>
           {ctx.gymNombre.toUpperCase()}
         </h1>
-        <p className="text-sm uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+        <p className="text-sm uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>
           Centro de gestión Clubio — {mes}
         </p>
       </div>
@@ -74,7 +74,7 @@ export default async function DashboardPage() {
         <div className="rounded-xl p-5 space-y-4" style={{ background: `${T.accent}08`, border: `1px solid ${T.accentBorder}` }}>
           <div className="flex items-center gap-2">
             <Zap className="w-4 h-4" style={{ color: T.accent }} />
-            <p className="text-sm font-bold uppercase tracking-widest" style={{ fontFamily: "var(--font-barlow-condensed)", color: T.accent }}>
+            <p className="text-sm font-bold uppercase tracking-widest" style={{ fontFamily: "var(--font-fredoka)", color: T.accent }}>
               Completá estos pasos para empezar a cobrar
             </p>
           </div>
@@ -118,10 +118,10 @@ export default async function DashboardPage() {
             <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-4" style={{ background: stat.glow, border: `1px solid ${stat.color}25` }}>
               <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
             </div>
-            <p className="text-3xl font-black leading-none mb-1" style={{ fontFamily: "var(--font-barlow-condensed)", color: T.text }}>
+            <p className="text-3xl font-black leading-none mb-1" style={{ fontFamily: "var(--font-fredoka)", color: T.text }}>
               {stat.value}
             </p>
-            <p className="text-xs uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+            <p className="text-xs uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>
               {stat.label}
             </p>
             <div className="absolute bottom-0 left-0 h-0.5 w-full" style={{ background: `linear-gradient(90deg, ${stat.color}60, transparent)` }} />
@@ -140,10 +140,10 @@ export default async function DashboardPage() {
             <Zap className="w-5 h-5" style={{ color: T.accent }} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs uppercase tracking-widest mb-0.5" style={{ color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
+            <p className="text-xs uppercase tracking-widest mb-0.5" style={{ color: T.accent, fontFamily: "var(--font-fredoka)" }}>
               Cobros automáticos este mes
             </p>
-            <p className="text-2xl font-black leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", color: T.text }}>
+            <p className="text-2xl font-black leading-none" style={{ fontFamily: "var(--font-fredoka)", color: T.text }}>
               {cobrosAutoCount} <span className="text-base font-normal" style={{ color: T.textDim }}>cobro{cobrosAutoCount !== 1 ? "s" : ""}</span>
               <span className="ml-3 text-xl" style={{ color: T.accent }}>${cobrosAutoMonto.toLocaleString("es-AR")}</span>
             </p>
@@ -156,13 +156,13 @@ export default async function DashboardPage() {
       <div className="flex flex-wrap gap-3">
         <Link href="/dashboard/alumnos/nuevo"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold uppercase tracking-widest text-sm transition-all hover:opacity-90"
-          style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accent, color: T.bgDeep, boxShadow: T.accentGlow }}
+          style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep, boxShadow: T.accentGlow }}
         >
           + Nuevo alumno
         </Link>
         <Link href="/dashboard/cuotas"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold uppercase tracking-widest text-sm transition-all hover:opacity-80"
-          style={{ fontFamily: "var(--font-barlow-condensed)", background: "transparent", color: T.accent, border: `1px solid ${T.accentBorder}` }}
+          style={{ fontFamily: "var(--font-fredoka)", background: "transparent", color: T.accent, border: `1px solid ${T.accentBorder}` }}
         >
           Ver cuotas
         </Link>

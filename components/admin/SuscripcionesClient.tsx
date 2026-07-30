@@ -87,13 +87,13 @@ export function SuscripcionesClient({ cobros, total, page, totalPages, filtroEst
         <Link
           href={`/admin/gyms/${filtroGymId}`}
           className="inline-flex items-center gap-1.5 text-xs uppercase tracking-widest font-bold transition-opacity hover:opacity-70"
-          style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}
+          style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}
         >
           <ArrowLeft className="w-3.5 h-3.5" /> Volver a {gymNombreFiltro}
         </Link>
       )}
       <div>
-        <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>
+        <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>
           {gymNombreFiltro ? `COBROS — ${gymNombreFiltro.toUpperCase()}` : "SUSCRIPCIONES"}
         </h1>
         <p className="text-sm mt-1" style={{ color: T.textDim }}>
@@ -109,7 +109,7 @@ export function SuscripcionesClient({ cobros, total, page, totalPages, filtroEst
             onClick={() => setFiltro("estado", e)}
             className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all"
             style={{
-              fontFamily: "var(--font-barlow-condensed)",
+              fontFamily: "var(--font-fredoka)",
               background: filtroEstado === e ? `${ADMIN_ACCENT}20` : T.card,
               border: `1px solid ${filtroEstado === e ? ADMIN_ACCENT + "60" : T.border}`,
               color: filtroEstado === e ? ADMIN_ACCENT : T.textMuted,
@@ -136,7 +136,7 @@ export function SuscripcionesClient({ cobros, total, page, totalPages, filtroEst
               <tr style={{ borderBottom: `1px solid ${T.border}` }}>
                 {["Gym", "Plan", "Período", "USD", "ARS", "Estado", "Enviado", "Pagado", "Acciones"].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-extrabold uppercase tracking-wider"
-                    style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+                    style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>
                     {h}
                   </th>
                 ))}
@@ -210,14 +210,14 @@ export function SuscripcionesClient({ cobros, total, page, totalPages, filtroEst
             {page > 1 && (
               <button onClick={() => setFiltro("page", String(page - 1))}
                 className="px-3 py-1.5 rounded-lg font-bold uppercase tracking-wider"
-                style={{ fontFamily: "var(--font-barlow-condensed)", background: T.card, border: `1px solid ${T.border}`, color: T.textMuted }}>
+                style={{ fontFamily: "var(--font-fredoka)", background: T.card, border: `1px solid ${T.border}`, color: T.textMuted }}>
                 Anterior
               </button>
             )}
             {page < totalPages && (
               <button onClick={() => setFiltro("page", String(page + 1))}
                 className="px-3 py-1.5 rounded-lg font-bold uppercase tracking-wider"
-                style={{ fontFamily: "var(--font-barlow-condensed)", background: T.card, border: `1px solid ${T.border}`, color: T.textMuted }}>
+                style={{ fontFamily: "var(--font-fredoka)", background: T.card, border: `1px solid ${T.border}`, color: T.textMuted }}>
                 Siguiente
               </button>
             )}

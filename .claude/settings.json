@@ -50,11 +50,38 @@
       "PowerShell(cd \"c:\\\\Git\\\\Clubio\\\\Clubio\"; npx tsc --noEmit 2>&1 | Where-Object { $_ -notmatch \"\\\\.next/\" } | Select-Object -First 20)",
       "PowerShell(cd \"c:\\\\Git\\\\Clubio\\\\Clubio\"; npx tsc --noEmit 2>&1 | Where-Object { $_ -notmatch \"\\\\.next/\" })",
       "Bash(git stash *)",
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "Bash(mkdir -p \"C:/Users/valen/Desktop/Laboral/CLUBIO\" 2>/dev/null; echo ok)",
+      "Bash(where chrome.exe)",
+      "Bash(where msedge.exe)",
+      "Read(//c/Program Files/Google/Chrome/Application/**)",
+      "Read(//c/Program Files \\\\\\(x86\\\\\\)/Microsoft/Edge/Application/**)",
+      "Bash(python3 -c \"import markdown\")",
+      "Read(//c/Users/valen/Desktop/Laboral/CLUBIO/**)",
+      "Bash(\"/c/Program Files/Google/Chrome/Application/chrome.exe\" --headless --disable-gpu --no-pdf-header-footer --print-to-pdf=\"C:/Users/valen/Desktop/Laboral/CLUBIO/CLUBIO - Brief de Marca y Producto.pdf\" \"C:/Users/valen/AppData/Local/Temp/claude/c--Git-Clubio-Clubio/b763db42-f79b-4ad1-89fb-b98d639c0eae/scratchpad/brief.html\")",
+      "Bash(node -e \"require\\('xlsx'\\)\")",
+      "Bash(node \"C:\\\\Users\\\\valen\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Git-Clubio-Clubio\\\\0503167d-abe0-48fd-86b9-fb8b733bc001\\\\scratchpad\\\\read_excel.js\")",
+      "Bash(node \"C:\\\\Users\\\\valen\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Git-Clubio-Clubio\\\\0503167d-abe0-48fd-86b9-fb8b733bc001\\\\scratchpad\\\\read_excel2.js\")",
+      "Bash(node \"C:\\\\Users\\\\valen\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Git-Clubio-Clubio\\\\0503167d-abe0-48fd-86b9-fb8b733bc001\\\\scratchpad\\\\check_dupes.js\")",
+      "Bash(node \"C:\\\\Users\\\\valen\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Git-Clubio-Clubio\\\\0503167d-abe0-48fd-86b9-fb8b733bc001\\\\scratchpad\\\\list_gyms.js\")",
+      "Bash(node \"C:\\\\Users\\\\valen\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Git-Clubio-Clubio\\\\0503167d-abe0-48fd-86b9-fb8b733bc001\\\\scratchpad\\\\cleanup_test_gyms.js\")",
+      "Bash(node ./tmp_cleanup_test_gyms.js)",
+      "Bash(rm -f ./tmp_cleanup_test_gyms.js)",
+      "Bash(psql --version)",
+      "Bash(grep -iE \"^\\(pg|postgres\\)$\")",
+      "Bash(npx supabase *)",
+      "Bash(node ./tmp_run_migrations.js)",
+      "Bash(node ./tmp_crear_box_club.js)",
+      "Bash(node ./tmp_fix_nombre.js)",
+      "Bash(npx tsx *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" https://app.clubio.com.ar)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} -> %{redirect_url}\\\\n\" \"https://app.clubio.com.ar/pagar/eyJhbGciOiJIUzI1NiJ9.eyJjdW90YV9pZCI6ImE5NDMzZDUxLTNmNTUtNGU1Mi1hNmZmLTdmYTcxNTc4ZDY3ZCIsImd5bV9pZCI6IjczNGMyYTM5LWYwYWQtNDljZC05NmI2LWQ2N2UxYTE2OTFlOSIsImFsdW1ub19pZCI6Ijg0YmJhMzFmLWFjNTEtNGRjMy1hMjNmLWNhNWVkYWNkMjRkMiIsImFsdW1ub19ub21icmUiOiJWYWxlbnRpbmEgU29zYSIsIm1lcyI6OCwiYW5pbyI6MjAyNiwibW9udG8iOjQwMDAwLCJqdGkiOiJjYzdlY2JkNS1kNGFjLTQ3OWMtOGI1MC00OTM0ZTY2YzlkMmQiLCJpYXQiOjE3ODUzNDEzNDIsImV4cCI6MTc4NzkzMzM0Mn0.wIEc2bqGEnONQxQwvBTTDh0ct9NI4f2sGT9vzhWUPn0\")",
+      "Bash(ls -lat \"C:\\\\Users\\\\valen\\\\Downloads\" 2>&1 | head -40)"
     ],
     "additionalDirectories": [
       "c:\\Git\\Clubio\\Clubio\\app\\pagar",
-      "c:\\Git\\Clubio\\Clubio\\.claude\\reports"
+      "c:\\Git\\Clubio\\Clubio\\.claude\\reports",
+      "C:\\Users\\valen\\Desktop\\Laboral\\CLUBIO"
     ]
   }
 }

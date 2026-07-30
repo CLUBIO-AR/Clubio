@@ -54,7 +54,7 @@ export function MailsEnviados({ notifs, total, page, desde, hasta }: Props) {
   return (
     <div className="rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
       <div className="px-5 py-4 border-b flex items-center justify-between flex-wrap gap-3" style={{ borderColor: T.borderSub }}>
-        <h2 className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.blue, fontFamily: "var(--font-barlow-condensed)" }}>
+        <h2 className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.blue, fontFamily: "var(--font-fredoka)" }}>
           — Mails enviados
         </h2>
         <div className="flex items-center gap-2">
@@ -65,7 +65,7 @@ export function MailsEnviados({ notifs, total, page, desde, hasta }: Props) {
             <button
               onClick={() => update({ mDesde: "", mHasta: "", mPage: "" })}
               className="text-xs font-bold uppercase tracking-widest px-2.5 py-1.5 rounded-md transition-opacity hover:opacity-75"
-              style={{ fontFamily: "var(--font-barlow-condensed)", color: T.textDim, border: `1px solid ${T.border}` }}
+              style={{ fontFamily: "var(--font-fredoka)", color: T.textDim, border: `1px solid ${T.border}` }}
             >
               Limpiar
             </button>
@@ -73,9 +73,9 @@ export function MailsEnviados({ notifs, total, page, desde, hasta }: Props) {
         </div>
       </div>
 
-      <div className="px-5 py-2 grid gap-3 border-b" style={{ borderColor: T.borderSub, background: T.bgDeep, gridTemplateColumns: "minmax(0,1fr) minmax(0,1.5fr) 80px 70px" }}>
+      <div className="px-5 py-2 grid gap-3 border-b" style={{ borderColor: T.borderOnDark, background: T.bgDeep, gridTemplateColumns: "minmax(0,1fr) minmax(0,1.5fr) 80px 70px" }}>
         {["Alumno", "Email", "Tipo", "Estado"].map((h) => (
-          <p key={h} className="text-xs font-bold uppercase tracking-[0.1em]" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>{h}</p>
+          <p key={h} className="text-xs font-bold uppercase tracking-[0.1em]" style={{ color: T.textOnDarkDim, fontFamily: "var(--font-fredoka)" }}>{h}</p>
         ))}
       </div>
 

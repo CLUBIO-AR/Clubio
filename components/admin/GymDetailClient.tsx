@@ -151,14 +151,14 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
 
   return (
     <div className="space-y-6">
-      <Link href="/admin/gyms" className="inline-flex items-center gap-1.5 text-xs uppercase tracking-widest font-bold transition-opacity hover:opacity-70" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+      <Link href="/admin/gyms" className="inline-flex items-center gap-1.5 text-xs uppercase tracking-widest font-bold transition-opacity hover:opacity-70" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>
         <ArrowLeft className="w-3.5 h-3.5" /> Volver a gyms
       </Link>
 
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>{gym.nombre}</h1>
+            <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>{gym.nombre}</h1>
             <AdminBadge label={gym.activo ? "Activo" : "Suspendido"} color={gym.activo ? T.accent : T.danger} />
           </div>
           <p className="text-sm mt-1" style={{ color: T.textDim }}>{gym.email_contacto} · {gym.telefono ?? "sin teléfono"}</p>
@@ -166,12 +166,12 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
         <div className="flex items-center gap-2">
           {gym.activo ? (
             <button onClick={handleToggleActivo} disabled={loading} className="h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-all hover:opacity-80 inline-flex items-center gap-2"
-              style={{ fontFamily: "var(--font-barlow-condensed)", background: `${T.danger}15`, border: `1px solid ${T.danger}40`, color: T.danger }}>
+              style={{ fontFamily: "var(--font-fredoka)", background: `${T.danger}15`, border: `1px solid ${T.danger}40`, color: T.danger }}>
               <Ban className="w-3.5 h-3.5" /> Suspender
             </button>
           ) : (
             <button onClick={handleToggleActivo} disabled={loading} className="h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-all hover:opacity-80 inline-flex items-center gap-2"
-              style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accentBg, border: `1px solid ${T.accentBorder}`, color: T.accent }}>
+              style={{ fontFamily: "var(--font-fredoka)", background: T.accentBg, border: `1px solid ${T.accentBorder}`, color: T.accent }}>
               <CheckCircle2 className="w-3.5 h-3.5" /> Reactivar
             </button>
           )}
@@ -189,8 +189,8 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
             <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3" style={{ background: s.bg, border: `1px solid ${s.color}25` }}>
               <s.icon className="w-4 h-4" style={{ color: s.color }} />
             </div>
-            <p className="text-2xl font-black leading-none mb-1" style={{ fontFamily: "var(--font-barlow-condensed)", color: T.text }}>{s.value}</p>
-            <p className="text-xs uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>{s.label}</p>
+            <p className="text-2xl font-black leading-none mb-1" style={{ fontFamily: "var(--font-fredoka)", color: T.text }}>{s.value}</p>
+            <p className="text-xs uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>{s.label}</p>
           </div>
         ))}
       </div>
@@ -199,15 +199,15 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
         {/* Licencia */}
         <div className="rounded-xl p-5 space-y-3" style={{ background: T.card, border: `1px solid ${T.border}` }}>
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-extrabold uppercase tracking-widest" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>Licencia</h3>
+            <h3 className="text-sm font-extrabold uppercase tracking-widest" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>Licencia</h3>
             {licencia && (
               <div className="flex items-center gap-2">
                 <button onClick={() => setPlanDialogOpen(true)} className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
-                  style={{ fontFamily: "var(--font-barlow-condensed)", background: "#F9731620", border: "1px solid #F9731648", color: ADMIN_ACCENT }}>
+                  style={{ fontFamily: "var(--font-fredoka)", background: "#F9731620", border: "1px solid #F9731648", color: ADMIN_ACCENT }}>
                   Cambiar plan
                 </button>
                 <button onClick={() => setRenovarDialogOpen(true)} className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80 inline-flex items-center gap-1.5"
-                  style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accentBg, border: `1px solid ${T.accentBorder}`, color: T.accent }}>
+                  style={{ fontFamily: "var(--font-fredoka)", background: T.accentBg, border: `1px solid ${T.accentBorder}`, color: T.accent }}>
                   <RefreshCw className="w-3 h-3" /> Renovar
                 </button>
               </div>
@@ -229,7 +229,7 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
 
         {/* Configuración */}
         <div className="rounded-xl p-5 space-y-3" style={{ background: T.card, border: `1px solid ${T.border}` }}>
-          <h3 className="text-sm font-extrabold uppercase tracking-widest" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>Configuración</h3>
+          <h3 className="text-sm font-extrabold uppercase tracking-widest" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>Configuración</h3>
           <div className="space-y-2 text-sm">
             <p style={{ color: T.textMuted }}>Mercado Pago: {config?.mp_access_token
               ? <AdminBadge label="Configurado" color={T.accent} />
@@ -243,7 +243,7 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
 
         {/* Sucursales */}
         <div className="rounded-xl p-5 space-y-3" style={{ background: T.card, border: `1px solid ${T.border}` }}>
-          <h3 className="text-sm font-extrabold uppercase tracking-widest" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>Sucursales ({sucursales.length})</h3>
+          <h3 className="text-sm font-extrabold uppercase tracking-widest" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>Sucursales ({sucursales.length})</h3>
           {sucursales.length === 0 ? <p className="text-sm" style={{ color: T.textDim }}>Sin sucursales.</p> : (
             <ul className="space-y-1.5 text-sm">
               {sucursales.map((s) => (
@@ -259,10 +259,10 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
         {/* Usuarios */}
         <div className="rounded-xl p-5 space-y-3" style={{ background: T.card, border: `1px solid ${T.border}` }}>
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-extrabold uppercase tracking-widest" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>Usuarios ({usuarios.length})</h3>
+            <h3 className="text-sm font-extrabold uppercase tracking-widest" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>Usuarios ({usuarios.length})</h3>
             <button onClick={() => { setAddUserForm({ nombre: "", email: "", rol: "admin" }); setAddUserCredenciales(null); setAddUserDialogOpen(true); }}
               className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80 inline-flex items-center gap-1.5"
-              style={{ fontFamily: "var(--font-barlow-condensed)", background: "#F9731620", border: "1px solid #F9731648", color: ADMIN_ACCENT }}>
+              style={{ fontFamily: "var(--font-fredoka)", background: "#F9731620", border: "1px solid #F9731648", color: ADMIN_ACCENT }}>
               <UserPlus className="w-3 h-3" /> Agregar
             </button>
           </div>
@@ -277,12 +277,12 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button onClick={() => { setNuevoRol(u.rol as "owner" | "admin" | "recepcion"); setRolTarget(u); }}
                       className="text-xs font-bold uppercase tracking-wider px-2 py-1 rounded-lg transition-opacity hover:opacity-80"
-                      style={{ fontFamily: "var(--font-barlow-condensed)", background: T.bg, border: `1px solid ${T.borderSub}`, color: T.textDim }}>
+                      style={{ fontFamily: "var(--font-fredoka)", background: T.bg, border: `1px solid ${T.borderSub}`, color: T.textDim }}>
                       Rol
                     </button>
                     <button onClick={() => handleToggleUsuario(u.id, !u.activo)} disabled={loading}
                       className="text-xs font-bold uppercase tracking-wider px-2 py-1 rounded-lg transition-opacity hover:opacity-80"
-                      style={{ fontFamily: "var(--font-barlow-condensed)", background: u.activo ? `${T.danger}15` : T.accentBg, border: `1px solid ${u.activo ? T.danger + "40" : T.accentBorder}`, color: u.activo ? T.danger : T.accent }}>
+                      style={{ fontFamily: "var(--font-fredoka)", background: u.activo ? `${T.danger}15` : T.accentBg, border: `1px solid ${u.activo ? T.danger + "40" : T.accentBorder}`, color: u.activo ? T.danger : T.accent }}>
                       {u.activo ? "Desactivar" : "Activar"}
                     </button>
                   </div>
@@ -298,13 +298,13 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CreditCard className="w-4 h-4" style={{ color: ADMIN_ACCENT }} />
-            <h3 className="text-sm font-extrabold uppercase tracking-widest" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
+            <h3 className="text-sm font-extrabold uppercase tracking-widest" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>
               Cobros de suscripción
             </h3>
             <Link
               href={`/admin/suscripciones?gym_id=${gym.id}`}
               className="text-xs font-bold uppercase tracking-wider hover:opacity-70 transition-opacity"
-              style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}
+              style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}
             >
               Ver todos
             </Link>
@@ -313,7 +313,7 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
             onClick={handleGenerarCobro}
             disabled={loading}
             className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80 inline-flex items-center gap-1.5"
-            style={{ fontFamily: "var(--font-barlow-condensed)", background: "#F9731620", border: "1px solid #F9731648", color: ADMIN_ACCENT }}
+            style={{ fontFamily: "var(--font-fredoka)", background: "#F9731620", border: "1px solid #F9731648", color: ADMIN_ACCENT }}
           >
             {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <CreditCard className="w-3 h-3" />}
             Generar cobro
@@ -322,7 +322,7 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
 
         {cobroLink && (
           <div className="rounded-lg p-3 space-y-2" style={{ background: T.bg, border: `1px solid ${T.accentBorder}` }}>
-            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
+            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: T.accent, fontFamily: "var(--font-fredoka)" }}>
               Link de pago generado y enviado por email
             </p>
             <div className="flex items-center gap-2">
@@ -375,15 +375,15 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <label className="text-xs font-bold uppercase tracking-widest block mb-1.5" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Nuevo plan</label>
+              <label className="text-xs font-bold uppercase tracking-widest block mb-1.5" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>Nuevo plan</label>
               <select value={nuevoPlan} onChange={(e) => setNuevoPlan(e.target.value)} className="h-9 px-3 rounded-lg text-sm w-full"
-                style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
+                style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" }}>
                 <option value="basic">Basic — USD 28</option>
                 <option value="multi">Multi — USD 75</option>
               </select>
             </div>
             <div>
-              <label className="text-xs font-bold uppercase tracking-widest flex items-center gap-1.5 mb-1.5" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+              <label className="text-xs font-bold uppercase tracking-widest flex items-center gap-1.5 mb-1.5" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>
                 <FileText className="w-3 h-3" /> Motivo del cambio <span style={{ color: T.textDim, fontWeight: 400 }}>(opcional)</span>
               </label>
               <textarea
@@ -424,7 +424,7 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
                   await navigator.clipboard.writeText(`Email: ${addUserCredenciales.email}\nPassword: ${addUserCredenciales.password}`);
                   setAddUserCopiado(true); setTimeout(() => setAddUserCopiado(false), 2000);
                 }} className="h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider inline-flex items-center gap-2 hover:opacity-80"
-                  style={{ fontFamily: "var(--font-barlow-condensed)", background: "#F9731620", border: "1px solid #F9731648", color: ADMIN_ACCENT }}>
+                  style={{ fontFamily: "var(--font-fredoka)", background: "#F9731620", border: "1px solid #F9731648", color: ADMIN_ACCENT }}>
                   {addUserCopiado ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />} {addUserCopiado ? "Copiado" : "Copiar"}
                 </button>
                 <Button variant="outline" onClick={() => setAddUserDialogOpen(false)}>Cerrar</Button>
@@ -438,13 +438,13 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
               </DialogHeader>
               {error && <div className="rounded-lg px-3 py-2 text-xs" style={{ background: `${T.danger}15`, border: `1px solid ${T.danger}40`, color: T.danger }}>{error}</div>}
               <div className="space-y-3">
-                <div><label className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Nombre</label>
+                <div><label className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>Nombre</label>
                   <Input value={addUserForm.nombre} onChange={(e) => setAddUserForm((f) => ({ ...f, nombre: e.target.value }))} style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text }} /></div>
-                <div><label className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Email</label>
+                <div><label className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>Email</label>
                   <Input type="email" value={addUserForm.email} onChange={(e) => setAddUserForm((f) => ({ ...f, email: e.target.value }))} style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text }} /></div>
-                <div><label className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Rol</label>
+                <div><label className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>Rol</label>
                   <select value={addUserForm.rol} onChange={(e) => setAddUserForm((f) => ({ ...f, rol: e.target.value as "owner" | "admin" | "recepcion" }))} className="h-9 px-3 rounded-lg text-sm w-full"
-                    style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
+                    style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" }}>
                     <option value="owner">Owner</option>
                     <option value="admin">Admin</option>
                     <option value="recepcion">Recepción</option>
@@ -469,7 +469,7 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
             <DialogDescription>Usuario: {rolTarget?.nombre}</DialogDescription>
           </DialogHeader>
           <select value={nuevoRol} onChange={(e) => setNuevoRol(e.target.value as "owner" | "admin" | "recepcion")} className="h-9 px-3 rounded-lg text-sm w-full"
-            style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
+            style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" }}>
             <option value="owner">Owner</option>
             <option value="admin">Admin</option>
             <option value="recepcion">Recepción</option>
@@ -492,15 +492,15 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <label className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Meses a agregar</label>
+              <label className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>Meses a agregar</label>
               <Input type="number" min={1} value={meses} onChange={(e) => setMeses(Number(e.target.value))} style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text }} />
             </div>
             <div>
-              <label className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Precio acordado (USD) <span style={{ color: T.textDim, fontWeight: 400 }}>(0 = sin costo)</span></label>
+              <label className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>Precio acordado (USD) <span style={{ color: T.textDim, fontWeight: 400 }}>(0 = sin costo)</span></label>
               <Input type="number" min={0} value={precio} onChange={(e) => setPrecio(Number(e.target.value))} style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text }} />
             </div>
             <div>
-              <label className="text-xs font-bold uppercase tracking-widest flex items-center gap-1.5 mb-1.5" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+              <label className="text-xs font-bold uppercase tracking-widest flex items-center gap-1.5 mb-1.5" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>
                 <FileText className="w-3 h-3" /> Motivo <span style={{ color: T.textDim, fontWeight: 400 }}>(opcional)</span>
               </label>
               <textarea

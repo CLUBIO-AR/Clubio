@@ -53,7 +53,7 @@ const ESTADO_OPTS = [
 ];
 
 const inp: React.CSSProperties = { background: T.card, border: `1px solid ${T.border}`, color: T.text };
-const sel: React.CSSProperties = { background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" };
+const sel: React.CSSProperties = { background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" };
 
 function gymDe(g: GymRef[] | GymRef) {
   return Array.isArray(g) ? g[0] : g;
@@ -95,7 +95,7 @@ export function EmailsLogClient({ logs, total, page, totalPages, filters, gyms }
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>LOGS · EMAILS</h1>
+        <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>LOGS · EMAILS</h1>
         <p className="text-sm mt-1" style={{ color: T.textDim }}>{total.toLocaleString("es-AR")} envío{total !== 1 ? "s" : ""} registrado{total !== 1 ? "s" : ""}</p>
       </div>
 
@@ -116,7 +116,7 @@ export function EmailsLogClient({ logs, total, page, totalPages, filters, gyms }
           onClick={() => applyFilters({ search })}
           disabled={isPending}
           className="h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-all hover:opacity-80"
-          style={{ fontFamily: "var(--font-barlow-condensed)", background: T.card, border: `1px solid ${T.border}`, color: ADMIN_ACCENT }}
+          style={{ fontFamily: "var(--font-fredoka)", background: T.card, border: `1px solid ${T.border}`, color: ADMIN_ACCENT }}
         >
           {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Buscar"}
         </button>
@@ -136,7 +136,7 @@ export function EmailsLogClient({ logs, total, page, totalPages, filters, gyms }
           <input type="date" value={filters.hasta} onChange={(e) => applyFilters({ hasta: e.target.value })} className="h-9 px-3 rounded-lg text-sm" style={sel} />
           {hayFiltroFecha && (
             <button onClick={() => applyFilters({ desde: "", hasta: "" })} className="text-xs font-bold uppercase tracking-widest px-2.5 py-1.5 rounded-md transition-opacity hover:opacity-75"
-              style={{ fontFamily: "var(--font-barlow-condensed)", color: T.textDim, border: `1px solid ${T.border}` }}>
+              style={{ fontFamily: "var(--font-fredoka)", color: T.textDim, border: `1px solid ${T.border}` }}>
               Limpiar
             </button>
           )}
@@ -155,7 +155,7 @@ export function EmailsLogClient({ logs, total, page, totalPages, filters, gyms }
             <TableHeader>
               <TableRow style={{ background: T.bg, borderColor: T.border }}>
                 {["Fecha", "Gym", "Destinatario", "Tipo", "Asunto", "Canal", "Estado", ""].map((h) => (
-                  <TableHead key={h} className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)", borderColor: T.border }}>
+                  <TableHead key={h} className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)", borderColor: T.border }}>
                     {h}
                   </TableHead>
                 ))}
@@ -224,13 +224,13 @@ export function EmailsLogClient({ logs, total, page, totalPages, filters, gyms }
                 {detalle.provider_id && <p style={{ color: T.textMuted }}>Provider ID: <span className="font-mono" style={{ color: T.text }}>{detalle.provider_id}</span></p>}
                 {detalle.preview && (
                   <div className="pt-1">
-                    <p className="text-xs uppercase tracking-widest font-bold mb-1" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Vista previa</p>
+                    <p className="text-xs uppercase tracking-widest font-bold mb-1" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>Vista previa</p>
                     <p className="rounded-lg p-3 text-xs leading-relaxed" style={{ background: T.bg, border: `1px solid ${T.borderSub}`, color: T.textMuted }}>{detalle.preview}</p>
                   </div>
                 )}
                 {detalle.error_detail && (
                   <div className="pt-1">
-                    <p className="text-xs uppercase tracking-widest font-bold mb-1" style={{ color: T.danger, fontFamily: "var(--font-barlow-condensed)" }}>Error</p>
+                    <p className="text-xs uppercase tracking-widest font-bold mb-1" style={{ color: T.danger, fontFamily: "var(--font-fredoka)" }}>Error</p>
                     <p className="rounded-lg p-3 text-xs font-mono leading-relaxed" style={{ background: `${T.danger}10`, border: `1px solid ${T.danger}30`, color: T.danger }}>{detalle.error_detail}</p>
                   </div>
                 )}

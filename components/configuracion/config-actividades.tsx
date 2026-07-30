@@ -69,11 +69,11 @@ function ActividadForm({
     <form onSubmit={submit} className="space-y-3 p-4 rounded-xl" style={{ background: T.bgDeep, border: `1px solid ${T.accentBorder}` }}>
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
-          <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Nombre</label>
+          <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textOnDarkDim, fontFamily: "var(--font-fredoka)" }}>Nombre</label>
           <input required value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))} placeholder="ej: Funcional" style={inputBase} />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Precio mensual ($)</label>
+          <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textOnDarkDim, fontFamily: "var(--font-fredoka)" }}>Precio mensual ($)</label>
           <input required type="number" min={0} value={form.monto_base} onChange={e => setForm(f => ({ ...f, monto_base: e.target.value }))} placeholder="ej: 18000" style={inputBase} />
         </div>
       </div>
@@ -81,11 +81,11 @@ function ActividadForm({
       {/* Recargo propio */}
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
-          <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Mora: días</label>
+          <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textOnDarkDim, fontFamily: "var(--font-fredoka)" }}>Mora: días</label>
           <input type="number" min={0} value={form.r1dias} onChange={e => setForm(f => ({ ...f, r1dias: e.target.value }))} placeholder="(gym por defecto)" style={inputBase} />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Mora: % recargo</label>
+          <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textOnDarkDim, fontFamily: "var(--font-fredoka)" }}>Mora: % recargo</label>
           <input type="number" min={0} step={0.1} value={form.r1pct} onChange={e => setForm(f => ({ ...f, r1pct: e.target.value }))} placeholder="(gym por defecto)" style={inputBase} />
         </div>
       </div>
@@ -93,7 +93,7 @@ function ActividadForm({
       {/* Mora 2 */}
       <div className="flex items-center gap-2">
         <input type="checkbox" id="r2a" checked={form.r2activo} onChange={e => setForm(f => ({ ...f, r2activo: e.target.checked }))} style={{ accentColor: T.accent }} />
-        <label htmlFor="r2a" className="text-xs" style={{ color: T.textDim }}>Segunda mora</label>
+        <label htmlFor="r2a" className="text-xs" style={{ color: T.textOnDarkDim }}>Segunda mora</label>
       </div>
       {form.r2activo && (
         <div className="grid grid-cols-2 gap-2">
@@ -104,7 +104,7 @@ function ActividadForm({
 
       {/* Color */}
       <div className="space-y-1">
-        <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Color</label>
+        <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textOnDarkDim, fontFamily: "var(--font-fredoka)" }}>Color</label>
         <div className="flex gap-2 flex-wrap">
           {COLORS.map(c => (
             <button key={c} type="button" onClick={() => setForm(f => ({ ...f, color: c }))}
@@ -117,12 +117,12 @@ function ActividadForm({
 
       {error && <p className="text-xs" style={{ color: T.danger }}>{error}</p>}
       <div className="flex gap-2 justify-end">
-        <button type="button" onClick={onCancel} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+        <button type="button" onClick={onCancel} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider" style={{ color: T.textOnDarkDim, fontFamily: "var(--font-fredoka)" }}>
           Cancelar
         </button>
         <button type="submit" disabled={saving}
           className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 disabled:opacity-50"
-          style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accent, color: T.bgDeep }}
+          style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep }}
         >
           {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
           Guardar
@@ -181,13 +181,13 @@ export function ConfigActividades({ actividades: inicial }: Props) {
   return (
     <div className="rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
       <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: T.borderSub }}>
-        <h2 className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
+        <h2 className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.accent, fontFamily: "var(--font-fredoka)" }}>
           — Actividades / Clases
         </h2>
         {!creando && (
           <button onClick={() => setCreando(true)}
             className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider"
-            style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accentBg, color: T.accent, border: `1px solid ${T.accentBorder}` }}
+            style={{ fontFamily: "var(--font-fredoka)", background: T.accentBg, color: T.accent, border: `1px solid ${T.accentBorder}` }}
           >
             <Plus className="w-3 h-3" /> Nueva
           </button>
@@ -217,7 +217,7 @@ export function ConfigActividades({ actividades: inicial }: Props) {
             <div key={a.id} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: T.bg, border: `1px solid ${T.border}`, opacity: a.activa ? 1 : 0.5 }}>
               <div className="w-3 h-3 rounded-full shrink-0" style={{ background: a.color }} />
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>{a.nombre.toUpperCase()}</p>
+                <p className="font-bold text-sm" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>{a.nombre.toUpperCase()}</p>
                 <p className="text-xs font-mono" style={{ color: T.textDim }}>
                   ${a.monto_base.toLocaleString("es-AR")}
                   {a.recargo_1_dias != null && ` · mora ${a.recargo_1_dias}d / ${a.recargo_1_porcentaje}%`}
@@ -226,7 +226,7 @@ export function ConfigActividades({ actividades: inicial }: Props) {
               <div className="flex items-center gap-1">
                 <button onClick={() => handleToggle(a.id, !a.activa)}
                   className="px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider"
-                  style={{ fontFamily: "var(--font-barlow-condensed)", background: a.activa ? T.accentBg : `${T.textDim}15`, color: a.activa ? T.accent : T.textDim }}
+                  style={{ fontFamily: "var(--font-fredoka)", background: a.activa ? T.accentBg : `${T.textDim}15`, color: a.activa ? T.accent : T.textDim }}
                 >
                   {a.activa ? "Activa" : "Inactiva"}
                 </button>

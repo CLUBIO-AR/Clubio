@@ -35,7 +35,7 @@ export default async function CuotaDetailPage({
         <Link href="/dashboard/cuotas" className="p-1.5 rounded-lg transition-colors hover:opacity-75" style={{ color: T.textDim }}>
           <ChevronLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>
+        <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>
           DETALLE DE CUOTA
         </h1>
       </div>

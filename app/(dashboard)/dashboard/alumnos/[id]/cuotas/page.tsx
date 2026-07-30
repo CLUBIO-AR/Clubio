@@ -91,10 +91,10 @@ export default async function AlumnoCuotasPage({
           <ChevronLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>
+          <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>
             {alumno.apellido?.toUpperCase()}, {alumno.nombre?.toUpperCase()}
           </h1>
-          <p className="text-xs uppercase tracking-wider mt-1" style={{ color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
+          <p className="text-xs uppercase tracking-wider mt-1" style={{ color: T.accent, fontFamily: "var(--font-fredoka)" }}>
             Historial de cuotas
           </p>
         </div>

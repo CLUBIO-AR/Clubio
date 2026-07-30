@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const labelStyle: React.CSSProperties = {
-  color: T.textMuted, fontFamily: "var(--font-barlow-condensed)",
+  color: T.textMuted, fontFamily: "var(--font-fredoka)",
   fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
 };
 
@@ -46,10 +46,10 @@ export default function RegisterPage() {
             style={{ background: T.accentBg, border: `2px solid ${T.accentBorder}` }}>
             <CheckCircle className="w-8 h-8" style={{ color: T.accent }} />
           </div>
-          <h1 className="text-3xl mb-3 uppercase" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text, letterSpacing: "0.04em" }}>
+          <h1 className="text-3xl mb-3 uppercase" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.textOnDark, letterSpacing: "0.04em" }}>
             ¡Solicitud enviada!
           </h1>
-          <p className="text-sm leading-relaxed mb-8" style={{ color: T.textMuted }}>
+          <p className="text-sm leading-relaxed mb-8" style={{ color: T.textOnDarkMuted }}>
             Recibimos tu consulta. Nos ponemos en contacto con vos en las próximas 24–48hs.
             También te enviamos un email de confirmación.
           </p>
@@ -71,14 +71,14 @@ export default function RegisterPage() {
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: T.accent, boxShadow: T.accentGlow }}>
               <Zap className="w-5 h-5" style={{ color: T.bgDeep }} />
             </div>
-            <span className="text-3xl tracking-[0.15em]" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>
+            <span className="text-3xl tracking-[0.15em]" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.textOnDark }}>
               CLUBIO
             </span>
           </div>
-          <h2 className="text-lg tracking-widest" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 700, color: T.textMuted }}>
+          <h2 className="text-lg tracking-widest" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 700, color: T.textOnDarkMuted }}>
             QUIERO USAR CLUBIO
           </h2>
-          <p className="text-sm mt-1 text-center" style={{ color: T.textDim }}>
+          <p className="text-sm mt-1 text-center" style={{ color: T.textOnDarkDim }}>
             Completá el formulario y te contactamos para mostrarte la plataforma.
           </p>
         </div>
@@ -126,14 +126,14 @@ export default function RegisterPage() {
 
             <button type="submit" disabled={loading}
               className="w-full h-11 rounded-lg font-bold uppercase tracking-widest text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-              style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accent, color: T.bgDeep, boxShadow: T.accentGlow }}
+              style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep, boxShadow: T.accentGlow }}
             >
               {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Enviando...</> : "Quiero que me contacten"}
             </button>
           </form>
         </div>
 
-        <p className="text-center text-sm mt-6" style={{ color: T.textDim }}>
+        <p className="text-center text-sm mt-6" style={{ color: T.textOnDarkDim }}>
           ¿Ya tenés cuenta?{" "}
           <Link href="/login" className="font-semibold hover:opacity-75 transition-opacity" style={{ color: T.accent }}>Iniciar sesión</Link>
         </p>

@@ -8,7 +8,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-barlow), system-ui, sans-serif;
-  --font-heading: var(--font-barlow-condensed), system-ui, sans-serif;
+  --font-heading: var(--font-fredoka), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -47,52 +47,53 @@
 }
 
 :root {
-  /* Navy azulado — no negro puro, más cómodo para la vista */
-  --background: oklch(0.17 0.04 250);
-  --foreground: oklch(0.91 0.008 240);       /* blanco levemente azulado */
+  /* Marca CLUBIO — fondo blanco, acentos violeta/lima. Sidebar se mantiene oscuro. */
+  --background: #FFFFFF;
+  --foreground: #16112B;             /* casi negro, tinte violeta */
 
-  --card: oklch(0.21 0.035 250);
-  --card-foreground: oklch(0.91 0.008 240);
+  --card: #FFFFFF;
+  --card-foreground: #16112B;
 
-  --popover: oklch(0.21 0.035 250);
-  --popover-foreground: oklch(0.91 0.008 240);
+  --popover: #FFFFFF;
+  --popover-foreground: #16112B;
 
-  /* Primary: esmeralda suave */
-  --primary: oklch(0.76 0.15 163);
-  --primary-foreground: oklch(0.12 0.04 250);
+  /* Primary: violeta CLUBIO */
+  --primary: #7C3AED;
+  --primary-foreground: #FFFFFF;
 
-  --secondary: oklch(0.25 0.032 250);
-  --secondary-foreground: oklch(0.91 0.008 240);
+  --secondary: #F6F4FC;
+  --secondary-foreground: #16112B;
 
-  --muted: oklch(0.23 0.03 250);
-  --muted-foreground: oklch(0.60 0.02 245);
+  --muted: #F8F7FC;
+  --muted-foreground: #6B647F;
 
-  --accent: oklch(0.76 0.15 163);
-  --accent-foreground: oklch(0.12 0.04 250);
+  /* Accent: lima CLUBIO (texto oscuro encima) */
+  --accent: #D7FF3D;
+  --accent-foreground: #16112B;
 
   --destructive: oklch(0.65 0.19 27);
 
-  --border: oklch(0.28 0.03 250);
-  --input: oklch(0.19 0.035 250);
-  --ring: oklch(0.76 0.15 163);
+  --border: #E4E0F1;
+  --input: #F8F7FC;
+  --ring: #7C3AED;
 
-  --chart-1: oklch(0.76 0.15 163);   /* esmeralda */
-  --chart-2: oklch(0.76 0.18 135);   /* lima */
+  --chart-1: #7C3AED;   /* violeta */
+  --chart-2: #D7FF3D;   /* lima */
   --chart-3: oklch(0.72 0.13 178);   /* teal */
   --chart-4: oklch(0.65 0.15 220);   /* azul */
   --chart-5: oklch(0.65 0.19 27);    /* rojo */
 
-  --radius: 0.5rem;
+  --radius: 0.75rem;
 
-  /* Sidebar: navy más profundo */
-  --sidebar: oklch(0.12 0.04 250);
-  --sidebar-foreground: oklch(0.72 0.018 245);
-  --sidebar-primary: oklch(0.76 0.15 163);
-  --sidebar-primary-foreground: oklch(0.12 0.04 250);
-  --sidebar-accent: oklch(0.21 0.035 250);
-  --sidebar-accent-foreground: oklch(0.91 0.008 240);
-  --sidebar-border: oklch(0.22 0.03 250);
-  --sidebar-ring: oklch(0.76 0.15 163);
+  /* Sidebar: violeta muy oscuro, se mantiene oscuro por diseño */
+  --sidebar: #160B33;
+  --sidebar-foreground: #C9C0E0;
+  --sidebar-primary: #7C3AED;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #241452;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #2A1B5C;
+  --sidebar-ring: #7C3AED;
 }
 
 @layer base {
@@ -104,28 +105,26 @@
     font-family: var(--font-barlow), system-ui, sans-serif;
   }
 
-  /* Headings usan Barlow Condensed */
+  /* Headings usan Fredoka — tipografía redondeada de marca */
   h1, h2, h3, h4 {
-    font-family: var(--font-barlow-condensed), system-ui, sans-serif;
-    font-weight: 800;
+    font-family: var(--font-fredoka), system-ui, sans-serif;
+    font-weight: 700;
     letter-spacing: 0.01em;
-    text-transform: uppercase;
   }
 }
 
-/* Clase utilitaria para headings bold condensados */
+/* Clase utilitaria para headings redondeados bold */
 .heading {
-  font-family: var(--font-barlow-condensed), system-ui, sans-serif;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.01em;
 }
 
-/* Glow neon helper */
+/* Glow violeta helper — reemplaza el glow neon esmeralda del theme oscuro anterior */
 .neon-glow {
-  text-shadow: 0 0 20px oklch(0.88 0.22 158 / 0.6);
+  text-shadow: 0 0 20px rgba(124, 58, 237, 0.35);
 }
 
 .neon-border {
-  box-shadow: 0 0 0 1px oklch(0.88 0.22 158 / 0.3), 0 0 15px oklch(0.88 0.22 158 / 0.1);
+  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.25), 0 0 15px rgba(124, 58, 237, 0.12);
 }

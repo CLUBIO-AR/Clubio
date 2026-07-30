@@ -75,7 +75,7 @@ export function ConfigMercadoPago({ mpAccessToken, mpPublicKey }: Props) {
           className="w-full flex items-center justify-between px-4 py-3 text-left transition-opacity hover:opacity-80"
           style={{ background: T.bg }}
         >
-          <span className="text-xs font-bold uppercase tracking-widest" style={{ fontFamily: "var(--font-barlow-condensed)", color: T.accent }}>
+          <span className="text-xs font-bold uppercase tracking-widest" style={{ fontFamily: "var(--font-fredoka)", color: T.accent }}>
             ¿Cómo obtengo mis credenciales?
           </span>
           {showGuia
@@ -90,7 +90,7 @@ export function ConfigMercadoPago({ mpAccessToken, mpPublicKey }: Props) {
               <div key={paso.num} className="flex gap-3">
                 <div
                   className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-black mt-0.5"
-                  style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accentBg, color: T.accent, border: `1px solid ${T.accentBorder}` }}
+                  style={{ fontFamily: "var(--font-fredoka)", background: T.accentBg, color: T.accent, border: `1px solid ${T.accentBorder}` }}
                 >
                   {paso.num}
                 </div>

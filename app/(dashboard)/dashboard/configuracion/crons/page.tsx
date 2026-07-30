@@ -92,7 +92,7 @@ export default async function CronsPage({
           <ChevronLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>
+          <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>
             MONITOREO CRONS
           </h1>
           <p className="text-sm mt-1" style={{ color: T.textDim }}>Estado de tareas automáticas de este gimnasio</p>
@@ -105,7 +105,7 @@ export default async function CronsPage({
       {/* Última ejecución por tipo — datos del GYM PROPIO */}
       <div className="rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>
         <div className="px-5 py-4 border-b" style={{ borderColor: T.borderSub }}>
-          <h2 className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
+          <h2 className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.accent, fontFamily: "var(--font-fredoka)" }}>
             — Última ejecución
           </h2>
         </div>
@@ -120,7 +120,7 @@ export default async function CronsPage({
                   <Icon className="w-4 h-4" style={{ color: cfg.color }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-sm" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
+                  <p className="font-bold text-sm" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>
                     {cfg.label.toUpperCase()}
                   </p>
                   {log ? (

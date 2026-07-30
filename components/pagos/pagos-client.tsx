@@ -117,7 +117,7 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
   const btnSm = (active?: boolean): React.CSSProperties => ({
     padding: "0.25rem 0.7rem", borderRadius: 6, fontSize: "0.75rem", fontWeight: 700,
     letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer",
-    fontFamily: "var(--font-barlow-condensed)",
+    fontFamily: "var(--font-fredoka)",
     background: active ? T.accent  : T.card,
     color:      active ? T.bgDeep  : T.textDim,
     border:     `1px solid ${active ? T.accent : T.border}`,
@@ -140,19 +140,19 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
 
         {/* Desde */}
         <div className="flex flex-col gap-0.5">
-          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)", fontSize: "0.65rem" }}>Desde</span>
+          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)", fontSize: "0.65rem" }}>Desde</span>
           <input type="date" value={desde} onChange={(e) => applyFilters({ desde: e.target.value })} style={inp} />
         </div>
 
         {/* Hasta */}
         <div className="flex flex-col gap-0.5">
-          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)", fontSize: "0.65rem" }}>Hasta</span>
+          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)", fontSize: "0.65rem" }}>Hasta</span>
           <input type="date" value={hasta} onChange={(e) => applyFilters({ hasta: e.target.value })} style={inp} />
         </div>
 
         {/* Método */}
         <div className="flex flex-col gap-0.5">
-          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)", fontSize: "0.65rem" }}>Método</span>
+          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)", fontSize: "0.65rem" }}>Método</span>
           <select value={metodo} onChange={(e) => applyFilters({ metodo: e.target.value })} style={{ ...inp, width: 140 }}>
             <option value="">Todos</option>
             {Object.entries(METODO_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
@@ -161,7 +161,7 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
 
         {/* Actividad */}
         <div className="flex flex-col gap-0.5">
-          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)", fontSize: "0.65rem" }}>Actividad</span>
+          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)", fontSize: "0.65rem" }}>Actividad</span>
           <select value={actividad} onChange={(e) => applyFilters({ actividad: e.target.value })} style={{ ...inp, width: 160 }}>
             <option value="">Todas</option>
             <option value={SIN_ACTIVIDAD}>General (sin actividad)</option>
@@ -180,7 +180,7 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
         <button
           onClick={exportCSV}
           className="flex items-center gap-1.5 h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-opacity hover:opacity-80 ml-auto"
-          style={{ fontFamily: "var(--font-barlow-condensed)", background: `${T.accent}15`, color: T.accent, border: `1px solid ${T.accentBorder}` }}
+          style={{ fontFamily: "var(--font-fredoka)", background: `${T.accent}15`, color: T.accent, border: `1px solid ${T.accentBorder}` }}
         >
           <Download className="w-3.5 h-3.5" /> Exportar XLSX
         </button>
@@ -190,7 +190,7 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
       {filtered.length > 0 && (
         <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg" style={{ background: T.accentBg, border: `1px solid ${T.accentBorder}` }}>
           <DollarSign className="w-4 h-4" style={{ color: T.accent }} />
-          <span className="text-sm font-bold" style={{ color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
+          <span className="text-sm font-bold" style={{ color: T.accent, fontFamily: "var(--font-fredoka)" }}>
             {filtered.length} pagos · Total: ${totalFiltrado.toLocaleString("es-AR")}
           </span>
         </div>
@@ -201,7 +201,7 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
        <div className="overflow-x-auto">
         <div className="min-w-[640px]">
         <div className="px-5 py-3 grid gap-4 border-b"
-          style={{ background: T.bgDeep, borderColor: T.borderSub, gridTemplateColumns: "minmax(0,2fr) minmax(0,1.2fr) minmax(0,1fr) 130px 110px" }}>
+          style={{ background: T.bgDeep, borderColor: T.borderOnDark, gridTemplateColumns: "minmax(0,2fr) minmax(0,1.2fr) minmax(0,1fr) 130px 110px" }}>
           {[
             { label: "Alumno", cls: "" },
             { label: "Período", cls: "" },
@@ -210,7 +210,7 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
             { label: "Monto", cls: "text-right" },
           ].map(({ label, cls }) => (
             <p key={label} className={`text-xs font-bold uppercase tracking-[0.12em] ${cls}`}
-              style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+              style={{ color: T.textOnDarkDim, fontFamily: "var(--font-fredoka)" }}>
               {label}
             </p>
           ))}
@@ -264,7 +264,7 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
               </div>
               <div>
                 <span className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider whitespace-nowrap"
-                  style={{ fontFamily: "var(--font-barlow-condensed)", background: `${metodoColor}15`, color: metodoColor, border: `1px solid ${metodoColor}30` }}>
+                  style={{ fontFamily: "var(--font-fredoka)", background: `${metodoColor}15`, color: metodoColor, border: `1px solid ${metodoColor}30` }}>
                   {METODO_LABEL[p.metodo] ?? p.metodo}
                 </span>
               </div>

@@ -134,7 +134,7 @@ export function LicenciasClient({ licencias, total, page, totalPages, filters }:
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>LICENCIAS</h1>
+        <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>LICENCIAS</h1>
         <p className="text-sm mt-1" style={{ color: T.textDim }}>{total} licencia{total !== 1 ? "s" : ""} registrada{total !== 1 ? "s" : ""}</p>
       </div>
 
@@ -155,7 +155,7 @@ export function LicenciasClient({ licencias, total, page, totalPages, filters }:
           onClick={() => applyFilters({ search })}
           disabled={isPending}
           className="h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-all hover:opacity-80"
-          style={{ fontFamily: "var(--font-barlow-condensed)", background: T.card, border: `1px solid ${T.border}`, color: ADMIN_ACCENT }}
+          style={{ fontFamily: "var(--font-fredoka)", background: T.card, border: `1px solid ${T.border}`, color: ADMIN_ACCENT }}
         >
           {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Buscar"}
         </button>
@@ -163,7 +163,7 @@ export function LicenciasClient({ licencias, total, page, totalPages, filters }:
           value={filters.plan}
           onChange={(e) => applyFilters({ plan: e.target.value })}
           className="h-9 px-3 rounded-lg text-sm"
-          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" }}
+          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" }}
         >
           {PLAN_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
@@ -171,7 +171,7 @@ export function LicenciasClient({ licencias, total, page, totalPages, filters }:
           value={filters.estado}
           onChange={(e) => applyFilters({ estado: e.target.value })}
           className="h-9 px-3 rounded-lg text-sm"
-          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" }}
+          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" }}
         >
           {ESTADO_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
@@ -192,7 +192,7 @@ export function LicenciasClient({ licencias, total, page, totalPages, filters }:
             <TableHeader>
               <TableRow style={{ background: T.bg, borderColor: T.border }}>
                 {["Gym", "Plan", "Inicio", "Vencimiento", "Estado", "Precio acordado", ""].map((h) => (
-                  <TableHead key={h} className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)", borderColor: T.border }}>
+                  <TableHead key={h} className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)", borderColor: T.border }}>
                     {h}
                   </TableHead>
                 ))}
@@ -230,11 +230,11 @@ export function LicenciasClient({ licencias, total, page, totalPages, filters }:
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-2">
                         <button onClick={() => abrirCambiarPlan(l)} className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
-                          style={{ fontFamily: "var(--font-barlow-condensed)", background: "#F9731620", border: "1px solid #F9731648", color: ADMIN_ACCENT }}>
+                          style={{ fontFamily: "var(--font-fredoka)", background: "#F9731620", border: "1px solid #F9731648", color: ADMIN_ACCENT }}>
                           Cambiar plan
                         </button>
                         <button onClick={() => abrirRenovar(l)} className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80 inline-flex items-center gap-1.5"
-                          style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accentBg, border: `1px solid ${T.accentBorder}`, color: T.accent }}>
+                          style={{ fontFamily: "var(--font-fredoka)", background: T.accentBg, border: `1px solid ${T.accentBorder}`, color: T.accent }}>
                           <RefreshCw className="w-3 h-3" /> Renovar
                         </button>
                       </div>
@@ -257,7 +257,7 @@ export function LicenciasClient({ licencias, total, page, totalPages, filters }:
             <DialogDescription>Actualizá el plan contratado por {planTarget ? gymDe(planTarget).nombre : ""}.</DialogDescription>
           </DialogHeader>
           <select value={nuevoPlan} onChange={(e) => setNuevoPlan(e.target.value as "basic" | "multi")} className="h-9 px-3 rounded-lg text-sm w-full"
-            style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
+            style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" }}>
             <option value="basic">Basic — USD 28</option>
             <option value="multi">Multi — USD 75</option>
           </select>
@@ -279,11 +279,11 @@ export function LicenciasClient({ licencias, total, page, totalPages, filters }:
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <label className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Meses a agregar</label>
+              <label className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>Meses a agregar</label>
               <Input type="number" min={1} value={meses} onChange={(e) => setMeses(Number(e.target.value))} style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text }} />
             </div>
             <div>
-              <label className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Precio acordado (USD)</label>
+              <label className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>Precio acordado (USD)</label>
               <Input type="number" min={0} value={precio} onChange={(e) => setPrecio(Number(e.target.value))} style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text }} />
             </div>
           </div>

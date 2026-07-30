@@ -50,14 +50,14 @@ function LoginForm() {
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: T.accent, boxShadow: T.accentGlow }}>
               <Zap className="w-5 h-5" style={{ color: T.bgDeep }} />
             </div>
-            <span className="text-3xl tracking-[0.15em]" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>
+            <span className="text-3xl tracking-[0.15em]" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.textOnDark }}>
               CLUBIO
             </span>
           </div>
-          <h2 className="text-lg tracking-widest" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 700, color: T.textMuted }}>
+          <h2 className="text-lg tracking-widest" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 700, color: T.textOnDarkMuted }}>
             BIENVENIDO
           </h2>
-          <p className="text-sm mt-1 text-center" style={{ color: T.textDim }}>
+          <p className="text-sm mt-1 text-center" style={{ color: T.textOnDarkDim }}>
             Accedé al panel de gestión de tu gimnasio
           </p>
         </div>
@@ -66,9 +66,9 @@ function LoginForm() {
         {suspended && (
           <div className="mb-6 px-4 py-4 rounded-xl flex gap-3 items-start text-sm" style={{ background: `${T.warning}12`, border: `1px solid ${T.warning}40` }}>
             <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: T.warning }} />
-            <div style={{ color: T.text }}>
+            <div style={{ color: T.textOnDark }}>
               <p className="font-semibold mb-0.5">Tu suscripción venció</p>
-              <p style={{ color: T.textMuted }}>
+              <p style={{ color: T.textOnDarkMuted }}>
                 El acceso está suspendido. Contactate con{" "}
                 <a href="mailto:hola@clubio.com.ar" className="underline underline-offset-2" style={{ color: T.accent }}>
                   hola@clubio.com.ar
@@ -83,7 +83,7 @@ function LoginForm() {
         <div className="rounded-2xl p-7 space-y-5" style={{ background: T.card, border: `1px solid ${T.border}` }}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.textMuted, fontFamily: "var(--font-barlow-condensed)" }}>
+              <Label className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.textMuted, fontFamily: "var(--font-fredoka)" }}>
                 Email
               </Label>
               <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@migimnasio.com"
@@ -92,7 +92,7 @@ function LoginForm() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.textMuted, fontFamily: "var(--font-barlow-condensed)" }}>
+              <Label className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.textMuted, fontFamily: "var(--font-fredoka)" }}>
                 Contraseña
               </Label>
               <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
@@ -107,14 +107,14 @@ function LoginForm() {
 
             <button type="submit" disabled={loading}
               className="w-full h-11 rounded-lg font-bold uppercase tracking-widest text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
-              style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accent, color: T.bgDeep, boxShadow: T.accentGlow }}
+              style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep, boxShadow: T.accentGlow }}
             >
               {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Ingresando...</> : "Ingresar"}
             </button>
           </form>
         </div>
 
-        <p className="text-center text-sm mt-6" style={{ color: T.textDim }}>
+        <p className="text-center text-sm mt-6" style={{ color: T.textOnDarkDim }}>
           ¿No tenés cuenta?{" "}
           <Link href="/register" className="font-semibold transition-opacity hover:opacity-75" style={{ color: T.accent }}>
             Registrá tu gym

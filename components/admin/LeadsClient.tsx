@@ -80,7 +80,7 @@ const CANTIDAD_OPTS = [
 ];
 
 const inp: React.CSSProperties = { background: T.card, border: `1px solid ${T.border}`, color: T.text };
-const sel: React.CSSProperties = { background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" };
+const sel: React.CSSProperties = { background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" };
 
 export function LeadsClient({ leads, total, page, totalPages, filters, kpis }: LeadsClientProps) {
   const router = useRouter();
@@ -157,7 +157,7 @@ export function LeadsClient({ leads, total, page, totalPages, filters, kpis }: L
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>LEADS</h1>
+        <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>LEADS</h1>
         <p className="text-sm mt-1" style={{ color: T.textDim }}>{total} lead{total !== 1 ? "s" : ""} registrado{total !== 1 ? "s" : ""}</p>
       </div>
 
@@ -168,8 +168,8 @@ export function LeadsClient({ leads, total, page, totalPages, filters, kpis }: L
             <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3" style={{ background: k.bg, border: `1px solid ${k.color}25` }}>
               <k.icon className="w-4 h-4" style={{ color: k.color }} />
             </div>
-            <p className="text-2xl font-black leading-none mb-1" style={{ fontFamily: "var(--font-barlow-condensed)", color: T.text }}>{k.value}</p>
-            <p className="text-xs uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>{k.label}</p>
+            <p className="text-2xl font-black leading-none mb-1" style={{ fontFamily: "var(--font-fredoka)", color: T.text }}>{k.value}</p>
+            <p className="text-xs uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>{k.label}</p>
           </div>
         ))}
       </div>
@@ -200,7 +200,7 @@ export function LeadsClient({ leads, total, page, totalPages, filters, kpis }: L
           onClick={() => applyFilters({ search })}
           disabled={isPending}
           className="h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-all hover:opacity-80"
-          style={{ fontFamily: "var(--font-barlow-condensed)", background: T.card, border: `1px solid ${T.border}`, color: ADMIN_ACCENT }}
+          style={{ fontFamily: "var(--font-fredoka)", background: T.card, border: `1px solid ${T.border}`, color: ADMIN_ACCENT }}
         >
           {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Buscar"}
         </button>
@@ -227,7 +227,7 @@ export function LeadsClient({ leads, total, page, totalPages, filters, kpis }: L
             <TableHeader>
               <TableRow style={{ background: T.bg, borderColor: T.border }}>
                 {["Lead", "Gym", "Tamaño", "Origen", "Estado", "Fecha", ""].map((h) => (
-                  <TableHead key={h} className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)", borderColor: T.border }}>
+                  <TableHead key={h} className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)", borderColor: T.border }}>
                     {h}
                   </TableHead>
                 ))}
@@ -252,14 +252,14 @@ export function LeadsClient({ leads, total, page, totalPages, filters, kpis }: L
                   <TableCell>
                     <div className="flex items-center justify-end gap-2">
                       <button onClick={() => abrirNota(lead)} className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80 inline-flex items-center gap-1.5 relative"
-                        style={{ fontFamily: "var(--font-barlow-condensed)", background: lead.notas ? `${ADMIN_ACCENT}15` : T.card, border: `1px solid ${lead.notas ? ADMIN_ACCENT + "60" : T.border}`, color: lead.notas ? ADMIN_ACCENT : T.textMuted }}>
+                        style={{ fontFamily: "var(--font-fredoka)", background: lead.notas ? `${ADMIN_ACCENT}15` : T.card, border: `1px solid ${lead.notas ? ADMIN_ACCENT + "60" : T.border}`, color: lead.notas ? ADMIN_ACCENT : T.textMuted }}>
                         {lead.notas ? <MessageSquare className="w-3 h-3" /> : <MessageSquarePlus className="w-3 h-3" />} Nota
                         {lead.notas && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full" style={{ background: ADMIN_ACCENT }} />}
                       </button>
                       {lead.estado !== "convertido" && (
                         <Link href={`/admin/gyms/nuevo?lead_id=${lead.id}`}
                           className={buttonVariants({ className: "gap-1.5 text-xs font-bold uppercase tracking-wider px-3 py-1.5 h-auto hover:opacity-90" })}
-                          style={{ fontFamily: "var(--font-barlow-condensed)", background: ADMIN_ACCENT, color: T.bgDeep, border: "none" }}>
+                          style={{ fontFamily: "var(--font-fredoka)", background: ADMIN_ACCENT, color: T.bgDeep, border: "none" }}>
                           <ArrowRightCircle className="w-3 h-3" /> Convertir
                         </Link>
                       )}
@@ -302,7 +302,7 @@ export function LeadsClient({ leads, total, page, totalPages, filters, kpis }: L
           </DialogHeader>
           {notaTarget?.notas && (
             <div className="space-y-1">
-              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Historial</p>
+              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>Historial</p>
               <div className="rounded-lg p-3 text-xs whitespace-pre-wrap max-h-40 overflow-y-auto" style={{ background: T.bg, border: `1px solid ${T.borderSub}`, color: T.textMuted }}>
                 {notaTarget.notas}
               </div>

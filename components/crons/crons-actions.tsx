@@ -104,7 +104,7 @@ export function CronsActions() {
         style={{ borderBottom: expanded ? `1px solid ${T.borderSub}` : "none" }}
       >
         <h2 className="text-xs font-bold uppercase tracking-[0.12em]"
-          style={{ color: T.warning, fontFamily: "var(--font-barlow-condensed)" }}>
+          style={{ color: T.warning, fontFamily: "var(--font-fredoka)" }}>
           — Ejecución manual (testing)
         </h2>
         {expanded
@@ -131,7 +131,7 @@ export function CronsActions() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold uppercase tracking-wide"
-                        style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
+                        style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>
                         {label}
                       </p>
                       <p className="text-xs mt-0.5" style={{ color: T.textDim }}>{desc}</p>
@@ -148,7 +148,7 @@ export function CronsActions() {
                           style={{
                             background: periodoCuotas === opt ? `${color}20` : "transparent",
                             color: periodoCuotas === opt ? color : T.textDim,
-                            fontFamily: "var(--font-barlow-condensed)",
+                            fontFamily: "var(--font-fredoka)",
                           }}
                         >
                           {opt === "actual"
@@ -164,7 +164,7 @@ export function CronsActions() {
                     disabled={!!loading}
                     className="w-full h-9 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all hover:opacity-80 disabled:opacity-40"
                     style={{
-                      fontFamily: "var(--font-barlow-condensed)",
+                      fontFamily: "var(--font-fredoka)",
                       background: `${color}15`,
                       color,
                       border: `1px solid ${color}30`,
@@ -213,7 +213,7 @@ export function CronsActions() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold uppercase tracking-wide"
-                  style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>
+                  style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>
                   Test de email
                 </p>
                 <p className="text-xs mt-0.5" style={{ color: T.textDim }}>
@@ -230,7 +230,7 @@ export function CronsActions() {
                 placeholder="destino@email.com (vacío = tu email)"
                 className="flex-1 h-9 px-3 rounded-lg text-xs outline-none"
                 style={{
-                  background: T.bgDeep,
+                  background: T.inputBg,
                   border: `1px solid ${T.border}`,
                   color: T.text,
                 }}
@@ -240,7 +240,7 @@ export function CronsActions() {
                 disabled={testEmailLoading}
                 className="h-9 px-4 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all hover:opacity-80 disabled:opacity-40 shrink-0"
                 style={{
-                  fontFamily: "var(--font-barlow-condensed)",
+                  fontFamily: "var(--font-fredoka)",
                   background: `${T.warning}15`,
                   color: T.warning,
                   border: `1px solid ${T.warning}30`,

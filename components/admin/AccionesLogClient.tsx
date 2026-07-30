@@ -71,7 +71,7 @@ export function AccionesLogClient({ logs, total, page, totalPages, accionesUnica
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>
+        <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>
           AUDIT TRAIL
         </h1>
         <p className="text-sm mt-1" style={{ color: T.textDim }}>
@@ -85,7 +85,7 @@ export function AccionesLogClient({ logs, total, page, totalPages, accionesUnica
           value={filtros.accion}
           onChange={(e) => setFiltro("accion", e.target.value)}
           className="h-9 px-3 rounded-lg text-sm"
-          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" }}
+          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" }}
         >
           <option value="">Todas las acciones</option>
           {accionesUnicas.map((a) => (
@@ -96,7 +96,7 @@ export function AccionesLogClient({ logs, total, page, totalPages, accionesUnica
           value={filtros.gymId}
           onChange={(e) => setFiltro("gym_id", e.target.value)}
           className="h-9 px-3 rounded-lg text-sm"
-          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" }}
+          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" }}
         >
           <option value="">Todos los gyms</option>
           {gyms.map((g) => <option key={g.id} value={g.id}>{g.nombre}</option>)}
@@ -105,7 +105,7 @@ export function AccionesLogClient({ logs, total, page, totalPages, accionesUnica
           value={filtros.adminId}
           onChange={(e) => setFiltro("admin_id", e.target.value)}
           className="h-9 px-3 rounded-lg text-sm"
-          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" }}
+          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" }}
         >
           <option value="">Todos los admins</option>
           {admins.map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
@@ -122,7 +122,7 @@ export function AccionesLogClient({ logs, total, page, totalPages, accionesUnica
               <tr style={{ borderBottom: `1px solid ${T.border}` }}>
                 {["Fecha", "Acción", "Admin", "Gym", "Detalle"].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-extrabold uppercase tracking-wider"
-                    style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+                    style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>
                     {h}
                   </th>
                 ))}

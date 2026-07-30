@@ -87,13 +87,13 @@ export function GymsClient({ gyms, total, page, totalPages, alumnosPorGym, cobra
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>GYMS</h1>
+          <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>GYMS</h1>
           <p className="text-sm mt-1" style={{ color: T.textDim }}>{total} gym{total !== 1 ? "s" : ""} registrado{total !== 1 ? "s" : ""}</p>
         </div>
         <Link
           href="/admin/gyms/nuevo"
           className={buttonVariants({ className: "gap-2 font-bold uppercase tracking-widest text-sm hover:opacity-90" })}
-          style={{ fontFamily: "var(--font-barlow-condensed)", background: ADMIN_ACCENT, color: T.bgDeep, border: "none" }}
+          style={{ fontFamily: "var(--font-fredoka)", background: ADMIN_ACCENT, color: T.bgDeep, border: "none" }}
         >
           <Plus className="w-4 h-4" /> Nuevo gym
         </Link>
@@ -116,7 +116,7 @@ export function GymsClient({ gyms, total, page, totalPages, alumnosPorGym, cobra
           onClick={() => applyFilters({ search })}
           disabled={isPending}
           className="h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-all hover:opacity-80"
-          style={{ fontFamily: "var(--font-barlow-condensed)", background: T.card, border: `1px solid ${T.border}`, color: ADMIN_ACCENT }}
+          style={{ fontFamily: "var(--font-fredoka)", background: T.card, border: `1px solid ${T.border}`, color: ADMIN_ACCENT }}
         >
           {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Buscar"}
         </button>
@@ -124,7 +124,7 @@ export function GymsClient({ gyms, total, page, totalPages, alumnosPorGym, cobra
           value={filters.plan}
           onChange={(e) => applyFilters({ plan: e.target.value })}
           className="h-9 px-3 rounded-lg text-sm"
-          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" }}
+          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" }}
         >
           {PLAN_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
@@ -132,7 +132,7 @@ export function GymsClient({ gyms, total, page, totalPages, alumnosPorGym, cobra
           value={filters.estado}
           onChange={(e) => applyFilters({ estado: e.target.value })}
           className="h-9 px-3 rounded-lg text-sm"
-          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-barlow-condensed)" }}
+          style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" }}
         >
           {ESTADO_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
@@ -149,7 +149,7 @@ export function GymsClient({ gyms, total, page, totalPages, alumnosPorGym, cobra
             <TableHeader>
               <TableRow style={{ background: T.bg, borderColor: T.border }}>
                 {["Gym", "Plan", "Alumnos", "Cobrado mes", "Estado", "Licencia", ""].map((h) => (
-                  <TableHead key={h} className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)", borderColor: T.border }}>
+                  <TableHead key={h} className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)", borderColor: T.border }}>
                     {h}
                   </TableHead>
                 ))}
@@ -171,7 +171,7 @@ export function GymsClient({ gyms, total, page, totalPages, alumnosPorGym, cobra
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold"
-                          style={{ background: "#F9731620", border: "1px solid #F9731648", color: ADMIN_ACCENT, fontFamily: "var(--font-barlow-condensed)" }}>
+                          style={{ background: "#F9731620", border: "1px solid #F9731648", color: ADMIN_ACCENT, fontFamily: "var(--font-fredoka)" }}>
                           {gym.nombre.slice(0, 2).toUpperCase()}
                         </div>
                         <div>

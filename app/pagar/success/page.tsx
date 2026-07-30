@@ -50,7 +50,7 @@ function SuccessContent() {
   } else if (condonada) {
     titulo = "Cuota condonada";
     subtitulo = `Esta cuota fue condonada por el gimnasio, ${nombre}.`;
-    color = T.textMuted;
+    color = T.textOnDarkMuted;
   }
 
   return (
@@ -62,19 +62,19 @@ function SuccessContent() {
             : <CheckCircle style={{ width: 36, height: 36, color }} />
           }
         </div>
-        <h1 style={{ fontFamily: "var(--font-barlow-condensed)", fontSize: "2rem", fontWeight: 900, color: T.text, letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: "0.75rem" }}>
+        <h1 style={{ fontFamily: "var(--font-fredoka)", fontSize: "2rem", fontWeight: 900, color: T.textOnDark, letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: "0.75rem" }}>
           {titulo}
         </h1>
-        <p style={{ color: T.textMuted, fontSize: "1rem", lineHeight: 1.6, marginBottom: "2rem" }}>
+        <p style={{ color: T.textOnDarkMuted, fontSize: "1rem", lineHeight: 1.6, marginBottom: "2rem" }}>
           {subtitulo}
         </p>
         {mpPaymentId && (
-          <p style={{ color: T.textDim, fontSize: "0.75rem", fontFamily: "monospace", marginBottom: "1.5rem" }}>
+          <p style={{ color: T.textOnDarkDim, fontSize: "0.75rem", fontFamily: "monospace", marginBottom: "1.5rem" }}>
             Operación #{mpPaymentId}
           </p>
         )}
         <div style={{ padding: "0.5rem 1rem", borderRadius: 8, background: T.accentBg, border: `1px solid ${T.accentBorder}`, display: "inline-block" }}>
-          <span style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 800, fontSize: "1.1rem", letterSpacing: "0.1em", color: T.accent }}>
+          <span style={{ fontFamily: "var(--font-fredoka)", fontWeight: 800, fontSize: "1.1rem", letterSpacing: "0.1em", color: T.accent }}>
             CLUBIO
           </span>
         </div>

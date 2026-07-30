@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { T } from "@/lib/theme";
 
 export default function DashboardError({
   error,
@@ -16,13 +17,14 @@ export default function DashboardError({
   return (
     <div className="flex min-h-screen items-center justify-center p-8">
       <div className="max-w-md text-center space-y-4">
-        <h2 className="text-xl font-semibold text-white">Algo salió mal</h2>
-        <p className="text-sm text-gray-400">
+        <h2 className="text-xl font-semibold" style={{ color: T.text }}>Algo salió mal</h2>
+        <p className="text-sm" style={{ color: T.textMuted }}>
           Ocurrió un error inesperado. Si el problema persiste, contactá a soporte.
         </p>
         <button
           onClick={reset}
-          className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-sm rounded-md transition-colors"
+          className="px-4 py-2 text-sm rounded-md transition-colors"
+          style={{ background: T.accent, color: T.accentText }}
         >
           Reintentar
         </button>

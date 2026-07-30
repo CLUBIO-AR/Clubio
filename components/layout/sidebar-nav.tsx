@@ -46,12 +46,12 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
       {/* ── Mobile top bar ── */}
       <div
         className="md:hidden fixed top-0 inset-x-0 h-14 z-40 flex items-center justify-between px-4 shrink-0"
-        style={{ background: T.bgDeep, borderBottom: `1px solid ${T.borderSub}` }}
+        style={{ background: T.bgDeep, borderBottom: `1px solid ${T.borderOnDark}` }}
       >
         <button
           onClick={() => setMobileOpen(true)}
           className="p-2 -ml-1 rounded-lg transition-colors"
-          style={{ color: T.textMuted }}
+          style={{ color: T.textOnDarkMuted }}
           aria-label="Abrir menú"
         >
           <Menu className="w-5 h-5" />
@@ -65,7 +65,7 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
           </div>
           <span
             className="text-lg tracking-[0.15em]"
-            style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}
+            style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.textOnDark }}
           >
             CLUBIO
           </span>
@@ -92,7 +92,7 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
           // Desktop: participates in normal flex layout
           "md:static md:w-64 md:translate-x-0 md:z-auto"
         )}
-        style={{ background: T.bgDeep, borderRight: `1px solid ${T.borderSub}` }}
+        style={{ background: T.bgDeep, borderRight: `1px solid ${T.borderOnDark}` }}
       >
         {/* Logo + close button (close only on mobile) */}
         <div className="px-5 pt-5 pb-3 flex items-center justify-between">
@@ -105,14 +105,14 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
             </div>
             <span
               className="text-xl tracking-[0.15em]"
-              style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}
+              style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}
             >
               CLUBIO
             </span>
           </div>
           <button
             className="md:hidden p-1 rounded transition-colors"
-            style={{ color: T.textDim }}
+            style={{ color: T.textOnDarkDim }}
             onClick={closeDrawer}
             aria-label="Cerrar menú"
           >
@@ -132,7 +132,7 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
                 background: T.accentBg,
                 border: `1px solid ${T.accentBorder}`,
                 color: T.accent,
-                fontFamily: "var(--font-barlow-condensed)",
+                fontFamily: "var(--font-fredoka)",
               }}
             >
               {gymInitials}
@@ -140,7 +140,7 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
             <div className="min-w-0">
               <p
                 className="font-extrabold uppercase truncate text-sm tracking-wider"
-                style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}
+                style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}
               >
                 {gymNombre}
               </p>
@@ -152,7 +152,7 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
           </div>
         </div>
 
-        <div className="mx-3 mb-2" style={{ height: "1px", background: T.borderSub }} />
+        <div className="mx-3 mb-2" style={{ height: "1px", background: T.borderOnDark }} />
 
         {/* Nav */}
         <nav className="flex-1 px-3 pt-2 pb-2 space-y-0.5">
@@ -165,14 +165,14 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
                 onClick={closeDrawer}
                 className={cn("flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold uppercase tracking-widest transition-all duration-150")}
                 style={{
-                  fontFamily: "var(--font-barlow-condensed)",
+                  fontFamily: "var(--font-fredoka)",
                   letterSpacing: "0.08em",
                   background:  active ? T.accentBg : "transparent",
-                  color:       active ? T.accent   : T.textMuted,
+                  color:       active ? T.accent   : T.textOnDarkMuted,
                   borderLeft:  `3px solid ${active ? T.accent : "transparent"}`,
                 }}
               >
-                <Icon className="w-4 h-4 shrink-0" style={{ color: active ? T.accent : T.textDim }} />
+                <Icon className="w-4 h-4 shrink-0" style={{ color: active ? T.accent : T.textOnDarkDim }} />
                 {label}
               </Link>
             );
@@ -183,7 +183,7 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
         <div className="px-5 py-2" style={{ borderTop: `1px solid ${T.borderSub}` }}>
           <p
             className="text-xs uppercase tracking-[0.2em] select-none"
-            style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)", fontWeight: 700 }}
+            style={{ color: T.textOnDarkDim, fontFamily: "var(--font-fredoka)", fontWeight: 700 }}
           >
             Powered by Clubio
           </p>
@@ -197,7 +197,7 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
           >
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
-              style={{ background: T.accentBg, border: `1px solid ${T.accentBorder}`, color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}
+              style={{ background: T.accentBg, border: `1px solid ${T.accentBorder}`, color: T.accent, fontFamily: "var(--font-fredoka)" }}
             >
               {userInitials}
             </div>

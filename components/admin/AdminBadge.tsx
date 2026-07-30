@@ -11,7 +11,7 @@ export function AdminBadge({ label, color }: AdminBadgeProps) {
     <span
       className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider inline-block"
       style={{
-        fontFamily: "var(--font-barlow-condensed)",
+        fontFamily: "var(--font-fredoka)",
         background: `${color}15`,
         color,
         border: `1px solid ${color}40`,

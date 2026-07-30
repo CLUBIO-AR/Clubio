@@ -46,14 +46,14 @@ export default function RegistroPage() {
           <div style={{ width: 64, height: 64, borderRadius: "50%", background: `${T.accent}18`, border: `2px solid ${T.accent}40`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.5rem" }}>
             <CheckCircle style={{ width: 32, height: 32, color: T.accent }} />
           </div>
-          <h1 style={{ fontFamily: "var(--font-barlow-condensed)", fontSize: "2rem", fontWeight: 900, color: "#f9fafb", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 12 }}>
+          <h1 style={{ fontFamily: "var(--font-fredoka)", fontSize: "2rem", fontWeight: 900, color: "#f9fafb", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 12 }}>
             ¡Recibimos tu consulta!
           </h1>
           <p style={{ color: "#9ca3af", fontSize: 15, lineHeight: 1.6, marginBottom: 32 }}>
             Nos pondremos en contacto con vos en las próximas 24–48hs para contarte todo sobre CLUBIO.
           </p>
           <div style={{ padding: "0.5rem 1rem", borderRadius: 8, background: T.accentBg, border: `1px solid ${T.accentBorder}`, display: "inline-block" }}>
-            <span style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 800, fontSize: "1.1rem", letterSpacing: "0.1em", color: T.accent }}>
+            <span style={{ fontFamily: "var(--font-fredoka)", fontWeight: 800, fontSize: "1.1rem", letterSpacing: "0.1em", color: T.accent }}>
               CLUBIO
             </span>
           </div>
@@ -68,9 +68,9 @@ export default function RegistroPage() {
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <div style={{ display: "inline-block", padding: "0.4rem 1rem", borderRadius: 8, background: T.accentBg, border: `1px solid ${T.accentBorder}`, marginBottom: 24 }}>
-            <span style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 800, fontSize: "1.3rem", letterSpacing: "0.12em", color: T.accent }}>CLUBIO</span>
+            <span style={{ fontFamily: "var(--font-fredoka)", fontWeight: 800, fontSize: "1.3rem", letterSpacing: "0.12em", color: T.accent }}>CLUBIO</span>
           </div>
-          <h1 style={{ fontFamily: "var(--font-barlow-condensed)", fontSize: "1.8rem", fontWeight: 900, color: "#f9fafb", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
+          <h1 style={{ fontFamily: "var(--font-fredoka)", fontSize: "1.8rem", fontWeight: 900, color: "#f9fafb", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
             Quiero usar Clubio
           </h1>
           <p style={{ color: "#6b7280", fontSize: 14, lineHeight: 1.6 }}>
@@ -127,7 +127,7 @@ export default function RegistroPage() {
             type="submit"
             disabled={loading}
             style={{
-              height: 48, borderRadius: 10, fontFamily: "var(--font-barlow-condensed)", fontWeight: 800,
+              height: 48, borderRadius: 10, fontFamily: "var(--font-fredoka)", fontWeight: 800,
               fontSize: 16, letterSpacing: "0.1em", textTransform: "uppercase",
               background: loading ? "#065f46" : T.accent, color: "#030712",
               border: "none", cursor: loading ? "default" : "pointer",

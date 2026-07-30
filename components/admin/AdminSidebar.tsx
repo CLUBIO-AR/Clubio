@@ -85,7 +85,7 @@ export function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps)
           // Desktop: participates in normal flex layout
           "md:static md:w-64 md:translate-x-0 md:z-auto"
         )}
-        style={{ background: T.bgDeep, borderRight: `1px solid ${T.borderSub}` }}
+        style={{ background: T.bgDeep, borderRight: `1px solid ${T.borderOnDark}` }}
       >
         {/* Logo + close button */}
         <div className="px-5 pt-5 pb-3 flex items-center justify-between">
@@ -99,13 +99,13 @@ export function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps)
             <div>
               <span
                 className="text-xl tracking-[0.15em] block leading-none"
-                style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}
+                style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.textOnDark }}
               >
                 CLUBIO
               </span>
               <span
                 className="text-[10px] uppercase tracking-[0.25em]"
-                style={{ fontFamily: "var(--font-barlow-condensed)", color: ADMIN_ACCENT }}
+                style={{ fontFamily: "var(--font-fredoka)", color: ADMIN_ACCENT }}
               >
                 Admin
               </span>
@@ -113,7 +113,7 @@ export function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps)
           </div>
           <button
             className="md:hidden p-1 rounded transition-colors"
-            style={{ color: T.textDim }}
+            style={{ color: T.textOnDarkDim }}
             onClick={closeDrawer}
             aria-label="Cerrar menú"
           >
@@ -121,7 +121,7 @@ export function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps)
           </button>
         </div>
 
-        <div className="mx-3 mb-2" style={{ height: "1px", background: T.borderSub }} />
+        <div className="mx-3 mb-2" style={{ height: "1px", background: T.borderOnDark }} />
 
         {/* Nav */}
         <nav className="flex-1 px-3 pt-2 pb-2 space-y-0.5 overflow-y-auto">
@@ -134,14 +134,14 @@ export function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps)
                 onClick={closeDrawer}
                 className={cn("flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold uppercase tracking-widest transition-all duration-150")}
                 style={{
-                  fontFamily: "var(--font-barlow-condensed)",
+                  fontFamily: "var(--font-fredoka)",
                   letterSpacing: "0.08em",
                   background:  active ? ADMIN_ACCENT_BG : "transparent",
-                  color:       active ? ADMIN_ACCENT   : T.textMuted,
+                  color:       active ? ADMIN_ACCENT   : T.textOnDarkMuted,
                   borderLeft:  `3px solid ${active ? ADMIN_ACCENT : "transparent"}`,
                 }}
               >
-                <Icon className="w-4 h-4 shrink-0" style={{ color: active ? ADMIN_ACCENT : T.textDim }} />
+                <Icon className="w-4 h-4 shrink-0" style={{ color: active ? ADMIN_ACCENT : T.textOnDarkDim }} />
                 {label}
               </Link>
             );
@@ -152,16 +152,16 @@ export function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps)
             onClick={() => setLogsOpen((o) => !o)}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold uppercase tracking-widest transition-all duration-150"
             style={{
-              fontFamily: "var(--font-barlow-condensed)",
+              fontFamily: "var(--font-fredoka)",
               letterSpacing: "0.08em",
               background: pathname.startsWith("/admin/logs") ? ADMIN_ACCENT_BG : "transparent",
-              color:      pathname.startsWith("/admin/logs") ? ADMIN_ACCENT   : T.textMuted,
+              color:      pathname.startsWith("/admin/logs") ? ADMIN_ACCENT   : T.textOnDarkMuted,
               borderLeft: `3px solid ${pathname.startsWith("/admin/logs") ? ADMIN_ACCENT : "transparent"}`,
             }}
           >
-            <ScrollText className="w-4 h-4 shrink-0" style={{ color: pathname.startsWith("/admin/logs") ? ADMIN_ACCENT : T.textDim }} />
+            <ScrollText className="w-4 h-4 shrink-0" style={{ color: pathname.startsWith("/admin/logs") ? ADMIN_ACCENT : T.textOnDarkDim }} />
             <span className="flex-1 text-left">Logs</span>
-            <ChevronDown className={cn("w-3.5 h-3.5 transition-transform duration-150", logsOpen && "rotate-180")} style={{ color: T.textDim }} />
+            <ChevronDown className={cn("w-3.5 h-3.5 transition-transform duration-150", logsOpen && "rotate-180")} style={{ color: T.textOnDarkDim }} />
           </button>
 
           {logsOpen && (
@@ -175,10 +175,10 @@ export function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps)
                     onClick={closeDrawer}
                     className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-150"
                     style={{
-                      fontFamily: "var(--font-barlow-condensed)",
+                      fontFamily: "var(--font-fredoka)",
                       letterSpacing: "0.06em",
                       background: active ? ADMIN_ACCENT_BG : "transparent",
-                      color:      active ? ADMIN_ACCENT   : T.textDim,
+                      color:      active ? ADMIN_ACCENT   : T.textOnDarkDim,
                     }}
                   >
                     <Icon className="w-3.5 h-3.5 shrink-0" />
@@ -196,12 +196,12 @@ export function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps)
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold uppercase tracking-widest transition-all duration-150"
             style={{
-              fontFamily: "var(--font-barlow-condensed)",
+              fontFamily: "var(--font-fredoka)",
               letterSpacing: "0.08em",
-              color: T.textMuted,
+              color: T.textOnDarkMuted,
             }}
           >
-            <LogOut className="w-4 h-4 shrink-0" style={{ color: T.textDim }} />
+            <LogOut className="w-4 h-4 shrink-0" style={{ color: T.textOnDarkDim }} />
             Salir
           </button>
         </div>

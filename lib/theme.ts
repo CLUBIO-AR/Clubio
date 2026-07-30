@@ -1,31 +1,42 @@
 // Tokens de color centralizados — actualizar acá para cambiar el tema globalmente
+// Paleta CLUBIO: fondo blanco, sidebar violeta oscuro, acentos violeta/lima.
+// NOTA: los hex de accent/lime están tomados a ojo de las piezas de marca —
+// confirmar contra el brand book / Figma antes de un rollout final.
 export const T = {
-  // Fondos — navy azulado, no negro puro
-  bgDeep:   "oklch(0.12 0.04 250)",      // sidebar
-  bg:       "oklch(0.17 0.04 250)",      // fondo principal
-  card:     "oklch(0.21 0.035 250)",     // cards
-  cardHover:"oklch(0.25 0.032 250)",     // hover
-  inputBg:  "oklch(0.19 0.035 250)",     // inputs
+  // Fondos
+  bgDeep:   "#160B33",      // sidebar — violeta muy oscuro (se mantiene oscuro por diseño)
+  bg:       "#FFFFFF",      // fondo principal — blanco
+  card:     "#FFFFFF",      // cards
+  cardHover:"#F6F4FC",      // hover
+  inputBg:  "#F8F7FC",      // inputs
 
   // Bordes
-  border:    "oklch(0.28 0.03 250)",
-  borderSub: "oklch(0.23 0.03 250)",
+  border:    "#E4E0F1",
+  borderSub: "#EDEBF7",
 
-  // Textos
-  text:     "oklch(0.91 0.008 240)",     // blanco levemente azulado — menos duro que puro blanco
-  textMuted:"oklch(0.60 0.02 245)",
-  textDim:  "oklch(0.42 0.02 245)",
+  // Textos — para superficies claras (bg, card, inputBg)
+  text:     "#16112B",      // casi negro con tinte violeta
+  textMuted:"#6B647F",
+  textDim:  "#9A93AC",
 
-  // Acento — esmeralda suave, nada de neon
-  accent:        "oklch(0.76 0.15 163)",          // #2dcc96 — verde esmeralda
-  accentBg:      "oklch(0.76 0.15 163 / 0.12)",
-  accentBorder:  "oklch(0.76 0.15 163 / 0.28)",
-  accentGlow:    "0 0 18px oklch(0.76 0.15 163 / 0.22)",
-  accentText:    "oklch(0.12 0.04 250)",           // texto sobre fondo accent
+  // Textos — para superficies que se mantienen oscuras a propósito
+  // (sidebar sobre bgDeep, login/registro, pantallas de /pagar, skeletons oscuros)
+  textOnDark:      "#F5F3FC",   // casi blanco — headings/valores sobre bgDeep
+  textOnDarkMuted: "#B6AAD6",   // texto secundario sobre bgDeep
+  textOnDarkDim:   "#8579A8",   // texto terciario/íconos inactivos sobre bgDeep
+  borderOnDark:    "#2A1B5C",   // separadores sutiles sobre bgDeep
+
+  // Acento — violeta CLUBIO
+  accent:        "#7C3AED",
+  accentBg:      "rgba(124, 58, 237, 0.10)",
+  accentBorder:  "rgba(124, 58, 237, 0.28)",
+  accentGlow:    "0 0 18px rgba(124, 58, 237, 0.25)",
+  accentText:    "#FFFFFF",           // texto sobre fondo accent (violeta)
 
   // Semánticos
   danger:  "oklch(0.65 0.19 27)",
   warning: "oklch(0.80 0.15 85)",
-  lime:    "oklch(0.76 0.18 135)",
+  lime:    "#D7FF3D",        // segundo acento de marca — usar con texto oscuro encima
+  limeText:"#16112B",        // texto sobre fondo lime
   blue:    "oklch(0.65 0.15 220)",
 } as const;

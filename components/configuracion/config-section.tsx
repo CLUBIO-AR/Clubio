@@ -32,7 +32,7 @@ export function ConfigSection({ title, children, onSave }: ConfigSectionProps) {
   return (
     <div className="rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
       <div className="px-5 py-4 border-b" style={{ borderColor: T.borderSub }}>
-        <h2 className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
+        <h2 className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.accent, fontFamily: "var(--font-fredoka)" }}>
           — {title}
         </h2>
       </div>
@@ -45,7 +45,7 @@ export function ConfigSection({ title, children, onSave }: ConfigSectionProps) {
           onClick={handleSave}
           disabled={saving}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-bold uppercase tracking-widest text-sm transition-all hover:opacity-90 disabled:opacity-50"
-          style={{ fontFamily: "var(--font-barlow-condensed)", background: saved ? `${T.lime}20` : T.accentBg, color: saved ? T.lime : T.accent, border: `1px solid ${saved ? T.lime : T.accentBorder}` }}
+          style={{ fontFamily: "var(--font-fredoka)", background: saved ? `${T.lime}20` : T.accentBg, color: saved ? T.lime : T.accent, border: `1px solid ${saved ? T.lime : T.accentBorder}` }}
         >
           {saving ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -67,7 +67,7 @@ interface FieldProps {
 export function Field({ label, children }: FieldProps) {
   return (
     <div className="space-y-1.5">
-      <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>
+      <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>
         {label}
       </label>
       {children}

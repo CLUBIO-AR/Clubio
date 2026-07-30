@@ -49,11 +49,11 @@ export default async function AlumnoDetailPage({ params }: { params: Promise<{ i
         </Link>
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>
+            <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>
               {alumno.apellido?.toUpperCase()}, {alumno.nombre?.toUpperCase()}
             </h1>
             <span className="px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider"
-              style={{ fontFamily: "var(--font-barlow-condensed)", background: alumno.activo ? T.accentBg : `${T.textDim}15`, color: alumno.activo ? T.accent : T.textDim, border: `1px solid ${alumno.activo ? T.accentBorder : T.borderSub}` }}>
+              style={{ fontFamily: "var(--font-fredoka)", background: alumno.activo ? T.accentBg : `${T.textDim}15`, color: alumno.activo ? T.accent : T.textDim, border: `1px solid ${alumno.activo ? T.accentBorder : T.borderSub}` }}>
               {alumno.activo ? "Activo" : "Inactivo"}
             </span>
           </div>
@@ -70,7 +70,7 @@ export default async function AlumnoDetailPage({ params }: { params: Promise<{ i
                 <Icon className="w-4 h-4" style={{ color: T.accent }} />
               </div>
               <div className="min-w-0">
-                <p className="text-xs uppercase tracking-wider" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>{label}</p>
+                <p className="text-xs uppercase tracking-wider" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>{label}</p>
                 <p className="text-sm font-medium truncate" style={{ color: T.text }}>{value}</p>
               </div>
             </div>
@@ -82,7 +82,7 @@ export default async function AlumnoDetailPage({ params }: { params: Promise<{ i
       {cuotasRes.data && cuotasRes.data.length > 0 && (
         <div className="rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>
           <div className="px-5 py-4 border-b" style={{ borderColor: T.borderSub }}>
-            <h2 className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>— Últimas cuotas</h2>
+            <h2 className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.accent, fontFamily: "var(--font-fredoka)" }}>— Últimas cuotas</h2>
           </div>
           <div>
             {cuotasRes.data.map((c) => {
@@ -91,12 +91,12 @@ export default async function AlumnoDetailPage({ params }: { params: Promise<{ i
                 <div key={c.id} className="px-5 py-3 flex items-center justify-between border-b last:border-b-0" style={{ borderColor: T.borderSub }}>
                   <div className="flex items-center gap-3">
                     <div className="w-11 h-11 rounded-lg flex flex-col items-center justify-center shrink-0" style={{ background: T.bg, border: `1px solid ${T.border}` }}>
-                      <span className="text-xs font-bold" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>{MESES[c.mes]}</span>
+                      <span className="text-xs font-bold" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>{MESES[c.mes]}</span>
                       <span className="text-xs" style={{ color: T.textDim }}>{c.anio}</span>
                     </div>
                     <p className="font-bold font-mono" style={{ color: T.text }}>${c.monto_total?.toLocaleString("es-AR")}</p>
                   </div>
-                  <span className="px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider" style={{ fontFamily: "var(--font-barlow-condensed)", background: s.bg, color: s.color, border: `1px solid ${s.color}30` }}>
+                  <span className="px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider" style={{ fontFamily: "var(--font-fredoka)", background: s.bg, color: s.color, border: `1px solid ${s.color}30` }}>
                     {c.estado.replace("_", " ")}
                   </span>
                 </div>
@@ -104,7 +104,7 @@ export default async function AlumnoDetailPage({ params }: { params: Promise<{ i
             })}
           </div>
           <div className="px-5 py-3 border-t" style={{ borderColor: T.borderSub }}>
-            <Link href={`/dashboard/alumnos/${id}/cuotas`} className="text-xs font-bold uppercase tracking-wider transition-opacity hover:opacity-70" style={{ color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
+            <Link href={`/dashboard/alumnos/${id}/cuotas`} className="text-xs font-bold uppercase tracking-wider transition-opacity hover:opacity-70" style={{ color: T.accent, fontFamily: "var(--font-fredoka)" }}>
               Ver todas →
             </Link>
           </div>
@@ -121,7 +121,7 @@ export default async function AlumnoDetailPage({ params }: { params: Promise<{ i
       {/* Editar */}
       <div className="rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>
         <div className="px-5 py-4 border-b" style={{ borderColor: T.borderSub }}>
-          <h2 className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>— Editar datos</h2>
+          <h2 className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.accent, fontFamily: "var(--font-fredoka)" }}>— Editar datos</h2>
         </div>
         <div className="p-5">
           <AlumnoForm sucursales={sucursalesRes.data ?? []} mode="edit" alumno={alumno} />

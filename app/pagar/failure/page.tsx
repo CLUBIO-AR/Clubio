@@ -16,13 +16,13 @@ export default async function PagarFailurePage({
           <XCircle style={{ width: 36, height: 36, color: T.danger }} />
         </div>
         <h1 style={{
-          fontFamily: "var(--font-barlow-condensed)", fontSize: "2rem",
-          fontWeight: 900, color: T.text, letterSpacing: "0.04em",
+          fontFamily: "var(--font-fredoka)", fontSize: "2rem",
+          fontWeight: 900, color: T.textOnDark, letterSpacing: "0.04em",
           textTransform: "uppercase", marginBottom: "0.75rem",
         }}>
           Pago no completado
         </h1>
-        <p style={{ color: T.textMuted, fontSize: "1rem", lineHeight: 1.6, marginBottom: "2rem" }}>
+        <p style={{ color: T.textOnDarkMuted, fontSize: "1rem", lineHeight: 1.6, marginBottom: "2rem" }}>
           {nombre}, el pago no pudo procesarse. Podés intentarlo nuevamente o contactar al gimnasio.
         </p>
         <div style={{
@@ -30,7 +30,7 @@ export default async function PagarFailurePage({
           background: T.accentBg, border: `1px solid ${T.accentBorder}`,
           display: "inline-block",
         }}>
-          <span style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 800, fontSize: "1.1rem", letterSpacing: "0.1em", color: T.accent }}>
+          <span style={{ fontFamily: "var(--font-fredoka)", fontWeight: 800, fontSize: "1.1rem", letterSpacing: "0.1em", color: T.accent }}>
             CLUBIO
           </span>
         </div>

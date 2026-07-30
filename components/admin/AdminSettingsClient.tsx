@@ -67,7 +67,7 @@ export function AdminSettingsClient({
     return (
       <div className="rounded-xl p-6 space-y-4 max-w-lg" style={{ background: T.card, border: `1px solid ${T.border}` }}>
         <div>
-          <h2 className="text-sm font-extrabold uppercase tracking-widest mb-1" style={{ color: T.text, fontFamily: "var(--font-barlow-condensed)" }}>{title}</h2>
+          <h2 className="text-sm font-extrabold uppercase tracking-widest mb-1" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>{title}</h2>
           {description && <p className="text-xs" style={{ color: T.textDim }}>{description}</p>}
         </div>
         {children}
@@ -78,7 +78,7 @@ export function AdminSettingsClient({
   function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
     return (
       <div className="space-y-1.5">
-        <label className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>{label}</label>
+        <label className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>{label}</label>
         {children}
         {hint && <p className="text-xs" style={{ color: T.textDim }}>{hint}</p>}
       </div>
@@ -88,7 +88,7 @@ export function AdminSettingsClient({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-barlow-condensed)", fontWeight: 900, color: T.text }}>CONFIGURACIÓN</h1>
+        <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>CONFIGURACIÓN</h1>
         <p className="text-sm mt-1" style={{ color: T.textDim }}>Ajustes globales del panel de administración</p>
       </div>
 
@@ -134,14 +134,14 @@ export function AdminSettingsClient({
       {/* Planes y precios */}
       <Section title="Planes y precios" description="Precios que se usan al generar cobros de suscripción. Cambiá la moneda según cómo estés cobrando.">
         <div className="flex items-center gap-3">
-          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-barlow-condensed)" }}>Moneda</span>
+          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>Moneda</span>
           {(["USD", "ARS"] as const).map((m) => (
             <button
               key={m}
               onClick={() => { setMoneda(m); dirty(); }}
               className="px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all"
               style={{
-                fontFamily: "var(--font-barlow-condensed)",
+                fontFamily: "var(--font-fredoka)",
                 background: moneda === m ? `${ADMIN_ACCENT}20` : T.bg,
                 border: `1px solid ${moneda === m ? ADMIN_ACCENT + "60" : T.borderSub}`,
                 color: moneda === m ? ADMIN_ACCENT : T.textMuted,
@@ -211,7 +211,7 @@ export function AdminSettingsClient({
           Guardar configuración
         </Button>
         {saved && (
-          <span className="text-xs font-bold uppercase tracking-wider" style={{ color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
+          <span className="text-xs font-bold uppercase tracking-wider" style={{ color: T.accent, fontFamily: "var(--font-fredoka)" }}>
             Guardado ✓
           </span>
         )}

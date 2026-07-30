@@ -11,7 +11,7 @@ import type { Alumno } from "@/lib/alumnos";
 import { T } from "@/lib/theme";
 
 const labelStyle: React.CSSProperties = {
-  color: T.textMuted, fontFamily: "var(--font-barlow-condensed)",
+  color: T.textMuted, fontFamily: "var(--font-fredoka)",
   fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
 };
 const inp: React.CSSProperties = { background: T.inputBg, border: `1px solid ${T.border}`, color: T.text };
@@ -73,7 +73,7 @@ export function AlumnoForm({ sucursales, mode, alumno, onCreated }: AlumnoFormPr
   }
 
   const SectionTitle = ({ children }: { children: string }) => (
-    <h2 className="text-xs font-bold uppercase tracking-[0.15em] mb-4" style={{ color: T.accent, fontFamily: "var(--font-barlow-condensed)" }}>
+    <h2 className="text-xs font-bold uppercase tracking-[0.15em] mb-4" style={{ color: T.accent, fontFamily: "var(--font-fredoka)" }}>
       — {children}
     </h2>
   );
@@ -129,7 +129,7 @@ export function AlumnoForm({ sucursales, mode, alumno, onCreated }: AlumnoFormPr
       <div className="flex items-center gap-3">
         <button type="submit" disabled={loading}
           className="h-10 px-6 rounded-lg font-bold uppercase tracking-widest text-sm transition-all flex items-center gap-2 disabled:opacity-50 hover:opacity-90"
-          style={{ fontFamily: "var(--font-barlow-condensed)", background: T.accent, color: T.bgDeep, boxShadow: T.accentGlow }}
+          style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep, boxShadow: T.accentGlow }}
         >
           {loading ? <><Loader2 className="w-4 h-4 animate-spin" />Guardando...</> : saved ? <><Check className="w-4 h-4" />Guardado</> : mode === "create" ? "Crear alumno" : "Guardar cambios"}
         </button>

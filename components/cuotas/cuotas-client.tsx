@@ -156,7 +156,7 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
             <button key={tab.value}
               onClick={() => { setEstado(tab.value); navigate(curMes, curAnio, tab.value, search); }}
               className="px-3 py-1.5 text-xs rounded-md font-bold uppercase tracking-widest transition-all"
-              style={{ fontFamily: "var(--font-fredoka)", background: estado === tab.value ? T.accent : "transparent", color: estado === tab.value ? T.bgDeep : T.textMuted }}>
+              style={{ fontFamily: "var(--font-fredoka)", background: estado === tab.value ? T.accent : "transparent", color: estado === tab.value ? T.accentText : T.textMuted }}>
               {tab.label}
             </button>
           ))}

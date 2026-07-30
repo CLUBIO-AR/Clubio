@@ -289,7 +289,7 @@ export function LicenciasClient({ licencias, total, page, totalPages, filters }:
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRenovarTarget(null)}>Cancelar</Button>
-            <Button onClick={handleRenovar} disabled={loading} className={buttonVariants({ className: "gap-2" })} style={{ background: T.accent, color: T.bgDeep, border: "none" }}>
+            <Button onClick={handleRenovar} disabled={loading} className={buttonVariants({ className: "gap-2" })} style={{ background: T.accent, color: T.accentText, border: "none" }}>
               {loading && <Loader2 className="w-4 h-4 animate-spin" />} Renovar
             </Button>
           </DialogFooter>

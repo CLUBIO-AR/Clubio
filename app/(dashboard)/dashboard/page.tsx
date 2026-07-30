@@ -164,7 +164,7 @@ export default async function DashboardPage() {
       <div className="flex flex-wrap gap-3">
         <Link href="/dashboard/alumnos/nuevo"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold uppercase tracking-widest text-sm transition-all hover:opacity-90"
-          style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep, boxShadow: T.accentGlow }}
+          style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.accentText, boxShadow: T.accentGlow }}
         >
           + Nuevo alumno
         </Link>

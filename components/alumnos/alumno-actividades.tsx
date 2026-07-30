@@ -144,7 +144,7 @@ export function AlumnoActividades({ alumnoId, inscripciones: inicial, actividade
               </button>
               <button onClick={handleAgregar} disabled={!selectedId || loading}
                 className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 disabled:opacity-50"
-                style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep }}
+                style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.accentText }}
               >
                 {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
                 Agregar

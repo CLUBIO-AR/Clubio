@@ -122,7 +122,7 @@ function ActividadForm({
         </button>
         <button type="submit" disabled={saving}
           className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 disabled:opacity-50"
-          style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep }}
+          style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.accentText }}
         >
           {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
           Guardar

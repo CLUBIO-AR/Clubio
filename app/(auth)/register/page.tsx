@@ -69,7 +69,7 @@ export default function RegisterPage() {
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center gap-3 mb-5">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: T.accent, boxShadow: T.accentGlow }}>
-              <Zap className="w-5 h-5" style={{ color: T.bgDeep }} />
+              <Zap className="w-5 h-5" style={{ color: T.accentText }} />
             </div>
             <span className="text-3xl tracking-[0.15em]" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.textOnDark }}>
               CLUBIO
@@ -126,7 +126,7 @@ export default function RegisterPage() {
 
             <button type="submit" disabled={loading}
               className="w-full h-11 rounded-lg font-bold uppercase tracking-widest text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-              style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep, boxShadow: T.accentGlow }}
+              style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.accentText, boxShadow: T.accentGlow }}
             >
               {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Enviando...</> : "Quiero que me contacten"}
             </button>

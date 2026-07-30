@@ -61,7 +61,7 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
             className="w-6 h-6 rounded-md flex items-center justify-center"
             style={{ background: T.accent, boxShadow: T.accentGlow }}
           >
-            <Zap className="w-3 h-3" style={{ color: T.bgDeep }} />
+            <Zap className="w-3 h-3" style={{ color: T.accentText }} />
           </div>
           <span
             className="text-lg tracking-[0.15em]"
@@ -101,11 +101,11 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
               className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
               style={{ background: T.accent, boxShadow: T.accentGlow }}
             >
-              <Zap className="w-4 h-4" style={{ color: T.bgDeep }} />
+              <Zap className="w-4 h-4" style={{ color: T.accentText }} />
             </div>
             <span
               className="text-xl tracking-[0.15em]"
-              style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}
+              style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.textOnDark }}
             >
               CLUBIO
             </span>

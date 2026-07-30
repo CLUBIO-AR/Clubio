@@ -129,7 +129,7 @@ export function AlumnoForm({ sucursales, mode, alumno, onCreated }: AlumnoFormPr
       <div className="flex items-center gap-3">
         <button type="submit" disabled={loading}
           className="h-10 px-6 rounded-lg font-bold uppercase tracking-widest text-sm transition-all flex items-center gap-2 disabled:opacity-50 hover:opacity-90"
-          style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep, boxShadow: T.accentGlow }}
+          style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.accentText, boxShadow: T.accentGlow }}
         >
           {loading ? <><Loader2 className="w-4 h-4 animate-spin" />Guardando...</> : saved ? <><Check className="w-4 h-4" />Guardado</> : mode === "create" ? "Crear alumno" : "Guardar cambios"}
         </button>

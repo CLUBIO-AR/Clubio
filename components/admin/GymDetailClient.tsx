@@ -516,7 +516,7 @@ export function GymDetailClient({ gym, sucursales, usuarios, cobros, totalAlumno
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setRenovarDialogOpen(false); setMotivoRenovar(""); }}>Cancelar</Button>
-            <Button onClick={handleRenovar} disabled={loading} className={buttonVariants({ className: "gap-2" })} style={{ background: T.accent, color: T.bgDeep, border: "none" }}>
+            <Button onClick={handleRenovar} disabled={loading} className={buttonVariants({ className: "gap-2" })} style={{ background: T.accent, color: T.accentText, border: "none" }}>
               {loading && <Loader2 className="w-4 h-4 animate-spin" />} Renovar
             </Button>
           </DialogFooter>

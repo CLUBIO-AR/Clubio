@@ -131,7 +131,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
           <Link
             href="/dashboard/alumnos/nuevo"
             className={buttonVariants({ className: "gap-2 font-bold uppercase tracking-widest text-sm hover:opacity-90" })}
-            style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep, border: "none", boxShadow: T.accentGlow }}
+            style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.accentText, border: "none", boxShadow: T.accentGlow }}
           >
             <Plus className="w-4 h-4" /> Nuevo alumno
           </Link>
@@ -168,7 +168,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
               style={{
                 fontFamily: "var(--font-fredoka)",
                 background: activo === tab.value ? T.accent : "transparent",
-                color:      activo === tab.value ? T.bgDeep : T.textMuted,
+                color:      activo === tab.value ? T.accentText : T.textMuted,
               }}
             >
               {tab.label}

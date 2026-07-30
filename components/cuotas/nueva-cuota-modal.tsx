@@ -171,7 +171,7 @@ export function NuevaCuotaModal({ open, onClose, alumnoId, alumnoNombre, mesDefa
             </button>
             <button type="submit" disabled={loading || !alumnoId}
               className="h-9 px-5 rounded-lg text-sm font-bold uppercase tracking-wider flex items-center gap-2 disabled:opacity-50"
-              style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep, boxShadow: T.accentGlow }}>
+              style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.accentText, boxShadow: T.accentGlow }}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
               Crear cuota
             </button>

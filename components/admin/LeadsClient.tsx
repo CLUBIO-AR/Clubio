@@ -318,7 +318,7 @@ export function LeadsClient({ leads, total, page, totalPages, filters, kpis }: L
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setNotaTarget(null)}>Cancelar</Button>
-            <Button onClick={handleAgregarNota} disabled={loading} className={buttonVariants({ className: "gap-2" })} style={{ background: T.accent, color: T.bgDeep, border: "none" }}>
+            <Button onClick={handleAgregarNota} disabled={loading} className={buttonVariants({ className: "gap-2" })} style={{ background: T.accent, color: T.accentText, border: "none" }}>
               {loading && <Loader2 className="w-4 h-4 animate-spin" />} Guardar nota
             </Button>
           </DialogFooter>

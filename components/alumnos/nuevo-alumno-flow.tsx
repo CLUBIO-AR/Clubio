@@ -34,7 +34,7 @@ export function NuevoAlumnoFlow({ sucursales, actividadesDisponibles }: Props) {
       {/* Banner éxito */}
       <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: T.accentBg, border: `1px solid ${T.accentBorder}` }}>
         <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: T.accent }}>
-          <Check className="w-4 h-4" style={{ color: T.bgDeep }} />
+          <Check className="w-4 h-4" style={{ color: T.accentText }} />
         </div>
         <div>
           <p className="text-sm font-bold uppercase tracking-wider" style={{ fontFamily: "var(--font-fredoka)", color: T.accent }}>
@@ -56,7 +56,7 @@ export function NuevoAlumnoFlow({ sucursales, actividadesDisponibles }: Props) {
         <button
           onClick={() => router.push(`/dashboard/alumnos/${alumnoId}`)}
           className="flex items-center gap-2 h-10 px-6 rounded-lg font-bold uppercase tracking-widest text-sm transition-all hover:opacity-90"
-          style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep, boxShadow: T.accentGlow }}
+          style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.accentText, boxShadow: T.accentGlow }}
         >
           Ver ficha completa <ArrowRight className="w-4 h-4" />
         </button>

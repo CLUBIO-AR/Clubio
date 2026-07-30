@@ -208,7 +208,7 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
           {canPay && (
             <button onClick={() => setAccion("pagar")}
               className="flex items-center gap-2 h-10 px-5 rounded-lg font-bold uppercase tracking-widest text-sm transition-all hover:opacity-90"
-              style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep, boxShadow: T.accentGlow }}>
+              style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.accentText, boxShadow: T.accentGlow }}>
               <CheckCircle className="w-4 h-4" /> Registrar pago
             </button>
           )}
@@ -291,7 +291,7 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
           <div className="flex gap-3">
             <button onClick={handlePagar} disabled={loading}
               className="h-9 px-5 rounded-lg font-bold uppercase tracking-widest text-sm flex items-center gap-2 disabled:opacity-50 hover:opacity-90 transition-all"
-              style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep }}>
+              style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.accentText }}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle className="w-4 h-4" /> Confirmar pago</>}
             </button>
             <button onClick={() => setAccion("none")} className="h-9 px-4 rounded-lg text-sm hover:opacity-75 transition-all" style={{ color: T.textMuted }}>

@@ -221,7 +221,7 @@ export function NuevoGymWizard({ lead }: NuevoGymWizardProps) {
                 style={{
                   fontFamily: "var(--font-fredoka)",
                   background: i < step ? T.accent : i === step ? ADMIN_ACCENT : T.card,
-                  color: i <= step ? T.bgDeep : T.textDim,
+                  color: i <= step ? T.accentText : T.textDim,
                   border: `1px solid ${i <= step ? "transparent" : T.border}`,
                 }}>
                 {i < step ? <Check className="w-3.5 h-3.5" /> : i + 1}
@@ -361,7 +361,7 @@ export function NuevoGymWizard({ lead }: NuevoGymWizardProps) {
           </button>
         ) : (
           <button onClick={handleSubmit} disabled={loading} className={buttonVariants({ className: "gap-2 h-10 px-5 font-bold uppercase tracking-wider text-sm hover:opacity-90" })}
-            style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.bgDeep, border: "none" }}>
+            style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.accentText, border: "none" }}>
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Crear gym
           </button>
         )}

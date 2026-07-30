@@ -118,8 +118,8 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
     padding: "0.25rem 0.7rem", borderRadius: 6, fontSize: "0.75rem", fontWeight: 700,
     letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer",
     fontFamily: "var(--font-fredoka)",
-    background: active ? T.accent  : T.card,
-    color:      active ? T.bgDeep  : T.textDim,
+    background: active ? T.accent      : T.card,
+    color:      active ? T.accentText  : T.textDim,
     border:     `1px solid ${active ? T.accent : T.border}`,
   });
 

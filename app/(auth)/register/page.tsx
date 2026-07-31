@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { enviarSolicitudRegistro } from "@/app/actions/registro";
 import { T } from "@/lib/theme";
-import { CheckCircle, Loader2, Zap } from "lucide-react";
+import { CheckCircle, Loader2 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,9 +69,7 @@ export default function RegisterPage() {
       <div className="relative w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center gap-3 mb-5">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: T.accent, boxShadow: T.accentGlow }}>
-              <Zap className="w-5 h-5" style={{ color: T.accentText }} />
-            </div>
+            <Image src="/icon.jpeg" alt="" width={40} height={40} className="w-10 h-10 rounded-xl shrink-0" style={{ boxShadow: T.accentGlow }} />
             <span className="text-3xl tracking-[0.15em]" style={{ fontFamily: "var(--font-povlar)", fontWeight: 400, color: T.textOnDark, textTransform: "lowercase" }}>
               CLUBIO
             </span>

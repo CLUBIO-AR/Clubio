@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Users, CreditCard, DollarSign, Settings, LogOut, Zap, Receipt, Menu, X, Dumbbell } from "lucide-react";
+import Image from "next/image";
+import { LayoutDashboard, Users, CreditCard, DollarSign, Settings, LogOut, Receipt, Menu, X, Dumbbell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { T } from "@/lib/theme";
@@ -57,12 +58,14 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
           <Menu className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-2">
-          <div
-            className="w-6 h-6 rounded-md flex items-center justify-center"
-            style={{ background: T.accent, boxShadow: T.accentGlow }}
-          >
-            <Zap className="w-3 h-3" style={{ color: T.accentText }} />
-          </div>
+          <Image
+            src="/icon.jpeg"
+            alt=""
+            width={24}
+            height={24}
+            className="w-6 h-6 rounded-md shrink-0"
+            style={{ boxShadow: T.accentGlow }}
+          />
           <span
             className="text-lg tracking-[0.15em]"
             style={{ fontFamily: "var(--font-povlar)", fontWeight: 400, color: T.textOnDark, textTransform: "lowercase" }}
@@ -97,12 +100,14 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
         {/* Logo + close button (close only on mobile) */}
         <div className="px-5 pt-5 pb-3 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: T.accent, boxShadow: T.accentGlow }}
-            >
-              <Zap className="w-4 h-4" style={{ color: T.accentText }} />
-            </div>
+            <Image
+              src="/icon.jpeg"
+              alt=""
+              width={32}
+              height={32}
+              className="w-8 h-8 rounded-lg shrink-0"
+              style={{ boxShadow: T.accentGlow }}
+            />
             <span
               className="text-xl tracking-[0.15em]"
               style={{ fontFamily: "var(--font-povlar)", fontWeight: 400, color: T.textOnDark, textTransform: "lowercase" }}
@@ -145,7 +150,7 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
                 {gymNombre}
               </p>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <Zap className="w-2.5 h-2.5" style={{ color: T.lime }} />
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: T.lime }} />
                 <span className="text-xs" style={{ color: T.lime }}>Panel activo</span>
               </div>
             </div>

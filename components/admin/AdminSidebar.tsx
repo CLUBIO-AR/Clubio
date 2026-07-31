@@ -13,13 +13,13 @@ import {
   Clock,
   Wallet,
   LogOut,
-  Zap,
   ChevronDown,
   ShieldCheck,
   Settings,
   History,
   X,
 } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { T } from "@/lib/theme";
@@ -90,12 +90,14 @@ export function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps)
         {/* Logo + close button */}
         <div className="px-5 pt-5 pb-3 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: ADMIN_ACCENT, boxShadow: `0 0 18px ${ADMIN_ACCENT_BORDER}` }}
-            >
-              <Zap className="w-4 h-4" style={{ color: T.bgDeep }} />
-            </div>
+            <Image
+              src="/icon.jpeg"
+              alt=""
+              width={32}
+              height={32}
+              className="w-8 h-8 rounded-lg shrink-0"
+              style={{ boxShadow: `0 0 18px ${ADMIN_ACCENT_BORDER}` }}
+            />
             <div>
               <span
                 className="text-xl tracking-[0.15em] block leading-none"

@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Zap, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { T } from "@/lib/theme";
 
@@ -47,9 +48,7 @@ function LoginForm() {
         {/* Clubio brand */}
         <div className="flex flex-col items-center mb-10">
           <div className="flex items-center gap-3 mb-5">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: T.accent, boxShadow: T.accentGlow }}>
-              <Zap className="w-5 h-5" style={{ color: T.accentText }} />
-            </div>
+            <Image src="/icon.jpeg" alt="" width={40} height={40} className="w-10 h-10 rounded-xl shrink-0" style={{ boxShadow: T.accentGlow }} />
             <span className="text-3xl tracking-[0.15em]" style={{ fontFamily: "var(--font-povlar)", fontWeight: 400, color: T.textOnDark, textTransform: "lowercase" }}>
               CLUBIO
             </span>

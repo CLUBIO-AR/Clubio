@@ -53,7 +53,7 @@ export default function RegistroPage() {
             Nos pondremos en contacto con vos en las próximas 24–48hs para contarte todo sobre CLUBIO.
           </p>
           <div style={{ padding: "0.5rem 1rem", borderRadius: 8, background: T.accentBg, border: `1px solid ${T.accentBorder}`, display: "inline-block" }}>
-            <span style={{ fontFamily: "var(--font-fredoka)", fontWeight: 800, fontSize: "1.1rem", letterSpacing: "0.1em", color: T.accent }}>
+            <span style={{ fontFamily: "var(--font-povlar)", fontWeight: 400, fontSize: "1.1rem", letterSpacing: "0.1em", color: T.accent, textTransform: "lowercase" }}>
               CLUBIO
             </span>
           </div>
@@ -68,7 +68,7 @@ export default function RegistroPage() {
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <div style={{ display: "inline-block", padding: "0.4rem 1rem", borderRadius: 8, background: T.accentBg, border: `1px solid ${T.accentBorder}`, marginBottom: 24 }}>
-            <span style={{ fontFamily: "var(--font-fredoka)", fontWeight: 800, fontSize: "1.3rem", letterSpacing: "0.12em", color: T.accent }}>CLUBIO</span>
+            <span style={{ fontFamily: "var(--font-povlar)", fontWeight: 400, fontSize: "1.3rem", letterSpacing: "0.12em", color: T.accent, textTransform: "lowercase" }}>CLUBIO</span>
           </div>
           <h1 style={{ fontFamily: "var(--font-fredoka)", fontSize: "1.8rem", fontWeight: 900, color: "#f9fafb", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
             Quiero usar Clubio

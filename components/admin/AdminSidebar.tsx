@@ -99,7 +99,7 @@ export function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps)
             <div>
               <span
                 className="text-xl tracking-[0.15em] block leading-none"
-                style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.textOnDark }}
+                style={{ fontFamily: "var(--font-povlar)", fontWeight: 400, color: T.textOnDark, textTransform: "lowercase" }}
               >
                 CLUBIO
               </span>

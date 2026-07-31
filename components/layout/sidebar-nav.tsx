@@ -65,7 +65,7 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
           </div>
           <span
             className="text-lg tracking-[0.15em]"
-            style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.textOnDark }}
+            style={{ fontFamily: "var(--font-povlar)", fontWeight: 400, color: T.textOnDark, textTransform: "lowercase" }}
           >
             CLUBIO
           </span>
@@ -105,7 +105,7 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
             </div>
             <span
               className="text-xl tracking-[0.15em]"
-              style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.textOnDark }}
+              style={{ fontFamily: "var(--font-povlar)", fontWeight: 400, color: T.textOnDark, textTransform: "lowercase" }}
             >
               CLUBIO
             </span>
@@ -124,14 +124,14 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
         <div className="px-3 pb-3">
           <div
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-            style={{ background: T.card, border: `1px solid ${T.border}` }}
+            style={{ background: "rgba(255, 255, 255, 0.04)", border: `1px solid ${T.limeBorder}` }}
           >
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold"
               style={{
-                background: T.accentBg,
-                border: `1px solid ${T.accentBorder}`,
-                color: T.accent,
+                background: "rgba(215, 255, 61, 0.14)",
+                border: `1px solid ${T.limeBorder}`,
+                color: T.lime,
                 fontFamily: "var(--font-fredoka)",
               }}
             >
@@ -140,13 +140,13 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
             <div className="min-w-0">
               <p
                 className="font-extrabold uppercase truncate text-sm tracking-wider"
-                style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}
+                style={{ color: T.textOnDark, fontFamily: "var(--font-fredoka)" }}
               >
                 {gymNombre}
               </p>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <Zap className="w-2.5 h-2.5" style={{ color: T.accent }} />
-                <span className="text-xs" style={{ color: T.accent }}>Panel activo</span>
+                <Zap className="w-2.5 h-2.5" style={{ color: T.lime }} />
+                <span className="text-xs" style={{ color: T.lime }}>Panel activo</span>
               </div>
             </div>
           </div>
@@ -167,12 +167,12 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
                 style={{
                   fontFamily: "var(--font-fredoka)",
                   letterSpacing: "0.08em",
-                  background:  active ? T.accentBg : "transparent",
-                  color:       active ? T.accent   : T.textOnDarkMuted,
-                  borderLeft:  `3px solid ${active ? T.accent : "transparent"}`,
+                  background:  active ? "rgba(215, 255, 61, 0.12)" : "transparent",
+                  color:       active ? T.lime   : T.textOnDarkMuted,
+                  borderLeft:  `3px solid ${active ? T.lime : "transparent"}`,
                 }}
               >
-                <Icon className="w-4 h-4 shrink-0" style={{ color: active ? T.accent : T.textOnDarkDim }} />
+                <Icon className="w-4 h-4 shrink-0" style={{ color: active ? T.lime : T.textOnDarkDim }} />
                 {label}
               </Link>
             );
@@ -180,7 +180,7 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
         </nav>
 
         {/* Powered by */}
-        <div className="px-5 py-2" style={{ borderTop: `1px solid ${T.borderSub}` }}>
+        <div className="px-5 py-2" style={{ borderTop: `1px solid ${T.borderOnDark}` }}>
           <p
             className="text-xs uppercase tracking-[0.2em] select-none"
             style={{ color: T.textOnDarkDim, fontFamily: "var(--font-fredoka)", fontWeight: 700 }}
@@ -193,25 +193,25 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
         <div className="px-3 pb-3">
           <div
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-            style={{ background: T.card, border: `1px solid ${T.border}` }}
+            style={{ background: "rgba(255, 255, 255, 0.04)", border: `1px solid ${T.limeBorder}` }}
           >
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
-              style={{ background: T.accentBg, border: `1px solid ${T.accentBorder}`, color: T.accent, fontFamily: "var(--font-fredoka)" }}
+              style={{ background: "rgba(215, 255, 61, 0.14)", border: `1px solid ${T.limeBorder}`, color: T.lime, fontFamily: "var(--font-fredoka)" }}
             >
               {userInitials}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate" style={{ color: T.text }}>{usuarioNombre}</p>
-              <p className="text-xs capitalize" style={{ color: T.textDim }}>{usuarioRol}</p>
+              <p className="text-sm font-semibold truncate" style={{ color: T.textOnDark }}>{usuarioNombre}</p>
+              <p className="text-xs capitalize" style={{ color: T.textOnDarkDim }}>{usuarioRol}</p>
             </div>
             <button
               onClick={handleLogout}
               title="Cerrar sesión"
               className="transition-colors p-1 rounded"
-              style={{ color: T.textDim }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = T.accent)}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = T.textDim)}
+              style={{ color: T.textOnDarkDim }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = T.lime)}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = T.textOnDarkDim)}
             >
               <LogOut className="w-4 h-4" />
             </button>

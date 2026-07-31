@@ -50,7 +50,7 @@ function LoginForm() {
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: T.accent, boxShadow: T.accentGlow }}>
               <Zap className="w-5 h-5" style={{ color: T.accentText }} />
             </div>
-            <span className="text-3xl tracking-[0.15em]" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.textOnDark }}>
+            <span className="text-3xl tracking-[0.15em]" style={{ fontFamily: "var(--font-povlar)", fontWeight: 400, color: T.textOnDark, textTransform: "lowercase" }}>
               CLUBIO
             </span>
           </div>

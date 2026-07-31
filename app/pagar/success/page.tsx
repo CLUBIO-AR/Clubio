@@ -74,7 +74,7 @@ function SuccessContent() {
           </p>
         )}
         <div style={{ padding: "0.5rem 1rem", borderRadius: 8, background: T.accentBg, border: `1px solid ${T.accentBorder}`, display: "inline-block" }}>
-          <span style={{ fontFamily: "var(--font-fredoka)", fontWeight: 800, fontSize: "1.1rem", letterSpacing: "0.1em", color: T.accent }}>
+          <span style={{ fontFamily: "var(--font-povlar)", fontWeight: 400, fontSize: "1.1rem", letterSpacing: "0.1em", color: T.accent, textTransform: "lowercase" }}>
             CLUBIO
           </span>
         </div>

@@ -1,20 +1,35 @@
 import type { Metadata } from "next";
 import { Geist_Mono } from "next/font/google";
-import { Barlow, Fredoka } from "next/font/google";
+import localFont from "next/font/local";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
-const barlow = Barlow({
-  variable: "--font-barlow",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+// Avenir Next Pro — texto general, subtítulos (regular + bold/black)
+const avenir = localFont({
+  variable: "--font-avenir",
+  src: [
+    { path: "./fonts/AvenirNextLTPro-Regular.otf", weight: "400", style: "normal" },
+    { path: "./fonts/AvenirNextLTPro-Bold.otf",     weight: "700", style: "normal" },
+  ],
+  display: "swap",
 });
 
-// Fredoka — tipografía redondeada de marca, usada en headings, botones y el wordmark "clubio"
-const fredoka = Fredoka({
+// Gilroy — títulos en mayúscula. Solo tenemos el corte Black; se usa como único peso.
+// El nombre de variable --font-fredoka se mantiene por compatibilidad: decenas de
+// componentes ya referencian var(--font-fredoka) para headings/botones/labels en
+// mayúscula, y redefinir acá qué tipografía carga esa variable evita tener que
+// tocar cada uno de esos archivos uno por uno.
+const fredoka = localFont({
   variable: "--font-fredoka",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  src: [{ path: "./fonts/Gilroy-Black.ttf", weight: "900", style: "normal" }],
+  display: "swap",
+});
+
+// Povlar — SOLO para el wordmark "clubio" en minúscula (logo). No usar en otro lado.
+const povlar = localFont({
+  variable: "--font-povlar",
+  src: [{ path: "./fonts/Povlar-Demo.ttf", weight: "400", style: "normal" }],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
@@ -51,7 +66,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${barlow.variable} ${fredoka.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${avenir.variable} ${fredoka.variable} ${povlar.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}

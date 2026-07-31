@@ -7,8 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-barlow), system-ui, sans-serif;
+  --font-sans: var(--font-avenir), system-ui, sans-serif;
   --font-heading: var(--font-fredoka), system-ui, sans-serif;
+  --font-logo: var(--font-povlar), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -102,22 +103,30 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-barlow), system-ui, sans-serif;
+    font-family: var(--font-avenir), system-ui, sans-serif;
   }
 
-  /* Headings usan Fredoka — tipografía redondeada de marca */
+  /* Headings usan Gilroy (Black) — mayúscula, título de marca */
   h1, h2, h3, h4 {
     font-family: var(--font-fredoka), system-ui, sans-serif;
-    font-weight: 700;
+    font-weight: 900;
     letter-spacing: 0.01em;
+    text-transform: uppercase;
   }
 }
 
-/* Clase utilitaria para headings redondeados bold */
+/* Clase utilitaria para headings Gilroy en mayúscula */
 .heading {
   font-family: var(--font-fredoka), system-ui, sans-serif;
-  font-weight: 700;
+  font-weight: 900;
   letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+/* Wordmark "clubio" — SOLO Povlar, siempre en minúscula */
+.logo-wordmark {
+  font-family: var(--font-povlar), system-ui, sans-serif;
+  text-transform: lowercase;
 }
 
 /* Glow violeta helper — reemplaza el glow neon esmeralda del theme oscuro anterior */

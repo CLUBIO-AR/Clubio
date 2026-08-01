@@ -313,6 +313,11 @@ async function enviarAvisosFechaFija(params: {
     // Modo transferencia (agosto 2026): sin link de pago MP, se pide transferir al alias
     // configurado mientras se resuelve el tema de comisiones — ver gym_config.email_modo.
     if (modoTransferencia) {
+      const pct = actividadInfo?.recargo_1_porcentaje ?? gymConfig.recargo_1_porcentaje ?? 0;
+      const montoIncrementado = esDiaVencimiento && pct > 0
+        ? Math.round((cuota.monto_base ?? cuota.monto_total ?? 0) * (1 + pct / 100))
+        : undefined;
+
       let providerId: string | undefined;
       let ok = false;
       try {
@@ -324,7 +329,7 @@ async function enviarAvisosFechaFija(params: {
           colorAccento: gymConfig.email_color_acento,
           emailRemitenteNombre: gymConfig.email_remitente_nombre,
           emailRemitenteAddress: gymConfig.email_remitente_address,
-          cuotas: [{ mes: cuota.mes, anio: cuota.anio, monto_total: cuota.monto_total, actividadNombre: actividadInfo?.nombre ?? "Cuota" }],
+          cuotas: [{ mes: cuota.mes, anio: cuota.anio, monto_total: cuota.monto_total, actividadNombre: actividadInfo?.nombre ?? "Cuota", montoIncrementado }],
           alias: gymConfig.transferencia_alias!,
           titular: gymConfig.transferencia_titular,
           banco: gymConfig.transferencia_banco,

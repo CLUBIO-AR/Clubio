@@ -248,7 +248,7 @@ export async function sendEmailAvisoTransferencia(params: {
   colorAccento?: string | null;
   emailRemitenteNombre?: string | null;
   emailRemitenteAddress?: string | null;
-  cuotas: Array<{ mes: number; anio: number; monto_total: number | null; actividadNombre: string }>;
+  cuotas: Array<{ mes: number; anio: number; monto_total: number | null; actividadNombre: string; montoIncrementado?: number }>;
   alias: string;
   titular?: string | null;
   banco?: string | null;
@@ -268,18 +268,27 @@ export async function sendEmailAvisoTransferencia(params: {
     ? `${params.gymNombre} · Tus cuotas están por vencer — total $${montoTotal.toLocaleString("es-AR")}`
     : `${params.gymNombre} · Tu cuota de ${mesNombre(params.cuotas[0].mes)}/${params.cuotas[0].anio} está por vencer · $${montoTotal.toLocaleString("es-AR")}`;
 
-  const cuotaListHtml = params.cuotas.map(({ mes, anio, monto_total, actividadNombre }) => `
+  const hayAumento = params.cuotas.some((c) => c.montoIncrementado != null);
+
+  const cuotaListHtml = params.cuotas.map(({ mes, anio, monto_total, actividadNombre, montoIncrementado }) => `
     <tr style="border-bottom:1px solid #1e293b">
       <td style="padding:8px 0;color:#f9fafb;font-size:13px">${escapeHtml(actividadNombre)}</td>
       <td style="padding:8px 0;color:#9ca3af;font-size:13px">${mesNombre(mes)} ${anio}</td>
       <td style="padding:8px 0;color:#f9fafb;font-family:monospace;text-align:right">$${(monto_total ?? 0).toLocaleString("es-AR")}</td>
     </tr>
+    ${montoIncrementado != null ? `
+    <tr style="border-bottom:1px solid #1e293b">
+      <td colspan="2" style="padding:0 0 8px;color:#fbbf24;font-size:12px">Si no pagás hoy, desde mañana pasa a</td>
+      <td style="padding:0 0 8px;color:#fbbf24;font-family:monospace;text-align:right;font-weight:bold">$${montoIncrementado.toLocaleString("es-AR")}</td>
+    </tr>` : ""}
   `).join("");
 
   const html = clubioEmailHtml(`
     <h2 style="margin:0 0 12px;color:#f9fafb;font-size:18px">Hola ${escapeHtml(params.alumnoNombre)},</h2>
     <p style="color:#d1d5db;line-height:1.6;margin:0 0 16px">
-      Te escribimos porque tu${params.cuotas.length > 1 ? "s cuotas están" : " cuota está"} por vencer.
+      ${hayAumento
+        ? `Te escribimos porque tu${params.cuotas.length > 1 ? "s cuotas vencen" : " cuota vence"} hoy.`
+        : `Te escribimos porque tu${params.cuotas.length > 1 ? "s cuotas están" : " cuota está"} por vencer.`}
     </p>
     <table style="border-collapse:collapse;width:100%;margin:0 0 20px">
       <thead>

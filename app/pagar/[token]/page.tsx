@@ -57,7 +57,7 @@ export default async function PagarPage({
   // Obtener credenciales MP del gym
   const { data: gymConfig } = await admin
     .from("gym_config")
-    .select("mp_access_token")
+    .select("mp_access_token, mp_solo_dinero_cuenta")
     .eq("gym_id", payload.gym_id)
     .single();
 
@@ -87,6 +87,7 @@ export default async function PagarPage({
       pending: `${appUrl}/pagar/success?nombre=${encodeURIComponent(payload.alumno_nombre)}&pendiente=1`,
     },
     notificationUrl: `${appUrl}/api/webhooks/mercadopago?gym_id=${payload.gym_id}`,
+    soloDineroEnCuenta: gymConfig?.mp_solo_dinero_cuenta ?? false,
   });
 
   redirect(init_point);

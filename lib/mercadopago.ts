@@ -17,6 +17,7 @@ export type CreatePreferenceArgs = {
   monto: number;
   backUrls: { success: string; failure: string; pending: string };
   notificationUrl: string;
+  soloDineroEnCuenta?: boolean;
 };
 
 function isLocalhost(url: string) {
@@ -51,6 +52,9 @@ export async function createMpPreference(args: CreatePreferenceArgs) {
       }),
       statement_descriptor: "CLUBIO",
       metadata: { gym_id: args.gymId, cuota_id: args.cuotaId },
+      ...(args.soloDineroEnCuenta
+        ? { payment_methods: { excluded_payment_types: [{ id: "credit_card" }, { id: "debit_card" }, { id: "ticket" }, { id: "prepaid_card" }] } }
+        : {}),
     },
   });
 

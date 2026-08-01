@@ -15,9 +15,10 @@ export async function GET() {
       "recargo_1_dias, recargo_1_porcentaje, recargo_2_dias, recargo_2_porcentaje, " +
       "email_activo, dias_aviso_antes, dias_aviso_fijos, aviso_post_vencimiento_dias, max_avisos_post, " +
       "email_remitente_nombre, email_remitente_address, email_color_acento, email_templates, " +
-      "mp_public_key, whatsapp_activo, whatsapp_phone_number_id, " +
+      "mp_public_key, mp_solo_dinero_cuenta, whatsapp_activo, whatsapp_phone_number_id, " +
       "generar_cuota_al_alta, cuota_alta_proporcional, dias_minimos_para_cuota_alta, " +
-      "dias_mora_desactivacion, mora_desactivar_mes_siguiente"
+      "dias_mora_desactivacion, mora_desactivar_mes_siguiente, " +
+      "email_modo, transferencia_alias, transferencia_titular, transferencia_banco"
     ).eq("gym_id", ctx.gymId).single(),
   ]);
 
@@ -52,6 +53,10 @@ const PatchSchema = z.object({
   max_avisos_post: z.number().int().min(0).optional(),
   email_remitente_nombre: z.string().nullable().optional(),
   email_remitente_address: z.string().email().nullable().optional(),
+  email_modo: z.enum(["link", "transferencia"]).optional(),
+  transferencia_alias: z.string().max(60).nullable().optional(),
+  transferencia_titular: z.string().max(100).nullable().optional(),
+  transferencia_banco: z.string().max(60).nullable().optional(),
   // Config: branding de emails a alumnos
   email_color_acento: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(),
   email_templates: z
@@ -68,6 +73,7 @@ const PatchSchema = z.object({
   // Config: MercadoPago
   mp_access_token: z.string().nullable().optional(),
   mp_public_key: z.string().nullable().optional(),
+  mp_solo_dinero_cuenta: z.boolean().optional(),
   // Config: cuota al alta
   generar_cuota_al_alta: z.boolean().optional(),
   cuota_alta_proporcional: z.boolean().optional(),
@@ -121,10 +127,15 @@ export async function PATCH(request: Request) {
     max_avisos_post: number;
     email_remitente_nombre: string | null;
     email_remitente_address: string | null;
+    email_modo: "link" | "transferencia";
+    transferencia_alias: string | null;
+    transferencia_titular: string | null;
+    transferencia_banco: string | null;
     email_color_acento: string | null;
     email_templates: z.infer<typeof PatchSchema>["email_templates"] | null;
     mp_access_token: string | null;
     mp_public_key: string | null;
+    mp_solo_dinero_cuenta: boolean;
     generar_cuota_al_alta: boolean;
     cuota_alta_proporcional: boolean;
     dias_minimos_para_cuota_alta: number;
@@ -137,8 +148,9 @@ export async function PATCH(request: Request) {
     "dias_mora_desactivacion", "mora_desactivar_mes_siguiente",
     "email_activo", "dias_aviso_antes", "dias_aviso_fijos", "aviso_post_vencimiento_dias", "max_avisos_post",
     "email_remitente_nombre", "email_remitente_address",
+    "email_modo", "transferencia_alias", "transferencia_titular", "transferencia_banco",
     "email_color_acento", "email_templates",
-    "mp_access_token", "mp_public_key",
+    "mp_access_token", "mp_public_key", "mp_solo_dinero_cuenta",
     "generar_cuota_al_alta", "cuota_alta_proporcional", "dias_minimos_para_cuota_alta",
   ] as const;
 

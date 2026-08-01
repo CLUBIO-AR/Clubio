@@ -12,6 +12,10 @@ interface Props {
   maxAvisosPost: number;
   emailRemitenteNombre: string;
   emailRemitenteAddress: string;
+  emailModo: "link" | "transferencia";
+  transferenciaAlias: string;
+  transferenciaTitular: string;
+  transferenciaBanco: string;
 }
 
 export function ConfigNotificaciones({
@@ -22,6 +26,10 @@ export function ConfigNotificaciones({
   maxAvisosPost,
   emailRemitenteNombre,
   emailRemitenteAddress,
+  emailModo,
+  transferenciaAlias,
+  transferenciaTitular,
+  transferenciaBanco,
 }: Props) {
   const [form, setForm] = useState({
     activo: emailActivo,
@@ -32,6 +40,10 @@ export function ConfigNotificaciones({
     maxPost: maxAvisosPost.toString(),
     remNombre: emailRemitenteNombre,
     remEmail: emailRemitenteAddress,
+    modo: emailModo,
+    alias: transferenciaAlias,
+    titular: transferenciaTitular,
+    banco: transferenciaBanco,
   });
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -57,6 +69,10 @@ export function ConfigNotificaciones({
         max_avisos_post: parseInt(form.maxPost),
         email_remitente_nombre: form.remNombre || null,
         email_remitente_address: form.remEmail || null,
+        email_modo: form.modo,
+        transferencia_alias: form.alias || null,
+        transferencia_titular: form.titular || null,
+        transferencia_banco: form.banco || null,
       }),
     });
     if (!res.ok) throw new Error((await res.json()).error ?? "Error");
@@ -131,6 +147,39 @@ export function ConfigNotificaciones({
             <Field label="Email remitente">
               <Input type="email" value={form.remEmail} onChange={set("remEmail")} placeholder="avisos@migym.com" />
             </Field>
+          </div>
+
+          <div className="rounded-xl p-4 space-y-3" style={{ background: T.bg, border: `1px solid ${T.border}` }}>
+            <Field label="Qué se incluye en el aviso de vencimiento">
+              <select
+                value={form.modo}
+                onChange={(e) => setForm((f) => ({ ...f, modo: e.target.value as "link" | "transferencia" }))}
+                className="w-full rounded-lg px-3 py-2 text-sm"
+                style={{ background: T.bgDeep, border: `1px solid ${T.border}`, color: T.text }}
+              >
+                <option value="link">Link de pago (Mercado Pago)</option>
+                <option value="transferencia">Pedir transferencia a un alias (sin link de pago)</option>
+              </select>
+            </Field>
+            <p className="text-xs" style={{ color: T.textDim }}>
+              En modo transferencia no se genera link de pago ni preferencia de Mercado Pago —
+              el mail solo muestra la cuota (actividad, período, monto) y los datos para transferir.
+            </p>
+            {form.modo === "transferencia" && (
+              <>
+                <Field label="Alias">
+                  <Input value={form.alias} onChange={set("alias")} placeholder="migym.alias" />
+                </Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Titular (opcional)">
+                    <Input value={form.titular} onChange={set("titular")} placeholder="Nombre Apellido" />
+                  </Field>
+                  <Field label="Banco (opcional)">
+                    <Input value={form.banco} onChange={set("banco")} placeholder="Brubank" />
+                  </Field>
+                </div>
+              </>
+            )}
           </div>
         </>
       )}

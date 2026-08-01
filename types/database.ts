@@ -210,6 +210,7 @@ export type Database = {
           mp_access_token: string | null;
           mp_public_key: string | null;
           mp_webhook_secret: string | null;
+          mp_solo_dinero_cuenta: boolean;
           monto_base_defecto: number | null;
           dia_vencimiento_mensual: number;
           dias_gracia: number;
@@ -226,6 +227,10 @@ export type Database = {
           email_remitente_address: string | null;
           email_color_acento: string | null;
           email_templates: Json | null;
+          email_modo: "link" | "transferencia";
+          transferencia_alias: string | null;
+          transferencia_titular: string | null;
+          transferencia_banco: string | null;
           whatsapp_activo: boolean;
           whatsapp_phone_number_id: string | null;
           whatsapp_access_token: string | null;
@@ -245,6 +250,7 @@ export type Database = {
           mp_access_token?: string | null;
           mp_public_key?: string | null;
           mp_webhook_secret?: string | null;
+          mp_solo_dinero_cuenta?: boolean;
           monto_base_defecto?: number | null;
           dia_vencimiento_mensual?: number;
           dias_gracia?: number;
@@ -261,6 +267,10 @@ export type Database = {
           email_remitente_address?: string | null;
           email_color_acento?: string | null;
           email_templates?: Json | null;
+          email_modo?: "link" | "transferencia";
+          transferencia_alias?: string | null;
+          transferencia_titular?: string | null;
+          transferencia_banco?: string | null;
           whatsapp_activo?: boolean;
           whatsapp_phone_number_id?: string | null;
           whatsapp_access_token?: string | null;
@@ -276,6 +286,7 @@ export type Database = {
           mp_access_token?: string | null;
           mp_public_key?: string | null;
           mp_webhook_secret?: string | null;
+          mp_solo_dinero_cuenta?: boolean;
           monto_base_defecto?: number | null;
           dia_vencimiento_mensual?: number;
           dias_gracia?: number;
@@ -292,6 +303,10 @@ export type Database = {
           email_remitente_address?: string | null;
           email_color_acento?: string | null;
           email_templates?: Json | null;
+          email_modo?: "link" | "transferencia";
+          transferencia_alias?: string | null;
+          transferencia_titular?: string | null;
+          transferencia_banco?: string | null;
           whatsapp_activo?: boolean;
           whatsapp_phone_number_id?: string | null;
           whatsapp_access_token?: string | null;

@@ -57,7 +57,7 @@ export default async function PagarLotePage({
 
   const { data: gymConfig } = await admin
     .from("gym_config")
-    .select("mp_access_token")
+    .select("mp_access_token, mp_solo_dinero_cuenta")
     .eq("gym_id", payload.gym_id)
     .single();
 
@@ -127,6 +127,9 @@ export default async function PagarLotePage({
       })),
       external_reference: `lote-${loteId}`,
       statement_descriptor: "CLUBIO",
+      ...(gymConfig?.mp_solo_dinero_cuenta
+        ? { payment_methods: { excluded_payment_types: [{ id: "credit_card" }, { id: "debit_card" }, { id: "ticket" }, { id: "prepaid_card" }] } }
+        : {}),
       ...(local ? {} : {
         notification_url: `${appUrl}/api/webhooks/mercadopago?gym_id=${payload.gym_id}`,
         back_urls: {

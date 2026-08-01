@@ -8,6 +8,7 @@ import { T } from "@/lib/theme";
 interface Props {
   mpAccessToken: string;
   mpPublicKey: string;
+  mpSoloDineroEnCuenta: boolean;
 }
 
 const PASOS_MP = [
@@ -30,11 +31,11 @@ const PASOS_MP = [
   },
 ];
 
-export function ConfigMercadoPago({ mpAccessToken, mpPublicKey }: Props) {
-  const [form, setForm] = useState({ token: mpAccessToken, pubKey: mpPublicKey });
+export function ConfigMercadoPago({ mpAccessToken, mpPublicKey, mpSoloDineroEnCuenta }: Props) {
+  const [form, setForm] = useState({ token: mpAccessToken, pubKey: mpPublicKey, soloDineroEnCuenta: mpSoloDineroEnCuenta });
   const [showToken, setShowToken] = useState(false);
   const [showGuia, setShowGuia] = useState(!mpAccessToken);
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
+  const set = (k: "token" | "pubKey") => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
   async function save() {
@@ -44,6 +45,7 @@ export function ConfigMercadoPago({ mpAccessToken, mpPublicKey }: Props) {
       body: JSON.stringify({
         mp_access_token: form.token || null,
         mp_public_key: form.pubKey || null,
+        mp_solo_dinero_cuenta: form.soloDineroEnCuenta,
       }),
     });
     if (!res.ok) throw new Error((await res.json()).error ?? "Error");
@@ -145,6 +147,23 @@ export function ConfigMercadoPago({ mpAccessToken, mpPublicKey }: Props) {
           style={inputStyle}
         />
       </Field>
+
+      <div className="flex items-center gap-3 pt-2">
+        <input
+          type="checkbox"
+          id="soloDineroEnCuenta"
+          checked={form.soloDineroEnCuenta}
+          onChange={(e) => setForm((f) => ({ ...f, soloDineroEnCuenta: e.target.checked }))}
+          style={{ accentColor: T.accent }}
+        />
+        <label htmlFor="soloDineroEnCuenta" className="text-sm font-medium" style={{ color: T.text }}>
+          En el checkout, permitir pagar solo con &quot;Dinero en cuenta&quot; (menor comisión)
+        </label>
+      </div>
+      <p className="text-xs" style={{ color: T.textDim }}>
+        Oculta tarjeta de crédito/débito y otros medios del checkout de Mercado Pago; solo queda disponible
+        transferir/pagar con saldo de la cuenta MP del alumno, que tiene la comisión más baja.
+      </p>
     </ConfigSection>
   );
 }

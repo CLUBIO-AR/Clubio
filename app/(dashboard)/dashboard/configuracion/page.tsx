@@ -73,6 +73,10 @@ export default async function ConfiguracionPage() {
         maxAvisosPost={config?.max_avisos_post ?? 3}
         emailRemitenteNombre={config?.email_remitente_nombre ?? ""}
         emailRemitenteAddress={config?.email_remitente_address ?? ""}
+        emailModo={(config?.email_modo as "link" | "transferencia") ?? "link"}
+        transferenciaAlias={config?.transferencia_alias ?? ""}
+        transferenciaTitular={config?.transferencia_titular ?? ""}
+        transferenciaBanco={config?.transferencia_banco ?? ""}
       />
 
       <ConfigPlantillas
@@ -82,6 +86,7 @@ export default async function ConfiguracionPage() {
       <ConfigMercadoPago
         mpAccessToken={config?.mp_access_token ?? ""}
         mpPublicKey={config?.mp_public_key ?? ""}
+        mpSoloDineroEnCuenta={config?.mp_solo_dinero_cuenta ?? false}
       />
 
       <ConfigActividades actividades={actividades} />

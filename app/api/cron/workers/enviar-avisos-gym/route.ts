@@ -4,7 +4,7 @@ import { logCron } from "@/lib/cron-logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendNotification } from "@/lib/notifications";
 import type { GymNotificationConfig, EmailTemplates } from "@/lib/notifications";
-import { sendEmailAvisosLote } from "@/lib/notifications/channels/email";
+import { sendEmailAvisosLote, sendEmailAvisoTransferencia } from "@/lib/notifications/channels/email";
 import { z } from "zod";
 
 const Schema = z.object({ gym_id: z.string().uuid() });
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   // Config del gym
   const { data: gymConfig } = await admin
     .from("gym_config")
-    .select("email_activo, whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, email_color_acento, email_templates, email_remitente_nombre, email_remitente_address, dias_aviso_fijos, dia_vencimiento_mensual, recargo_1_porcentaje")
+    .select("email_activo, whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, email_color_acento, email_templates, email_remitente_nombre, email_remitente_address, dias_aviso_fijos, dia_vencimiento_mensual, recargo_1_porcentaje, email_modo, transferencia_alias, transferencia_titular, transferencia_banco")
     .eq("gym_id", gym_id)
     .single();
 
@@ -249,6 +249,10 @@ async function enviarAvisosFechaFija(params: {
     dias_aviso_fijos: number[] | null;
     dia_vencimiento_mensual: number;
     recargo_1_porcentaje: number;
+    email_modo: string | null;
+    transferencia_alias: string | null;
+    transferencia_titular: string | null;
+    transferencia_banco: string | null;
   };
   startTime: number;
 }) {
@@ -272,7 +276,7 @@ async function enviarAvisosFechaFija(params: {
     .select(`
       id, alumno_id, mes, anio, monto_total, monto_base, avisos_enviados,
       alumnos!inner(nombre, email, telefono, activo),
-      actividades(recargo_1_porcentaje)
+      actividades(recargo_1_porcentaje, nombre)
     `)
     .eq("gym_id", gym_id)
     .eq("alumnos.activo", true)
@@ -298,9 +302,51 @@ async function enviarAvisosFechaFija(params: {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
   let enviados = 0;
 
+  const modoTransferencia = gymConfig.email_modo === "transferencia" && !!gymConfig.transferencia_alias;
+
   for (const cuota of cuotas) {
     const alumno = cuota.alumnos as unknown as { nombre: string; email: string | null; telefono: string | null } | null;
     if (!alumno?.email) continue;
+
+    const actividadInfo = cuota.actividades as { recargo_1_porcentaje: number | null; nombre: string | null } | null;
+
+    // Modo transferencia (agosto 2026): sin link de pago MP, se pide transferir al alias
+    // configurado mientras se resuelve el tema de comisiones — ver gym_config.email_modo.
+    if (modoTransferencia) {
+      let providerId: string | undefined;
+      let ok = false;
+      try {
+        providerId = await sendEmailAvisoTransferencia({
+          to: alumno.email,
+          alumnoNombre: alumno.nombre,
+          gymNombre: gym.nombre,
+          logoUrl: gym.logo_url,
+          colorAccento: gymConfig.email_color_acento,
+          emailRemitenteNombre: gymConfig.email_remitente_nombre,
+          emailRemitenteAddress: gymConfig.email_remitente_address,
+          cuotas: [{ mes: cuota.mes, anio: cuota.anio, monto_total: cuota.monto_total, actividadNombre: actividadInfo?.nombre ?? "Cuota" }],
+          alias: gymConfig.transferencia_alias!,
+          titular: gymConfig.transferencia_titular,
+          banco: gymConfig.transferencia_banco,
+        });
+        ok = true;
+      } catch (err) {
+        console.error(`[worker:enviar-avisos] transferencia gym=${gym_id} alumno=${cuota.alumno_id} error:`, err);
+      }
+
+      await admin.from("notificaciones_log").insert({
+        gym_id, alumno_id: cuota.alumno_id, cuota_id: cuota.id,
+        tipo: "aviso_vencimiento", enviado_a: alumno.email,
+        estado: ok ? "enviado" : "error",
+        provider_id: providerId ?? null,
+      });
+
+      if (ok) {
+        await admin.from("cuotas").update({ avisos_enviados: (cuota.avisos_enviados ?? 0) + 1 }).eq("id", cuota.id);
+        enviados++;
+      }
+      continue;
+    }
 
     const token = await new SignJWT({
       cuota_id: cuota.id, gym_id, alumno_nombre: alumno.nombre, mes: cuota.mes, anio: cuota.anio, monto: cuota.monto_total,
@@ -312,8 +358,7 @@ async function enviarAvisosFechaFija(params: {
       .sign(secret);
     const pagoUrl = `${appUrl}/pagar/${token}`;
 
-    const actividadRecargo = cuota.actividades as { recargo_1_porcentaje: number | null } | null;
-    const pct = actividadRecargo?.recargo_1_porcentaje ?? gymConfig.recargo_1_porcentaje ?? 0;
+    const pct = actividadInfo?.recargo_1_porcentaje ?? gymConfig.recargo_1_porcentaje ?? 0;
     const montoIncrementado = esDiaVencimiento
       ? Math.round((cuota.monto_base ?? cuota.monto_total ?? 0) * (1 + pct / 100))
       : undefined;

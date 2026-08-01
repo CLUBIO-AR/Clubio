@@ -155,7 +155,7 @@ export function ConfigNotificaciones({
                 value={form.modo}
                 onChange={(e) => setForm((f) => ({ ...f, modo: e.target.value as "link" | "transferencia" }))}
                 className="w-full rounded-lg px-3 py-2 text-sm"
-                style={{ background: T.bgDeep, border: `1px solid ${T.border}`, color: T.text }}
+                style={{ background: T.bg, border: `1px solid ${T.border}`, color: T.text }}
               >
                 <option value="link">Link de pago (Mercado Pago)</option>
                 <option value="transferencia">Pedir transferencia a un alias (sin link de pago)</option>

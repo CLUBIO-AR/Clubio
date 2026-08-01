@@ -61,7 +61,7 @@ export default async function PagarLotePage({
     .eq("gym_id", payload.gym_id)
     .single();
 
-  const accessToken = gymConfig?.mp_access_token ?? process.env.MP_ACCESS_TOKEN;
+  const accessToken = gymConfig?.mp_access_token;
   if (!accessToken) {
     return <ErrorPage mensaje="El gym aún no configuró MercadoPago. Contactá al gimnasio." />;
   }

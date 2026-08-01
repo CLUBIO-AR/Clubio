@@ -69,7 +69,7 @@ export default async function PagarPage({
 
   const accessToken = gymConfig?.mp_access_token;
   if (!accessToken) {
-    return <ErrorPage mensaje="El gym aún no configuró MercadoPago. Contactá al gimnasio." />;
+    return <ErrorPage mensaje="Estamos teniendo problemas con los pagos. Ya estamos trabajando para resolverlo, probá de nuevo más tarde." />;
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL!;

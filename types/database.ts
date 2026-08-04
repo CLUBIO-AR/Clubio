@@ -210,6 +210,7 @@ export type Database = {
           mp_access_token: string | null;
           mp_public_key: string | null;
           mp_webhook_secret: string | null;
+          mp_external_pos_id: string | null;
           mp_solo_dinero_cuenta: boolean;
           monto_base_defecto: number | null;
           dia_vencimiento_mensual: number;
@@ -250,6 +251,7 @@ export type Database = {
           mp_access_token?: string | null;
           mp_public_key?: string | null;
           mp_webhook_secret?: string | null;
+          mp_external_pos_id?: string | null;
           mp_solo_dinero_cuenta?: boolean;
           monto_base_defecto?: number | null;
           dia_vencimiento_mensual?: number;
@@ -286,6 +288,7 @@ export type Database = {
           mp_access_token?: string | null;
           mp_public_key?: string | null;
           mp_webhook_secret?: string | null;
+          mp_external_pos_id?: string | null;
           mp_solo_dinero_cuenta?: boolean;
           monto_base_defecto?: number | null;
           dia_vencimiento_mensual?: number;

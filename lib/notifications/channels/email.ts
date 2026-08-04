@@ -33,6 +33,67 @@ export async function sendEmail(
   return data.id;
 }
 
+// Aviso de vencimiento con el QR in-store de Mercado Pago embebido en vez del botón
+// "Pagar ahora" (menor comisión que Checkout Pro). Usado solo por gyms con
+// gym_config.mp_external_pos_id configurado — ver worker enviar-avisos-gym y
+// app/actions/cuotas.ts (reenvío manual).
+export async function sendCuotaQrEmail(params: {
+  to: string;
+  alumnoNombre: string;
+  gymNombre: string;
+  logoUrl?: string | null;
+  colorAccento?: string | null;
+  emailRemitenteNombre?: string | null;
+  emailRemitenteAddress?: string | null;
+  mes: number;
+  anio: number;
+  montoTotal: number;
+  vencida: boolean;
+  qrPngBase64: string;
+}): Promise<string> {
+  const { Resend } = await import("resend");
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
+  const brand: EmailBrand = { logoUrl: params.logoUrl, colorAccent: params.colorAccento };
+
+  const from = params.emailRemitenteAddress
+    ? `${params.emailRemitenteNombre ?? params.gymNombre} <${params.emailRemitenteAddress}>`
+    : `${params.gymNombre} <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.app"}>`;
+
+  const subject = params.vencida
+    ? `${params.gymNombre} · Tu cuota de ${mesNombre(params.mes)}/${params.anio} está vencida`
+    : `${params.gymNombre} · Tu cuota de ${mesNombre(params.mes)}/${params.anio} vence pronto · $${params.montoTotal.toLocaleString("es-AR")}`;
+
+  const html = clubioEmailHtml(`
+    <p style="color:#f9fafb;line-height:1.6;margin:0 0 20px">
+      Hola ${escapeHtml(params.alumnoNombre)}, tu cuota de ${mesNombre(params.mes)} ${params.anio} en ${escapeHtml(params.gymNombre)}
+      por $${params.montoTotal.toLocaleString("es-AR")} ${params.vencida ? "está vencida" : "está por vencer"}.
+    </p>
+    <p style="color:#9ca3af;font-size:13px;margin:0 0 12px">Escaneá este código con la app de Mercado Pago para pagar:</p>
+    <p style="margin:0 0 20px">
+      <img src="cid:cuota-qr.png" alt="QR de pago" width="220" height="220" style="display:block;border-radius:8px" />
+    </p>
+    <p style="color:#4b5563;font-size:12px;margin:0">${escapeHtml(params.gymNombre)}</p>
+  `, brand);
+
+  const { data, error } = await resend.emails.send({
+    from,
+    to: params.to,
+    subject,
+    html,
+    attachments: [
+      {
+        filename: "cuota-qr.png",
+        content: params.qrPngBase64,
+        contentId: "cuota-qr.png",
+      },
+    ],
+  });
+
+  if (error || !data?.id) throw new Error(`Resend error: ${error?.message ?? "sin id"}`);
+  return data.id;
+}
+
 // Email de bienvenida para el owner de un gym recién dado de alta desde el panel admin.
 // No usa NotificationPayload (no es una notificación a un alumno) — credenciales de acceso del owner.
 export async function sendGymWelcomeEmail(params: {

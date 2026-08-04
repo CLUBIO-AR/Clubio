@@ -98,8 +98,10 @@ export async function POST(request: Request) {
     if (!alumno?.email && !alumno?.telefono) continue;
 
     if (cuotasAlumno.length === 1) {
-      // Flujo individual — igual que antes
+      // Flujo individual
       const cuota = cuotasAlumno[0];
+      const tipo = cuota.estado === "vencida" ? "recordatorio_vencido" : "aviso_vencimiento";
+
       const token = await new SignJWT({
         cuota_id:      cuota.id,
         gym_id,
@@ -115,7 +117,6 @@ export async function POST(request: Request) {
         .sign(secret);
 
       const pagoUrl = `${appUrl}/pagar/${token}`;
-      const tipo = cuota.estado === "vencida" ? "recordatorio_vencido" : "aviso_vencimiento";
 
       const resultados = await sendNotification(notifConfig, {
         type: tipo,

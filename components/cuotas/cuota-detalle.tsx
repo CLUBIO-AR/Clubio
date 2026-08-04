@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, User, Calendar, DollarSign, AlertTriangle, CheckCircle, XCircle, Clock, Link2, Copy, Check, RefreshCw } from "lucide-react";
+import { Loader2, User, Calendar, DollarSign, AlertTriangle, CheckCircle, XCircle, Clock, Link2, Copy, Check, RefreshCw, Mail, QrCode } from "lucide-react";
 import { T } from "@/lib/theme";
+import { reenviarQrCuotaAction, generarQrCuotaAction } from "@/app/actions/cuotas";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const MESES = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
@@ -56,9 +58,46 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
   const [linkUrl, setLinkUrl] = useState<string | null>(null);
   const [verificarLoading, setVerificarLoading] = useState(false);
   const [verificarInput, setVerificarInput] = useState("");
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrEnviado, setQrEnviado] = useState(false);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [qrModalLoading, setQrModalLoading] = useState(false);
+  const [qrModalImg, setQrModalImg] = useState<string | null>(null);
+  const [qrModalError, setQrModalError] = useState<string | null>(null);
 
   const canPay = cuota.estado === "pendiente" || cuota.estado === "vencida";
   const canCondonar = cuota.estado !== "pagada" && cuota.estado !== "condonada";
+
+  async function handleReenviarQr() {
+    setQrLoading(true);
+    setQrEnviado(false);
+    try {
+      const result = await reenviarQrCuotaAction(cuota.id);
+      if (!result.ok) { alert(result.error); return; }
+      setQrEnviado(true);
+      setTimeout(() => setQrEnviado(false), 3000);
+    } catch {
+      alert("Error de red al reenviar el QR");
+    } finally {
+      setQrLoading(false);
+    }
+  }
+
+  async function handleMostrarQr() {
+    setQrModalOpen(true);
+    setQrModalLoading(true);
+    setQrModalError(null);
+    setQrModalImg(null);
+    try {
+      const result = await generarQrCuotaAction(cuota.id);
+      if (!result.ok) { setQrModalError(result.error); return; }
+      setQrModalImg(result.data.qr_png_base64);
+    } catch {
+      setQrModalError("Error de red al generar el QR");
+    } finally {
+      setQrModalLoading(false);
+    }
+  }
 
   async function handlePagar() {
     setError(null);
@@ -219,6 +258,20 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
               {linkLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : linkCopiado ? <><Check className="w-4 h-4" style={{ color: T.accent }} /> Link copiado</> : <><Link2 className="w-4 h-4" /> Enviar link MP</>}
             </button>
           )}
+          {canPay && (
+            <button onClick={handleReenviarQr} disabled={qrLoading}
+              className="flex items-center gap-2 h-10 px-5 rounded-lg font-bold uppercase tracking-widest text-sm transition-all hover:opacity-90 disabled:opacity-50"
+              style={{ fontFamily: "var(--font-fredoka)", background: T.card, color: T.text, border: `1px solid ${T.border}` }}>
+              {qrLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : qrEnviado ? <><Check className="w-4 h-4" style={{ color: T.accent }} /> QR enviado</> : <><Mail className="w-4 h-4" /> Reenviar QR por mail</>}
+            </button>
+          )}
+          {canPay && (
+            <button onClick={handleMostrarQr}
+              className="flex items-center gap-2 h-10 px-5 rounded-lg font-bold uppercase tracking-widest text-sm transition-all hover:opacity-90"
+              style={{ fontFamily: "var(--font-fredoka)", background: T.card, color: T.text, border: `1px solid ${T.border}` }}>
+              <QrCode className="w-4 h-4" /> Mostrar QR
+            </button>
+          )}
           {canCondonar && (
             <button onClick={() => setAccion("condonar")}
               className="flex items-center gap-2 h-10 px-5 rounded-lg font-bold uppercase tracking-widest text-sm transition-all hover:opacity-80"
@@ -345,6 +398,31 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
           ))}
         </div>
       )}
+
+      <Dialog open={qrModalOpen} onOpenChange={setQrModalOpen}>
+        <DialogContent style={{ background: T.card, border: `1px solid ${T.border}`, maxWidth: 420 }}>
+          <DialogHeader>
+            <DialogTitle style={{ color: T.text, fontFamily: "var(--font-fredoka)", fontSize: "1.4rem", fontWeight: 900 }}>
+              — QR de pago
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-3 py-2">
+            <p className="text-sm text-center" style={{ color: T.textMuted }}>
+              {cuota.alumnos?.nombre} {cuota.alumnos?.apellido} · ${cuota.monto_total?.toLocaleString("es-AR")}
+            </p>
+            {qrModalLoading && <Loader2 className="w-10 h-10 animate-spin" style={{ color: T.accent }} />}
+            {qrModalError && (
+              <p className="text-sm px-3 py-2 rounded-lg" style={{ background: `${T.danger}12`, color: T.danger, border: `1px solid ${T.danger}25` }}>
+                {qrModalError}
+              </p>
+            )}
+            {qrModalImg && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={`data:image/png;base64,${qrModalImg}`} alt="QR de pago" width={280} height={280} style={{ borderRadius: 8 }} />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

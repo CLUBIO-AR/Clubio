@@ -25,7 +25,7 @@ export type CreateQrOrderArgs = {
 };
 
 export async function createQrOrder(args: CreateQrOrderArgs): Promise<void> {
-  const url = `${MP_API}/instore/orders/qr/seller/collectors/${args.collectorId}/pos/${args.externalPosId}/orders`;
+  const url = `${MP_API}/instore/orders/qr/seller/collectors/${args.collectorId}/pos/${args.externalPosId}/qrs`;
 
   const res = await fetch(url, {
     method: "PUT",
@@ -64,14 +64,20 @@ export type GetPosQrImageArgs = {
 };
 
 // Devuelve la imagen PNG del QR estático del POS en base64, lista para adjuntar al mail.
+// El path GET /pos/{id} espera el ID numérico interno del POS, no el external_pos_id que
+// nosotros manejamos — por eso se busca por external_id con el endpoint de búsqueda.
 export async function getPosQrImage(args: GetPosQrImageArgs): Promise<string> {
-  const res = await fetch(`${MP_API}/pos/${args.externalPosId}?user_id=${args.collectorId}`, {
-    headers: { Authorization: `Bearer ${args.accessToken}` },
-  });
+  const res = await fetch(
+    `${MP_API}/pos?external_id=${encodeURIComponent(args.externalPosId)}&user_id=${args.collectorId}`,
+    { headers: { Authorization: `Bearer ${args.accessToken}` } },
+  );
   if (!res.ok) throw new Error(`MP consultar POS error: ${res.status} ${await res.text()}`);
-  const pos = await res.json();
+  const data = await res.json();
+  const results: Array<{ qr?: { image?: string } }> = Array.isArray(data) ? data : (data.results ?? []);
+  const pos = results[0];
+  if (!pos) throw new Error(`No se encontró el POS con external_id "${args.externalPosId}"`);
 
-  const qrImageUrl: string | undefined = pos.qr?.image;
+  const qrImageUrl = pos.qr?.image;
   if (!qrImageUrl) throw new Error("El POS no tiene imagen de QR disponible");
 
   const imgRes = await fetch(qrImageUrl);

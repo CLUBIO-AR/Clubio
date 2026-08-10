@@ -4,7 +4,7 @@ import { logCron } from "@/lib/cron-logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendNotification } from "@/lib/notifications";
 import type { GymNotificationConfig, EmailTemplates } from "@/lib/notifications";
-import { sendEmailAvisosLote, sendEmailAvisoTransferencia } from "@/lib/notifications/channels/email";
+import { sendEmailAvisosLote, sendEmailAvisoTransferencia, sendEmailAvisoUltimoLlamado } from "@/lib/notifications/channels/email";
 import { z } from "zod";
 
 const Schema = z.object({ gym_id: z.string().uuid() });
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   // Config del gym
   const { data: gymConfig } = await admin
     .from("gym_config")
-    .select("email_activo, whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, email_color_acento, email_templates, email_remitente_nombre, email_remitente_address, dias_aviso_fijos, dia_vencimiento_mensual, recargo_1_porcentaje, email_modo, transferencia_alias, transferencia_titular, transferencia_banco")
+    .select("email_activo, whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, email_color_acento, email_templates, email_remitente_nombre, email_remitente_address, dias_aviso_fijos, dia_vencimiento_mensual, dia_ultimo_aviso, recargo_1_porcentaje, email_modo, transferencia_alias, transferencia_titular, transferencia_banco")
     .eq("gym_id", gym_id)
     .single();
 
@@ -248,6 +248,7 @@ async function enviarAvisosFechaFija(params: {
     email_remitente_address: string | null;
     dias_aviso_fijos: number[] | null;
     dia_vencimiento_mensual: number;
+    dia_ultimo_aviso: number | null;
     recargo_1_porcentaje: number;
     email_modo: string | null;
     transferencia_alias: string | null;
@@ -262,9 +263,15 @@ async function enviarAvisosFechaFija(params: {
   const hoyDia = hoy.getDate();
   const hoyStr = hoy.toISOString().split("T")[0];
 
-  if (!gymConfig.dias_aviso_fijos!.includes(hoyDia)) {
+  const esUltimoAviso = gymConfig.dia_ultimo_aviso != null && hoyDia === gymConfig.dia_ultimo_aviso;
+
+  if (!gymConfig.dias_aviso_fijos!.includes(hoyDia) && !esUltimoAviso) {
     await logCron({ tipo: "enviar_avisos", gymId: gym_id, itemsCreados: 0, duracionMs: Date.now() - startTime });
     return NextResponse.json({ ok: true, enviados: 0, motivo: "no_es_dia_de_aviso" });
+  }
+
+  if (esUltimoAviso) {
+    return enviarUltimoAviso({ admin, gym_id, gym, gymConfig, startTime, hoy });
   }
 
   const esDiaVencimiento = hoyDia === gymConfig.dia_vencimiento_mensual;
@@ -389,6 +396,114 @@ async function enviarAvisosFechaFija(params: {
 
     if (resultados.some((r) => r.ok)) {
       await admin.from("cuotas").update({ avisos_enviados: (cuota.avisos_enviados ?? 0) + 1 }).eq("id", cuota.id);
+      enviados++;
+    }
+  }
+
+  await logCron({ tipo: "enviar_avisos", gymId: gym_id, itemsCreados: enviados, duracionMs: Date.now() - startTime });
+  return NextResponse.json({ ok: true, enviados });
+}
+
+// --- Último aviso (día fijo post-vencimiento, ej: día 16) ---
+// Cuotas ya vencidas del mes actual, con el recargo por mora ya incluido en
+// monto_total. Avisa que si no pagan quedan dados de baja y deben pedir el
+// alta de nuevo el mes que viene (ver gym_config.mora_desactivar_mes_siguiente).
+async function enviarUltimoAviso(params: {
+  admin: ReturnType<typeof createAdminClient>;
+  gym_id: string;
+  gym: { nombre: string; logo_url: string | null };
+  gymConfig: {
+    email_activo: boolean | null;
+    email_color_acento: string | null;
+    email_remitente_nombre: string | null;
+    email_remitente_address: string | null;
+    email_modo: string | null;
+    transferencia_alias: string | null;
+    transferencia_titular: string | null;
+    transferencia_banco: string | null;
+  };
+  startTime: number;
+  hoy: Date;
+}) {
+  const { admin, gym_id, gym, gymConfig, startTime, hoy } = params;
+
+  if (!(gymConfig.email_modo === "transferencia" && gymConfig.transferencia_alias)) {
+    // Por ahora solo implementado para gyms en modo transferencia (ver sendEmailAvisoUltimoLlamado).
+    await logCron({ tipo: "enviar_avisos", gymId: gym_id, itemsCreados: 0, duracionMs: Date.now() - startTime });
+    return NextResponse.json({ ok: true, enviados: 0, motivo: "modo_no_soportado" });
+  }
+
+  const mes = hoy.getMonth() + 1;
+  const anio = hoy.getFullYear();
+
+  const { data: cuotas } = await admin
+    .from("cuotas")
+    .select(`
+      id, alumno_id, mes, anio, monto_total, avisos_enviados,
+      alumnos!inner(nombre, email, activo),
+      actividades(nombre)
+    `)
+    .eq("gym_id", gym_id)
+    .eq("alumnos.activo", true)
+    .eq("estado", "vencida")
+    .eq("mes", mes)
+    .eq("anio", anio);
+
+  if (!cuotas?.length) {
+    await logCron({ tipo: "enviar_avisos", gymId: gym_id, itemsCreados: 0, duracionMs: Date.now() - startTime });
+    return NextResponse.json({ ok: true, enviados: 0 });
+  }
+
+  const byAlumno = new Map<string, typeof cuotas>();
+  for (const cuota of cuotas) {
+    const list = byAlumno.get(cuota.alumno_id) ?? [];
+    list.push(cuota);
+    byAlumno.set(cuota.alumno_id, list);
+  }
+
+  let enviados = 0;
+
+  for (const [alumnoId, cuotasAlumno] of byAlumno) {
+    const alumno = cuotasAlumno[0].alumnos as unknown as { nombre: string; email: string | null } | null;
+    if (!alumno?.email) continue;
+
+    let providerId: string | undefined;
+    let ok = false;
+    try {
+      providerId = await sendEmailAvisoUltimoLlamado({
+        to: alumno.email,
+        alumnoNombre: alumno.nombre,
+        gymNombre: gym.nombre,
+        logoUrl: gym.logo_url,
+        colorAccento: gymConfig.email_color_acento,
+        emailRemitenteNombre: gymConfig.email_remitente_nombre,
+        emailRemitenteAddress: gymConfig.email_remitente_address,
+        cuotas: cuotasAlumno.map((c) => ({
+          mes: c.mes, anio: c.anio, monto_total: c.monto_total ?? 0,
+          actividadNombre: (c.actividades as { nombre: string | null } | null)?.nombre ?? "Cuota",
+        })),
+        alias: gymConfig.transferencia_alias!,
+        titular: gymConfig.transferencia_titular,
+        banco: gymConfig.transferencia_banco,
+      });
+      ok = true;
+    } catch (err) {
+      console.error(`[worker:enviar-avisos] ultimo-aviso gym=${gym_id} alumno=${alumnoId} error:`, err);
+    }
+
+    await admin.from("notificaciones_log").insert({
+      gym_id, alumno_id: alumnoId, cuota_id: cuotasAlumno[0].id,
+      tipo: "aviso_ultimo_llamado", enviado_a: alumno.email,
+      estado: ok ? "enviado" : "error",
+      provider_id: providerId ?? null,
+    });
+
+    if (ok) {
+      await Promise.allSettled(
+        cuotasAlumno.map((cuota) =>
+          admin.from("cuotas").update({ avisos_enviados: (cuota.avisos_enviados ?? 0) + 1 }).eq("id", cuota.id)
+        )
+      );
       enviados++;
     }
   }

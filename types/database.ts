@@ -213,6 +213,7 @@ export type Database = {
           mp_solo_dinero_cuenta: boolean;
           monto_base_defecto: number | null;
           dia_vencimiento_mensual: number;
+          dia_ultimo_aviso: number | null;
           dias_gracia: number;
           recargo_1_dias: number;
           recargo_1_porcentaje: number;
@@ -253,6 +254,7 @@ export type Database = {
           mp_solo_dinero_cuenta?: boolean;
           monto_base_defecto?: number | null;
           dia_vencimiento_mensual?: number;
+          dia_ultimo_aviso?: number | null;
           dias_gracia?: number;
           recargo_1_dias?: number;
           recargo_1_porcentaje?: number;
@@ -289,6 +291,7 @@ export type Database = {
           mp_solo_dinero_cuenta?: boolean;
           monto_base_defecto?: number | null;
           dia_vencimiento_mensual?: number;
+          dia_ultimo_aviso?: number | null;
           dias_gracia?: number;
           recargo_1_dias?: number;
           recargo_1_porcentaje?: number;

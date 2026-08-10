@@ -8,6 +8,7 @@ interface Props {
   emailActivo: boolean;
   diasAvisoAntes: number[];
   diasAvisoFijos: number[] | null;
+  diaUltimoAviso: number | null;
   avisoPostVencimientoDias: number;
   maxAvisosPost: number;
   emailRemitenteNombre: string;
@@ -22,6 +23,7 @@ export function ConfigNotificaciones({
   emailActivo,
   diasAvisoAntes,
   diasAvisoFijos,
+  diaUltimoAviso,
   avisoPostVencimientoDias,
   maxAvisosPost,
   emailRemitenteNombre,
@@ -35,6 +37,8 @@ export function ConfigNotificaciones({
     activo: emailActivo,
     fechaFijaActivo: diasAvisoFijos !== null && diasAvisoFijos.length > 0,
     diasFijos: (diasAvisoFijos ?? []).join(", "),
+    ultimoAvisoActivo: diaUltimoAviso != null,
+    diaUltimoAviso: diaUltimoAviso?.toString() ?? "",
     diasAntes: diasAvisoAntes.join(", "),
     postDias: avisoPostVencimientoDias.toString(),
     maxPost: maxAvisosPost.toString(),
@@ -58,6 +62,10 @@ export function ConfigNotificaciones({
       ? form.diasFijos.split(",").map((d) => parseInt(d.trim())).filter((d) => !isNaN(d) && d >= 1 && d <= 28)
       : null;
 
+    const diaUltimoAvisoValue = form.ultimoAvisoActivo && form.diaUltimoAviso
+      ? parseInt(form.diaUltimoAviso)
+      : null;
+
     const res = await fetch("/api/config", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -65,6 +73,7 @@ export function ConfigNotificaciones({
         email_activo: form.activo,
         dias_aviso_antes: dias,
         dias_aviso_fijos: diasFijos,
+        dia_ultimo_aviso: diaUltimoAvisoValue,
         aviso_post_vencimiento_dias: parseInt(form.postDias),
         max_avisos_post: parseInt(form.maxPost),
         email_remitente_nombre: form.remNombre || null,
@@ -177,6 +186,30 @@ export function ConfigNotificaciones({
                   <Field label="Banco (opcional)">
                     <Input value={form.banco} onChange={set("banco")} placeholder="Brubank" />
                   </Field>
+                </div>
+                <div className="pt-2 border-t space-y-3" style={{ borderColor: T.borderSub }}>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="ultimoAvisoActivo"
+                      checked={form.ultimoAvisoActivo}
+                      onChange={(e) => setForm((f) => ({ ...f, ultimoAvisoActivo: e.target.checked }))}
+                      style={{ accentColor: T.accent }}
+                    />
+                    <label htmlFor="ultimoAvisoActivo" className="text-sm font-medium" style={{ color: T.text }}>
+                      Enviar un último aviso post-vencimiento
+                    </label>
+                  </div>
+                  <p className="text-xs" style={{ color: T.textDim }}>
+                    Un día fijo del mes, distinto de los de arriba, se les avisa a los que siguen con la cuota
+                    vencida (ya con el recargo aplicado) que si no pagan quedan dados de baja y tienen que
+                    pedir el alta de nuevo el mes que viene.
+                  </p>
+                  {form.ultimoAvisoActivo && (
+                    <Field label="Día del mes">
+                      <NumberInput value={form.diaUltimoAviso} onChange={set("diaUltimoAviso")} min={1} />
+                    </Field>
+                  )}
                 </div>
               </>
             )}

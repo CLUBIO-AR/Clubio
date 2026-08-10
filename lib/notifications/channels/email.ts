@@ -320,6 +320,88 @@ export async function sendEmailAvisoTransferencia(params: {
   return data.id;
 }
 
+// Último aviso post-vencimiento (modo transferencia): la cuota ya está vencida
+// y con el recargo por mora ya aplicado. Avisa que si no abona, el mes que viene
+// va a tener que pedir el alta de nuevo. Usado solo el día configurado en
+// gym_config.dias_aviso_fijos posterior al vencimiento (ver worker de avisos).
+export async function sendEmailAvisoUltimoLlamado(params: {
+  to: string;
+  alumnoNombre: string;
+  gymNombre: string;
+  logoUrl?: string | null;
+  colorAccento?: string | null;
+  emailRemitenteNombre?: string | null;
+  emailRemitenteAddress?: string | null;
+  cuotas: Array<{ mes: number; anio: number; monto_total: number; actividadNombre: string }>;
+  alias: string;
+  titular?: string | null;
+  banco?: string | null;
+}): Promise<string> {
+  const { Resend } = await import("resend");
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
+  const brand: EmailBrand = { logoUrl: params.logoUrl, colorAccent: params.colorAccento };
+  const accent = emailAccentColor(brand);
+
+  const from = params.emailRemitenteAddress
+    ? `${params.emailRemitenteNombre ?? params.gymNombre} <${params.emailRemitenteAddress}>`
+    : `${params.gymNombre} <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.app"}>`;
+
+  const montoTotal = params.cuotas.reduce((acc, c) => acc + c.monto_total, 0);
+  const subject = params.cuotas.length > 1
+    ? `${params.gymNombre} · Tus cuotas vencieron — total $${montoTotal.toLocaleString("es-AR")}`
+    : `${params.gymNombre} · Tu cuota de ${mesNombre(params.cuotas[0].mes)}/${params.cuotas[0].anio} venció · $${montoTotal.toLocaleString("es-AR")}`;
+
+  const cuotaListHtml = params.cuotas.map(({ mes, anio, monto_total, actividadNombre }) => `
+    <tr style="border-bottom:1px solid #1e293b">
+      <td style="padding:8px 0;color:#f9fafb;font-size:13px">${escapeHtml(actividadNombre)}</td>
+      <td style="padding:8px 0;color:#9ca3af;font-size:13px">${mesNombre(mes)} ${anio}</td>
+      <td style="padding:8px 0;color:#f87171;font-family:monospace;text-align:right">$${monto_total.toLocaleString("es-AR")}</td>
+    </tr>
+  `).join("");
+
+  const html = clubioEmailHtml(`
+    <h2 style="margin:0 0 12px;color:#f9fafb;font-size:18px">Hola ${escapeHtml(params.alumnoNombre)},</h2>
+    <p style="color:#d1d5db;line-height:1.6;margin:0 0 16px">
+      Tu${params.cuotas.length > 1 ? "s cuotas" : " cuota"} de ${escapeHtml(params.gymNombre)} ya venci${params.cuotas.length > 1 ? "eron" : "ó"},
+      con el recargo por mora ya incluido en el monto:
+    </p>
+    <table style="border-collapse:collapse;width:100%;margin:0 0 20px">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding:4px 0;color:#6b7280;font-size:11px;font-weight:normal;border-bottom:1px solid #374151">Actividad</th>
+          <th style="text-align:left;padding:4px 0;color:#6b7280;font-size:11px;font-weight:normal;border-bottom:1px solid #374151">Período</th>
+          <th style="text-align:right;padding:4px 0;color:#6b7280;font-size:11px;font-weight:normal;border-bottom:1px solid #374151">Monto</th>
+        </tr>
+      </thead>
+      <tbody>${cuotaListHtml}</tbody>
+    </table>
+    <p style="color:#d1d5db;line-height:1.6;margin:0 0 16px">
+      Para regularizar, transferí directamente con estos datos:
+    </p>
+    <div style="background:#111827;border:1px solid #1f2937;border-radius:8px;padding:16px 20px;margin:0 0 20px">
+      <p style="margin:0 0 4px;font-size:12px;color:#9ca3af">Alias (copiá y pegá)</p>
+      <p style="margin:0 0 14px;font-size:20px;color:${accent};font-family:monospace;font-weight:700;letter-spacing:0.02em">${escapeHtml(params.alias)}</p>
+      ${(params.titular || params.banco) ? `
+      <table style="border-collapse:collapse;width:100%">
+        ${params.titular ? `<tr><td style="padding:4px 0;color:#9ca3af;font-size:12px;width:110px;vertical-align:top">Nombre</td><td style="padding:4px 0;color:#f9fafb;font-size:13px">${escapeHtml(params.titular)}</td></tr>` : ""}
+        ${params.banco ? `<tr><td style="padding:4px 0;color:#9ca3af;font-size:12px;vertical-align:top">Banco</td><td style="padding:4px 0;color:#f9fafb;font-size:13px">${escapeHtml(params.banco)}</td></tr>` : ""}
+      </table>` : ""}
+    </div>
+    <div style="background:#1c1207;border:1px solid #7c2d12;border-radius:8px;padding:14px 18px;margin:0 0 20px">
+      <p style="margin:0;color:#fbbf24;font-size:13px;line-height:1.6">
+        ⚠️ Si no abonás, tu lugar queda dado de baja. Para volver el mes que viene vas a tener que avisarnos
+        para que te demos de alta de nuevo.
+      </p>
+    </div>
+    <p style="color:#6b7280;font-size:12px;margin:0">${escapeHtml(params.gymNombre)}</p>
+  `, brand);
+
+  const { data, error } = await resend.emails.send({ from, to: params.to, subject, html });
+  if (error || !data?.id) throw new Error(`Resend error: ${error?.message ?? "sin id"}`);
+  return data.id;
+}
+
 // ─── Notificaciones al owner del gym (no al alumno) ──────────────────────────
 
 export async function sendGymOwnerPagoRecibido(params: {

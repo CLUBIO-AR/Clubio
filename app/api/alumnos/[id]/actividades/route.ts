@@ -33,6 +33,7 @@ const UpsertSchema = z.object({
   monto_personalizado: z.number().min(0).nullable().optional(),
   activa: z.boolean().optional(),
   fecha_inicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  bonificada: z.boolean().optional(),
 });
 
 export async function POST(

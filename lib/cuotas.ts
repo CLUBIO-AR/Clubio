@@ -53,6 +53,8 @@ export const CuotaUpdateSchema = z.discriminatedUnion("accion", [
     metodo_pago: z.enum(["efectivo", "transferencia", "otro"]),
     pagado_por: z.string().min(1).optional(),
     notas:      z.string().nullable().optional(),
+    monto:      z.number().positive().optional(),
+    aplicar_proximas: z.boolean().optional(),
   }),
   z.object({
     accion: z.literal("condonar"),
@@ -146,9 +148,14 @@ export async function marcarPagadaManual(
   metodo: "efectivo" | "transferencia" | "otro",
   pagadoPor: string | undefined,
   registradoPor: string,
-  notas?: string | null
+  notas?: string | null,
+  montoOverride?: number
 ) {
   const now = new Date().toISOString();
+
+  // Monto editable: si el gym acordó un monto distinto con el alumno, se pisa
+  // monto_base y se resetea el recargo (monto_total es columna generada base+recargo).
+  const montoPayload = montoOverride != null ? { monto_base: montoOverride, monto_recargo: 0 } : {};
 
   // 1. Actualizar cuota
   const { data: cuota, error: cuotaError } = await supabase
@@ -159,10 +166,11 @@ export async function marcarPagadaManual(
       metodo_pago: metodo,
       pagado_por: pagadoPor ?? null,
       notas: notas ?? null,
+      ...montoPayload,
     })
     .eq("id", cuotaId)
     .eq("gym_id", gymId)
-    .select("alumno_id, monto_total")
+    .select("alumno_id, monto_total, actividad_id")
     .single();
 
   if (cuotaError || !cuota) return { error: cuotaError };
@@ -177,7 +185,32 @@ export async function marcarPagadaManual(
     registrado_por: registradoPor,
   });
 
-  return { error: null };
+  return { error: null, alumnoId: cuota.alumno_id, actividadId: cuota.actividad_id };
+}
+
+// Aplica un monto acordado a las próximas cuotas: si la cuota pertenecía a una
+// actividad, pisa el override de esa inscripción; si era el flujo legacy sin
+// actividad, pisa el override a nivel alumno.
+export async function aplicarMontoProximasCuotas(
+  supabase: SupabaseClient<Database>,
+  gymId: string,
+  alumnoId: string,
+  actividadId: string | null,
+  monto: number
+) {
+  if (actividadId) {
+    return supabase
+      .from("alumno_actividades")
+      .update({ monto_personalizado: monto })
+      .eq("gym_id", gymId)
+      .eq("alumno_id", alumnoId)
+      .eq("actividad_id", actividadId);
+  }
+  return supabase
+    .from("alumnos")
+    .update({ monto_cuota_personalizado: monto })
+    .eq("gym_id", gymId)
+    .eq("id", alumnoId);
 }
 
 export async function condonarCuota(
@@ -230,18 +263,21 @@ export async function generarCuotaAlta(
 
   const { data: actividadesActivas } = await supabase
     .from("alumno_actividades")
-    .select("actividad_id, fecha_inicio")
+    .select("actividad_id, fecha_inicio, bonificada")
     .eq("alumno_id", alumnoId)
     .eq("gym_id", gymId)
     .eq("activa", true);
 
   const hoyStr = hoy.toISOString().split("T")[0];
   const actividadesVigentes = (actividadesActivas ?? []).filter(
-    (a) => !a.fecha_inicio || a.fecha_inicio <= hoyStr
+    (a) => !a.bonificada && (!a.fecha_inicio || a.fecha_inicio <= hoyStr)
   );
 
   if (!actividadesActivas?.length) {
     return { generada: false, motivo: "sin_actividad" };
+  }
+  if (actividadesActivas.every((a) => a.bonificada)) {
+    return { generada: false, motivo: "solo_bonificada" };
   }
   if (!actividadesVigentes.length) {
     return { generada: false, motivo: "fecha_inicio_futura" };
@@ -317,7 +353,7 @@ export async function generarCuotasMes(
 
   const { data: todasInscripciones } = await supabase
     .from("alumno_actividades")
-    .select("alumno_id, actividad_id, monto_personalizado, fecha_inicio, actividades(monto_base)")
+    .select("alumno_id, actividad_id, monto_personalizado, fecha_inicio, bonificada, actividades(monto_base)")
     .eq("gym_id", gymId)
     .eq("activa", true);
 
@@ -344,6 +380,8 @@ export async function generarCuotasMes(
     if (inscripciones.length > 0) {
       // Generar una cuota por cada actividad
       for (const ins of inscripciones) {
+        if (ins.bonificada) continue; // sin cuota: cuenta como inscripto pero no se le cobra ni avisa
+
         const actividadData = ins.actividades as { monto_base: number } | null;
         const monto = ins.monto_personalizado ?? actividadData?.monto_base ?? 0;
         if (!monto) continue;

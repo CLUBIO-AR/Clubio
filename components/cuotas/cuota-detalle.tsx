@@ -49,6 +49,8 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
   const [metodo, setMetodo] = useState<"efectivo" | "transferencia" | "otro">("efectivo");
   const [pagadoPor, setPagadoPor] = useState(cuota.alumnos ? `${cuota.alumnos.nombre} ${cuota.alumnos.apellido}` : "");
   const [notas, setNotas] = useState("");
+  const [montoPago, setMontoPago] = useState(String(cuota.monto_total));
+  const [aplicarProximas, setAplicarProximas] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [linkLoading, setLinkLoading] = useState(false);
@@ -63,10 +65,15 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
   async function handlePagar() {
     setError(null);
     setLoading(true);
+    const montoEditado = parseFloat(montoPago);
+    const montoDistinto = !Number.isNaN(montoEditado) && montoEditado !== cuota.monto_total;
     const res = await fetch(`/api/cuotas/${cuota.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ accion: "pagar_manual", metodo_pago: metodo, pagado_por: pagadoPor || undefined, notas: notas || null }),
+      body: JSON.stringify({
+        accion: "pagar_manual", metodo_pago: metodo, pagado_por: pagadoPor || undefined, notas: notas || null,
+        ...(montoDistinto ? { monto: montoEditado, aplicar_proximas: aplicarProximas } : {}),
+      }),
     });
     const data = await res.json();
     if (!res.ok) { setError(data.error); setLoading(false); return; }
@@ -283,6 +290,21 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
               <Input value={pagadoPor} onChange={(e) => setPagadoPor(e.target.value)} placeholder="Nombre del pagador" style={inp} className="placeholder:opacity-25" />
             </div>
           </div>
+          <div className="space-y-1.5">
+            <Label style={labelStyle}>Monto a registrar ($)</Label>
+            <Input type="number" min={0} value={montoPago} onChange={(e) => setMontoPago(e.target.value)} style={inp} />
+            <p className="text-xs" style={{ color: T.textDim }}>
+              Por defecto ${cuota.monto_total.toLocaleString("es-AR")}. Editalo si el alumno acordó un monto distinto con el gym.
+            </p>
+          </div>
+          {parseFloat(montoPago) !== cuota.monto_total && !Number.isNaN(parseFloat(montoPago)) && (
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="aplicarProximas" checked={aplicarProximas} onChange={(e) => setAplicarProximas(e.target.checked)} style={{ accentColor: T.accent }} />
+              <label htmlFor="aplicarProximas" className="text-xs" style={{ color: T.textMuted }}>
+                Aplicar este monto también a las próximas cuotas de esta inscripción
+              </label>
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label style={labelStyle}>Notas</Label>
             <Input value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Opcional" style={inp} className="placeholder:opacity-25" />

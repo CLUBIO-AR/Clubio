@@ -7,12 +7,27 @@ export default async function ActividadesPage() {
   const ctx = await requireGymContext();
   const supabase = await createClient();
 
-  const { data: actividades } = await supabase
-    .from("actividades")
-    .select("*")
-    .eq("gym_id", ctx.gymId)
-    .is("deleted_at", null)
-    .order("nombre");
+  const [{ data: actividades }, { data: inscripciones }] = await Promise.all([
+    supabase
+      .from("actividades")
+      .select("*")
+      .eq("gym_id", ctx.gymId)
+      .is("deleted_at", null)
+      .order("nombre"),
+    supabase
+      .from("alumno_actividades")
+      .select("actividad_id, bonificada")
+      .eq("gym_id", ctx.gymId)
+      .eq("activa", true),
+  ]);
+
+  const conteoPorActividad: Record<string, { total: number; bonificados: number }> = {};
+  for (const ins of inscripciones ?? []) {
+    const actual = conteoPorActividad[ins.actividad_id] ?? { total: 0, bonificados: 0 };
+    actual.total++;
+    if (ins.bonificada) actual.bonificados++;
+    conteoPorActividad[ins.actividad_id] = actual;
+  }
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -33,7 +48,7 @@ export default async function ActividadesPage() {
         Si un alumno está en 3 actividades, recibe 3 cuotas por mes.
       </div>
 
-      <ConfigActividades actividades={actividades ?? []} />
+      <ConfigActividades actividades={actividades ?? []} conteoPorActividad={conteoPorActividad} />
     </div>
   );
 }

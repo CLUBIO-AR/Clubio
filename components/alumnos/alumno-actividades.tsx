@@ -10,6 +10,7 @@ type Inscripcion = {
   actividad_id: string;
   monto_personalizado: number | null;
   activa: boolean;
+  bonificada: boolean;
   actividades: Actividad | null;
 };
 
@@ -25,6 +26,7 @@ export function AlumnoActividades({ alumnoId, inscripciones: inicial, actividade
   const [selectedId, setSelectedId] = useState("");
   const [montoCustom, setMontoCustom] = useState("");
   const [fechaInicio, setFechaInicio] = useState(() => new Date().toISOString().split("T")[0]);
+  const [bonificada, setBonificada] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,6 +45,7 @@ export function AlumnoActividades({ alumnoId, inscripciones: inicial, actividade
         monto_personalizado: montoCustom ? parseFloat(montoCustom) : null,
         activa: true,
         fecha_inicio: fechaInicio,
+        bonificada,
       }),
     });
     if (!res.ok) {
@@ -56,6 +59,7 @@ export function AlumnoActividades({ alumnoId, inscripciones: inicial, actividade
     setSelectedId("");
     setMontoCustom("");
     setFechaInicio(new Date().toISOString().split("T")[0]);
+    setBonificada(false);
     setAgregando(false);
     setLoading(false);
   }
@@ -67,6 +71,15 @@ export function AlumnoActividades({ alumnoId, inscripciones: inicial, actividade
       body: JSON.stringify({ actividad_id: inscripcion.actividad_id, activa: !inscripcion.activa }),
     });
     setInscs(prev => prev.map(i => i.id === inscripcion.id ? { ...i, activa: !i.activa } : i));
+  }
+
+  async function handleToggleBonificada(inscripcion: Inscripcion) {
+    await fetch(`/api/alumnos/${alumnoId}/actividades`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ actividad_id: inscripcion.actividad_id, bonificada: !inscripcion.bonificada }),
+    });
+    setInscs(prev => prev.map(i => i.id === inscripcion.id ? { ...i, bonificada: !i.bonificada } : i));
   }
 
   async function handleQuitar(inscripcion: Inscripcion) {
@@ -137,6 +150,12 @@ export function AlumnoActividades({ alumnoId, inscripciones: inicial, actividade
                 style={{ width: "100%", padding: "0.4rem 0.6rem", borderRadius: 7, background: T.bg, border: `1px solid ${T.border}`, color: T.text, fontSize: "0.8rem" }}
               />
             </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="bonificada" checked={bonificada} onChange={e => setBonificada(e.target.checked)} style={{ accentColor: T.accent }} />
+              <label htmlFor="bonificada" className="text-xs" style={{ color: T.textOnDarkDim }}>
+                Bonificada (no genera cuota ni avisos, ej: profes)
+              </label>
+            </div>
             {error && <p className="text-xs" style={{ color: T.danger }}>{error}</p>}
             <div className="flex gap-2 justify-end">
               <button onClick={() => { setAgregando(false); setError(null); }} className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider" style={{ color: T.textOnDarkDim, fontFamily: "var(--font-fredoka)" }}>
@@ -170,10 +189,18 @@ export function AlumnoActividades({ alumnoId, inscripciones: inicial, actividade
                   {act?.nombre.toUpperCase() ?? "—"}
                 </p>
                 <p className="text-xs font-mono" style={{ color: T.textDim }}>
-                  ${monto.toLocaleString("es-AR")}/mes
-                  {ins.monto_personalizado != null && <span style={{ color: T.accent }}> (personalizado)</span>}
+                  {ins.bonificada ? "Sin cargo" : `$${monto.toLocaleString("es-AR")}/mes`}
+                  {!ins.bonificada && ins.monto_personalizado != null && <span style={{ color: T.accent }}> (personalizado)</span>}
                 </p>
               </div>
+              <button
+                onClick={() => handleToggleBonificada(ins)}
+                className="px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider"
+                style={{ fontFamily: "var(--font-fredoka)", background: ins.bonificada ? `${T.accent}20` : `${T.textDim}15`, color: ins.bonificada ? T.accent : T.textDim }}
+                title="No genera cuota ni avisos"
+              >
+                {ins.bonificada ? "Bonificada" : "Bonificar"}
+              </button>
               <button
                 onClick={() => handleToggle(ins)}
                 className="px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider"

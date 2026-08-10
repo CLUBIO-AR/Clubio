@@ -132,9 +132,12 @@ function ActividadForm({
   );
 }
 
-interface Props { actividades: Actividad[] }
+interface Props {
+  actividades: Actividad[];
+  conteoPorActividad?: Record<string, { total: number; bonificados: number }>;
+}
 
-export function ConfigActividades({ actividades: inicial }: Props) {
+export function ConfigActividades({ actividades: inicial, conteoPorActividad = {} }: Props) {
   const [actividades, setActividades] = useState(inicial);
   const [creando, setCreando] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
@@ -221,6 +224,11 @@ export function ConfigActividades({ actividades: inicial }: Props) {
                 <p className="text-xs font-mono" style={{ color: T.textDim }}>
                   ${a.monto_base.toLocaleString("es-AR")}
                   {a.recargo_1_dias != null && ` · mora ${a.recargo_1_dias}d / ${a.recargo_1_porcentaje}%`}
+                  {" · "}
+                  {conteoPorActividad[a.id]?.total ?? 0} inscriptos
+                  {(conteoPorActividad[a.id]?.bonificados ?? 0) > 0 && (
+                    <span style={{ color: T.accent }}> ({conteoPorActividad[a.id]!.bonificados} bonificados)</span>
+                  )}
                 </p>
               </div>
               <div className="flex items-center gap-1">

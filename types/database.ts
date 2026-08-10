@@ -498,6 +498,7 @@ export type Database = {
           actividad_id: string;
           monto_personalizado: number | null;
           activa: boolean;
+          bonificada: boolean;
           fecha_inicio: string;
           created_at: string;
         };
@@ -508,11 +509,13 @@ export type Database = {
           actividad_id: string;
           monto_personalizado?: number | null;
           activa?: boolean;
+          bonificada?: boolean;
           fecha_inicio?: string;
         };
         Update: {
           monto_personalizado?: number | null;
           activa?: boolean;
+          bonificada?: boolean;
           fecha_inicio?: string;
         };
         Relationships: [

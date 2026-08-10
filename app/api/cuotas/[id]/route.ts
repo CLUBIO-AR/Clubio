@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getApiGymContext } from "@/lib/supabase/api-auth";
-import { getCuotaById, marcarPagadaManual, condonarCuota, reactivarAlumnoSiCorresponde, CuotaUpdateSchema } from "@/lib/cuotas";
+import { getCuotaById, marcarPagadaManual, condonarCuota, reactivarAlumnoSiCorresponde, aplicarMontoProximasCuotas, CuotaUpdateSchema } from "@/lib/cuotas";
 import { notifyGymOwnerPago } from "@/lib/notifications/gym-owner";
 
 export async function GET(
@@ -40,11 +40,15 @@ export async function PATCH(
   const update = parsed.data;
 
   if (update.accion === "pagar_manual") {
-    const { error } = await marcarPagadaManual(
+    const { error, alumnoId, actividadId } = await marcarPagadaManual(
       supabase, ctx.gymId, id,
-      update.metodo_pago, update.pagado_por, ctx.userId, update.notas
+      update.metodo_pago, update.pagado_por, ctx.userId, update.notas, update.monto
     );
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    if (update.aplicar_proximas && update.monto != null && alumnoId) {
+      await aplicarMontoProximasCuotas(supabase, ctx.gymId, alumnoId, actividadId ?? null, update.monto);
+    }
 
     void (async () => {
       const { data: c } = await supabase

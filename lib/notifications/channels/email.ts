@@ -402,6 +402,60 @@ export async function sendEmailAvisoUltimoLlamado(params: {
   return data.id;
 }
 
+// Aviso al dueño del gym de que el cron de importación desde Google Sheets
+// cargó alumnos nuevos — agrupados por la actividad ya asignada (con su fecha
+// de inicio, según el corte del día 10). Los que no matchearon ninguna
+// actividad conocida quedan en un grupo aparte para asignar a mano.
+export async function sendAlumnosImportadosEmail(params: {
+  to: string | string[];
+  gymNombre: string;
+  alumnos: Array<{ nombre: string; apellido: string; email: string; telefono: string | null; actividadIndicada: string; actividadAsignada: string | null; fechaInicio: string | null }>;
+}): Promise<string> {
+  const { Resend } = await import("resend");
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const from = `CLUBIO <${process.env.RESEND_FROM_DEFAULT ?? "noreply@clubio.app"}>`;
+
+  const claveGrupo = (a: (typeof params.alumnos)[number]) =>
+    a.actividadAsignada ? `${a.actividadAsignada} — inicio ${a.fechaInicio}` : `⚠️ Sin asignar (indicó: "${a.actividadIndicada}")`;
+
+  const grupos = new Map<string, typeof params.alumnos>();
+  for (const a of params.alumnos) {
+    const key = claveGrupo(a);
+    const list = grupos.get(key) ?? [];
+    list.push(a);
+    grupos.set(key, list);
+  }
+
+  const sinAsignar = params.alumnos.filter((a) => !a.actividadAsignada).length;
+
+  const gruposHtml = [...grupos.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([grupo, alumnos]) => `
+    <h3 style="margin:20px 0 8px;color:#f9fafb;font-size:14px">${escapeHtml(grupo)} (${alumnos.length})</h3>
+    ${clubioEmailTable(alumnos
+      .sort((a, b) => a.apellido.localeCompare(b.apellido))
+      .map((a) => [`${escapeHtml(a.apellido)}, ${escapeHtml(a.nombre)}`, `${escapeHtml(a.telefono ?? "sin tel")} · ${escapeHtml(a.email)}`])
+    )}
+  `).join("");
+
+  const { data, error } = await resend.emails.send({
+    from,
+    to: params.to,
+    subject: `${params.alumnos.length} alumno${params.alumnos.length !== 1 ? "s" : ""} nuevo${params.alumnos.length !== 1 ? "s" : ""} desde el formulario — ${params.gymNombre}`,
+    html: clubioEmailHtml(`
+      <h2 style="margin:0 0 8px;color:#f9fafb;font-size:18px">Alumnos nuevos del formulario</h2>
+      <p style="color:#9ca3af;margin:0 0 8px;font-size:13px">${escapeHtml(params.gymNombre)}</p>
+      <p style="color:#d1d5db;font-size:13px;line-height:1.6;margin:0 0 16px">
+        Se cargaron automáticamente en Clubio con su actividad y fecha de inicio ya asignadas.
+        La cuota se genera sola cuando llegue el mes que corresponda.
+        ${sinAsignar > 0 ? `<br/><strong style="color:#fbbf24">${sinAsignar} quedaron sin actividad asignada — revisalos manualmente.</strong>` : ""}
+      </p>
+      ${gruposHtml}
+    `),
+  });
+
+  if (error || !data?.id) throw new Error(`Resend error: ${error?.message ?? "sin id"}`);
+  return data.id;
+}
+
 // ─── Notificaciones al owner del gym (no al alumno) ──────────────────────────
 
 export async function sendGymOwnerPagoRecibido(params: {

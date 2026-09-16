@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Gym sin google_sheet_id configurado" }, { status: 400 });
   }
 
-  const { data: gym } = await admin.from("gyms").select("nombre").eq("id", gym_id).single();
+  const { data: gym } = await admin.from("gyms").select("nombre, email_contacto").eq("id", gym_id).single();
   if (!gym) return NextResponse.json({ error: "Gym no encontrado" }, { status: 404 });
 
   try {
@@ -41,10 +41,10 @@ export async function POST(request: Request) {
 
     if (error) throw new Error(error);
 
-    // Mientras el import está en etapa de prueba, el aviso va solo a CLUBIO
-    // (ALUMNOS_IMPORT_NOTIFICACION_EMAIL), no al dueño del gym.
-    const notifyTo = process.env.ALUMNOS_IMPORT_NOTIFICACION_EMAIL;
-    if (insertados.length > 0 && notifyTo) {
+    // Aviso a CLUBIO (ALUMNOS_IMPORT_NOTIFICACION_EMAIL) + al dueño del gym.
+    const notifyTo = [process.env.ALUMNOS_IMPORT_NOTIFICACION_EMAIL, gym.email_contacto]
+      .filter((email): email is string => Boolean(email));
+    if (insertados.length > 0 && notifyTo.length > 0) {
       await sendAlumnosImportadosEmail({
         to: notifyTo,
         gymNombre: gym.nombre,

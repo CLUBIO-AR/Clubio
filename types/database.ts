@@ -242,6 +242,8 @@ export type Database = {
           mora_desactivar_mes_siguiente: boolean;
           color_primario: string;
           color_secundario: string;
+          google_sheet_id: string | null;
+          google_sheet_gid: number;
           created_at: string;
           updated_at: string;
         };
@@ -283,6 +285,8 @@ export type Database = {
           mora_desactivar_mes_siguiente?: boolean;
           color_primario?: string;
           color_secundario?: string;
+          google_sheet_id?: string | null;
+          google_sheet_gid?: number;
         };
         Update: {
           mp_access_token?: string | null;

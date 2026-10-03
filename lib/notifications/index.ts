@@ -42,6 +42,8 @@ export type GymNotificationConfig = {
   whatsapp_activo: boolean;
   whatsapp_phone_number_id?: string | null;
   whatsapp_access_token?: string | null;
+  whatsapp_template_aviso?: string | null;
+  whatsapp_template_confirmacion?: string | null;
 };
 
 export async function sendNotification(
@@ -71,10 +73,14 @@ function getActiveChannels(
     channels.push("email");
   }
 
-  // WhatsApp: se agrega cuando esté implementado (Semana 5 / MVP 2.5)
-  // if (config.whatsapp_activo && config.whatsapp_access_token && payload.alumno.telefono) {
-  //   channels.push("whatsapp");
-  // }
+  if (
+    config.whatsapp_activo &&
+    config.whatsapp_access_token &&
+    config.whatsapp_phone_number_id &&
+    payload.alumno.telefono
+  ) {
+    channels.push("whatsapp");
+  }
 
   return channels;
 }

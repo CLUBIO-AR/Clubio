@@ -1,9 +1,8 @@
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireGymContext } from "@/lib/supabase/auth";
 import { T } from "@/lib/theme";
 import { WhatsappThreadClient } from "@/components/whatsapp/whatsapp-thread-client";
+import { marcarConversacionLeidaAction } from "@/app/actions/whatsapp";
 
 export default async function WhatsappThreadPage({
   params,
@@ -23,20 +22,18 @@ export default async function WhatsappThreadPage({
     .eq("telefono", telefono)
     .order("created_at", { ascending: true });
 
+  // Idempotente: marca como leídos los entrantes de esta conversación al abrirla.
+  await marcarConversacionLeidaAction(telefono);
+
   const primerMensaje = mensajes?.[0];
   const alumno = primerMensaje?.alumnos as unknown as { nombre: string; apellido: string } | null;
   const nombre = alumno ? `${alumno.nombre} ${alumno.apellido}` : telefono;
 
   return (
-    <div className="space-y-4 flex flex-col h-[calc(100vh-8rem)]">
-      <div className="flex items-center gap-3">
-        <Link href="/dashboard/whatsapp" style={{ color: T.textDim }}>
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
-        <div>
-          <h1 className="text-xl font-bold" style={{ fontFamily: "var(--font-fredoka)", color: T.text }}>{nombre}</h1>
-          <p className="text-xs" style={{ color: T.textDim }}>{telefono}</p>
-        </div>
+    <div className="space-y-3 flex flex-col h-full">
+      <div>
+        <h1 className="text-xl font-bold" style={{ fontFamily: "var(--font-fredoka)", color: T.text }}>{nombre}</h1>
+        <p className="text-xs" style={{ color: T.textDim }}>{telefono}</p>
       </div>
 
       <WhatsappThreadClient telefono={telefono} mensajesIniciales={mensajes ?? []} />

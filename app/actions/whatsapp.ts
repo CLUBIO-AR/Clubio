@@ -59,3 +59,22 @@ export async function enviarMensajeWhatsappAction(
   revalidatePath(`/dashboard/whatsapp/${encodeURIComponent(telefono)}`);
   return { ok: true, data: { wa_message_id: waMessageId } };
 }
+
+// Marca como leídos todos los mensajes entrantes de una conversación — se llama al
+// abrir el hilo desde el inbox.
+export async function marcarConversacionLeidaAction(telefono: string): Promise<ActionResult> {
+  const ctx = await getGymContext();
+  if (!ctx) return { ok: false, error: "Unauthorized" };
+
+  const admin = createAdminClient();
+  await admin
+    .from("mensajes_whatsapp")
+    .update({ leido: true })
+    .eq("gym_id", ctx.gymId)
+    .eq("telefono", telefono)
+    .eq("direccion", "entrante")
+    .eq("leido", false);
+
+  revalidatePath("/dashboard/whatsapp");
+  return { ok: true, data: undefined };
+}

@@ -82,6 +82,7 @@ export async function POST(request: Request) {
           cuerpo,
           wa_message_id: message.id,
           estado: "recibido",
+          leido: false,
         });
       }
     }

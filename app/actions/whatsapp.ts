@@ -61,7 +61,9 @@ export async function enviarMensajeWhatsappAction(
 }
 
 // Marca como leídos todos los mensajes entrantes de una conversación — se llama al
-// abrir el hilo desde el inbox.
+// abrir el hilo desde el inbox (durante el render de la página, por eso NO usa
+// revalidatePath acá: Next no permite revalidar dentro de un render. El layout ya
+// lee el estado fresco en cada navegación, así que no hace falta).
 export async function marcarConversacionLeidaAction(telefono: string): Promise<ActionResult> {
   const ctx = await getGymContext();
   if (!ctx) return { ok: false, error: "Unauthorized" };
@@ -75,6 +77,5 @@ export async function marcarConversacionLeidaAction(telefono: string): Promise<A
     .eq("direccion", "entrante")
     .eq("leido", false);
 
-  revalidatePath("/dashboard/whatsapp");
   return { ok: true, data: undefined };
 }

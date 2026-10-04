@@ -4,18 +4,10 @@ import { requireGymContext } from "@/lib/supabase/auth";
 import { getAlumnoById } from "@/lib/alumnos";
 import { AlumnoForm } from "@/components/alumnos/alumno-form";
 import { AlumnoActividades } from "@/components/alumnos/alumno-actividades";
+import { AlumnoCuotasList } from "@/components/alumnos/alumno-cuotas-list";
 import { ChevronLeft, Calendar, Phone, Mail, FileText } from "lucide-react";
 import Link from "next/link";
 import { T } from "@/lib/theme";
-
-const ESTADO_STYLES: Record<string, { bg: string; color: string }> = {
-  pendiente:    { bg: `${T.warning}15`, color: T.warning },
-  vencida:      { bg: `${T.danger}15`,  color: T.danger  },
-  pagada:       { bg: T.accentBg,       color: T.accent  },
-  condonada:    { bg: `${T.textDim}15`, color: T.textDim },
-  pagada_parcial: { bg: `${T.blue}15`, color: T.blue     },
-};
-const MESES = ["", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
 export default async function AlumnoDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -80,35 +72,7 @@ export default async function AlumnoDetailPage({ params }: { params: Promise<{ i
 
       {/* Cuotas */}
       {cuotasRes.data && cuotasRes.data.length > 0 && (
-        <div className="rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>
-          <div className="px-5 py-4 border-b" style={{ borderColor: T.borderSub }}>
-            <h2 className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: T.accent, fontFamily: "var(--font-fredoka)" }}>— Últimas cuotas</h2>
-          </div>
-          <div>
-            {cuotasRes.data.map((c) => {
-              const s = ESTADO_STYLES[c.estado] ?? ESTADO_STYLES.pendiente;
-              return (
-                <div key={c.id} className="px-5 py-3 flex items-center justify-between border-b last:border-b-0" style={{ borderColor: T.borderSub }}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-lg flex flex-col items-center justify-center shrink-0" style={{ background: T.bg, border: `1px solid ${T.border}` }}>
-                      <span className="text-xs font-bold" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>{MESES[c.mes]}</span>
-                      <span className="text-xs" style={{ color: T.textDim }}>{c.anio}</span>
-                    </div>
-                    <p className="font-bold font-mono" style={{ color: T.text }}>${c.monto_total?.toLocaleString("es-AR")}</p>
-                  </div>
-                  <span className="px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider" style={{ fontFamily: "var(--font-fredoka)", background: s.bg, color: s.color, border: `1px solid ${s.color}30` }}>
-                    {c.estado.replace("_", " ")}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-          <div className="px-5 py-3 border-t" style={{ borderColor: T.borderSub }}>
-            <Link href={`/dashboard/alumnos/${id}/cuotas`} className="text-xs font-bold uppercase tracking-wider transition-opacity hover:opacity-70" style={{ color: T.accent, fontFamily: "var(--font-fredoka)" }}>
-              Ver todas →
-            </Link>
-          </div>
-        </div>
+        <AlumnoCuotasList cuotas={cuotasRes.data} alumnoId={id} telefono={alumno.telefono} />
       )}
 
       {/* Actividades */}

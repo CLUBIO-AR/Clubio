@@ -18,15 +18,23 @@ type Mensaje = {
 export function WhatsappThreadClient({
   telefono,
   mensajesIniciales,
+  ventanaAbierta,
 }: {
   telefono: string;
   mensajesIniciales: Mensaje[];
+  // Calculada en el server component (page.tsx) para no llamar Date.now() en el
+  // cliente durante el render — Meta solo permite texto libre dentro de las 24hs
+  // desde el último mensaje del alumno; si nunca escribió o pasaron más de 24hs,
+  // hay que iniciar con una plantilla aprobada (ver "Reenviar aviso" en Cuotas).
+  ventanaAbierta: boolean;
 }) {
   const [mensajes, setMensajes] = useState(mensajesIniciales);
   const [texto, setTexto] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const ultimoEntrante = [...mensajes].reverse().find((m) => m.direccion === "entrante");
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -87,28 +95,39 @@ export function WhatsappThreadClient({
 
       <div className="p-4" style={{ borderTop: `1px solid ${T.border}` }}>
         {error && <p className="text-xs mb-2" style={{ color: T.danger }}>{error}</p>}
-        <div className="flex items-end gap-2">
-          <Textarea
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleEnviar();
-              }
-            }}
-            placeholder="Escribí un mensaje..."
-            rows={1}
-            className="resize-none"
-            disabled={isPending}
-          />
-          <Button onClick={handleEnviar} disabled={isPending || !texto.trim()} size="icon">
-            <Send className="w-4 h-4" />
-          </Button>
-        </div>
-        <p className="text-[11px] mt-1.5" style={{ color: T.textDim }}>
-          Solo podés responder dentro de las 24hs desde el último mensaje del alumno.
-        </p>
+        {!ventanaAbierta ? (
+          <p className="text-xs" style={{ color: T.textDim }}>
+            {ultimoEntrante
+              ? "Pasaron más de 24hs desde el último mensaje del alumno — no se puede mandar texto libre."
+              : "Este alumno todavía no te escribió — no se puede iniciar con texto libre."}
+            {" "}Para contactarlo igual, usá &ldquo;Reenviar aviso&rdquo; desde una de sus cuotas.
+          </p>
+        ) : (
+          <>
+            <div className="flex items-end gap-2">
+              <Textarea
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleEnviar();
+                  }
+                }}
+                placeholder="Escribí un mensaje..."
+                rows={1}
+                className="resize-none"
+                disabled={isPending}
+              />
+              <Button onClick={handleEnviar} disabled={isPending || !texto.trim()} size="icon">
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+            <p className="text-[11px] mt-1.5" style={{ color: T.textDim }}>
+              Solo podés responder dentro de las 24hs desde el último mensaje del alumno.
+            </p>
+          </>
+        )}
       </div>
     </div>
   );

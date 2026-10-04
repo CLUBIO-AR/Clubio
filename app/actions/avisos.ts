@@ -13,7 +13,10 @@ type ActionResult<T = undefined> =
 // Reenvío manual del aviso de vencimiento de una cuota puntual (email + WhatsApp según
 // lo que tenga activo el gym) — útil para pruebas o cuando un alumno pide que se lo
 // reenvíen. No depende de las ventanas de fecha del cron (enviar-avisos-gym).
-export async function reenviarAvisoAction(cuotaId: string): Promise<ActionResult<{ canales: string[] }>> {
+export async function reenviarAvisoAction(
+  cuotaId: string,
+  opciones?: { soloWhatsapp?: boolean }
+): Promise<ActionResult<{ canales: string[] }>> {
   const ctx = await getGymContext();
   if (!ctx) return { ok: false, error: "Unauthorized" };
 
@@ -53,7 +56,7 @@ export async function reenviarAvisoAction(cuotaId: string): Promise<ActionResult
     .sign(secret);
 
   const notifConfig: GymNotificationConfig = {
-    email_activo:              gymConfig.email_activo ?? true,
+    email_activo:              opciones?.soloWhatsapp ? false : (gymConfig.email_activo ?? true),
     email_remitente_nombre:    gymConfig.email_remitente_nombre,
     email_remitente_address:   gymConfig.email_remitente_address,
     email_templates:           (gymConfig.email_templates as EmailTemplates | null) ?? null,
@@ -126,5 +129,6 @@ export async function enviarAvisoCuotaPorTelefonoAction(telefono: string): Promi
 
   if (!cuota) return { ok: false, error: "Este alumno no tiene cuotas pendientes" };
 
-  return reenviarAvisoAction(cuota.id);
+  // Disparado desde el chat de WhatsApp — no tiene sentido mandar también el email acá.
+  return reenviarAvisoAction(cuota.id, { soloWhatsapp: true });
 }

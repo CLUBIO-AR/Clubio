@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   // Config del gym
   const { data: gymConfig } = await admin
     .from("gym_config")
-    .select("email_activo, whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, email_color_acento, email_templates, email_remitente_nombre, email_remitente_address, dias_aviso_fijos, dia_vencimiento_mensual, recargo_1_porcentaje, email_modo, transferencia_alias, transferencia_titular, transferencia_banco")
+    .select("email_activo, whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, whatsapp_template_aviso, whatsapp_template_confirmacion, whatsapp_template_transferencia, email_color_acento, email_templates, email_remitente_nombre, email_remitente_address, dias_aviso_fijos, dia_vencimiento_mensual, recargo_1_porcentaje, email_modo, transferencia_alias, transferencia_titular, transferencia_banco")
     .eq("gym_id", gym_id)
     .single();
 
@@ -55,7 +55,8 @@ export async function POST(request: Request) {
     .from("cuotas")
     .select(`
       id, alumno_id, mes, anio, monto_total, estado, fecha_vencimiento, avisos_enviados,
-      alumnos!inner(nombre, email, telefono, activo)
+      alumnos!inner(nombre, email, telefono, activo),
+      actividades(nombre)
     `)
     .eq("gym_id", gym_id)
     .eq("alumnos.activo", true)
@@ -78,6 +79,11 @@ export async function POST(request: Request) {
     whatsapp_activo:           gymConfig.whatsapp_activo ?? false,
     whatsapp_phone_number_id:  gymConfig.whatsapp_phone_number_id,
     whatsapp_access_token:     gymConfig.whatsapp_access_token,
+    whatsapp_template_aviso:         gymConfig.whatsapp_template_aviso,
+    whatsapp_template_confirmacion:  gymConfig.whatsapp_template_confirmacion,
+    whatsapp_template_transferencia: gymConfig.whatsapp_template_transferencia,
+    modo_pago:            (gymConfig.email_modo as "link" | "transferencia" | null) ?? "link",
+    transferencia_alias:  gymConfig.transferencia_alias,
   };
 
   const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
@@ -100,6 +106,7 @@ export async function POST(request: Request) {
     if (cuotasAlumno.length === 1) {
       // Flujo individual
       const cuota = cuotasAlumno[0];
+      const actividadNombre = (cuota.actividades as { nombre: string | null } | null)?.nombre;
       const tipo = cuota.estado === "vencida" ? "recordatorio_vencido" : "aviso_vencimiento";
 
       const token = await new SignJWT({
@@ -121,7 +128,7 @@ export async function POST(request: Request) {
       const resultados = await sendNotification(notifConfig, {
         type: tipo,
         alumno: { nombre: alumno.nombre, email: alumno.email, telefono: alumno.telefono },
-        cuota:  { mes: cuota.mes, anio: cuota.anio, monto_total: cuota.monto_total ?? 0, pago_url: pagoUrl },
+        cuota:  { mes: cuota.mes, anio: cuota.anio, monto_total: cuota.monto_total ?? 0, pago_url: pagoUrl, pago_token: token, fecha_vencimiento: cuota.fecha_vencimiento, actividad_nombre: actividadNombre },
         gym:    { nombre: gym.nombre, logo_url: gym.logo_url, color_acento: gymConfig.email_color_acento },
       });
 
@@ -243,6 +250,9 @@ async function enviarAvisosFechaFija(params: {
     whatsapp_activo: boolean | null;
     whatsapp_phone_number_id: string | null;
     whatsapp_access_token: string | null;
+    whatsapp_template_aviso: string | null;
+    whatsapp_template_confirmacion: string | null;
+    whatsapp_template_transferencia: string | null;
     email_color_acento: string | null;
     email_templates: unknown;
     email_remitente_nombre: string | null;
@@ -275,7 +285,7 @@ async function enviarAvisosFechaFija(params: {
   const { data: cuotas } = await admin
     .from("cuotas")
     .select(`
-      id, alumno_id, mes, anio, monto_total, monto_base, avisos_enviados,
+      id, alumno_id, mes, anio, monto_total, monto_base, avisos_enviados, fecha_vencimiento,
       alumnos!inner(nombre, email, telefono, activo),
       actividades(recargo_1_porcentaje, nombre)
     `)
@@ -297,6 +307,13 @@ async function enviarAvisosFechaFija(params: {
     whatsapp_activo:           gymConfig.whatsapp_activo ?? false,
     whatsapp_phone_number_id:  gymConfig.whatsapp_phone_number_id,
     whatsapp_access_token:     gymConfig.whatsapp_access_token,
+    whatsapp_template_aviso:         gymConfig.whatsapp_template_aviso,
+    whatsapp_template_confirmacion:  gymConfig.whatsapp_template_confirmacion,
+    whatsapp_template_transferencia: gymConfig.whatsapp_template_transferencia,
+    modo_pago:            (gymConfig.email_modo as "link" | "transferencia" | null) ?? "link",
+    transferencia_alias:  gymConfig.transferencia_alias,
+    transferencia_titular: gymConfig.transferencia_titular,
+    transferencia_banco:  gymConfig.transferencia_banco,
   };
 
   const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
@@ -347,6 +364,31 @@ async function enviarAvisosFechaFija(params: {
         provider_id: providerId ?? null,
       });
 
+      // WhatsApp con la misma info (plantilla sin botón de pago — se pide transferir al alias).
+      if (alumno.telefono) {
+        const wsResultados = await sendNotification(
+          { ...notifConfig, email_activo: false },
+          {
+            type: "aviso_vencimiento",
+            alumno: { nombre: alumno.nombre, telefono: alumno.telefono },
+            cuota: {
+              mes: cuota.mes, anio: cuota.anio, monto_total: cuota.monto_total ?? 0,
+              pago_url: "", fecha_vencimiento: cuota.fecha_vencimiento,
+              actividad_nombre: actividadInfo?.nombre, monto_incrementado: montoIncrementado,
+            },
+            gym: { nombre: gym.nombre, logo_url: gym.logo_url, color_acento: gymConfig.email_color_acento },
+          }
+        );
+        for (const r of wsResultados) {
+          await admin.from("notificaciones_log").insert({
+            gym_id, alumno_id: cuota.alumno_id, cuota_id: cuota.id,
+            tipo: "aviso_vencimiento", enviado_a: alumno.telefono,
+            estado: r.ok ? "enviado" : "error",
+            provider_id: r.provider_id ?? null,
+          });
+        }
+      }
+
       if (ok) {
         await admin.from("cuotas").update({ avisos_enviados: (cuota.avisos_enviados ?? 0) + 1 }).eq("id", cuota.id);
         enviados++;
@@ -374,7 +416,7 @@ async function enviarAvisosFechaFija(params: {
     const resultados = await sendNotification(notifConfig, {
       type: tipo,
       alumno: { nombre: alumno.nombre, email: alumno.email, telefono: alumno.telefono },
-      cuota: { mes: cuota.mes, anio: cuota.anio, monto_total: cuota.monto_total ?? 0, pago_url: pagoUrl, monto_incrementado: montoIncrementado },
+      cuota: { mes: cuota.mes, anio: cuota.anio, monto_total: cuota.monto_total ?? 0, pago_url: pagoUrl, pago_token: token, fecha_vencimiento: cuota.fecha_vencimiento, actividad_nombre: actividadInfo?.nombre, monto_incrementado: montoIncrementado },
       gym: { nombre: gym.nombre, logo_url: gym.logo_url, color_acento: gymConfig.email_color_acento },
     });
 

@@ -5,6 +5,10 @@
 // Solo se pueden mandar mensajes de tipo "template" fuera de la ventana de 24hs de
 // conversación — por eso las plantillas (whatsapp_template_aviso / _confirmacion) tienen
 // que estar previamente aprobadas por Meta en WhatsApp Manager.
+//
+// La plantilla "aviso_cuota" tiene 5 variables de texto en el body
+// ({{1}} nombre, {{2}} actividad, {{3}} mes/año, {{4}} monto, {{5}} fecha límite) +
+// un botón "Pagar ahora" con URL dinámica (base fija configurada en la plantilla + {{1}} = token).
 import type { NotificationPayload, GymNotificationConfig } from "../index";
 
 const GRAPH_VERSION = "v21.0";
@@ -20,9 +24,22 @@ export async function sendWhatsApp(
     throw new Error("WhatsApp no configurado para este gym");
   }
 
-  const { templateName, bodyParams } = buildTemplate(config, payload);
+  const { templateName, bodyParams, buttonParam } = buildTemplate(config, payload);
   if (!templateName) {
     throw new Error(`No hay plantilla de WhatsApp configurada para el tipo "${payload.type}"`);
+  }
+
+  const components: Record<string, unknown>[] = [
+    { type: "body", parameters: bodyParams.map((text) => ({ type: "text", text })) },
+  ];
+
+  if (buttonParam) {
+    components.push({
+      type: "button",
+      sub_type: "url",
+      index: "0",
+      parameters: [{ type: "text", text: buttonParam }],
+    });
   }
 
   const url = `https://graph.facebook.com/${GRAPH_VERSION}/${config.whatsapp_phone_number_id}/messages`;
@@ -40,12 +57,7 @@ export async function sendWhatsApp(
       template: {
         name: templateName,
         language: { code: DEFAULT_LANGUAGE },
-        components: [
-          {
-            type: "body",
-            parameters: bodyParams.map((text) => ({ type: "text", text })),
-          },
-        ],
+        components,
       },
     }),
   });
@@ -64,7 +76,7 @@ export async function sendWhatsApp(
 function buildTemplate(
   config: GymNotificationConfig,
   payload: NotificationPayload
-): { templateName?: string | null; bodyParams: string[] } {
+): { templateName?: string | null; bodyParams: string[]; buttonParam?: string } {
   const { type, alumno, cuota, gym } = payload;
 
   if ((type === "aviso_vencimiento" || type === "recordatorio_vencido" || type === "aviso_vence_hoy_aumento") && cuota) {
@@ -72,14 +84,31 @@ function buildTemplate(
       ? (cuota.monto_incrementado ?? cuota.monto_total)
       : cuota.monto_total;
 
+    const bodyBase = [
+      alumno.nombre,
+      cuota.actividad_nombre ?? "Cuota",
+      `${mesNombre(cuota.mes)}/${cuota.anio}`,
+      monto.toLocaleString("es-AR"),
+      formatFecha(cuota.fecha_vencimiento),
+    ];
+
+    // Modo transferencia: no hay link de pago, se pide transferir al alias del gym —
+    // plantilla sin botón dinámico (ver gym_config.email_modo).
+    if (config.modo_pago === "transferencia" && config.transferencia_alias) {
+      return {
+        templateName: config.whatsapp_template_transferencia,
+        bodyParams: [...bodyBase, config.transferencia_alias],
+      };
+    }
+
+    if (!cuota.pago_token) {
+      throw new Error("Falta pago_token en el payload — requerido por el botón de la plantilla de WhatsApp");
+    }
+
     return {
       templateName: config.whatsapp_template_aviso,
-      bodyParams: [
-        alumno.nombre,
-        gym.nombre,
-        `${mesNombre(cuota.mes)} ${cuota.anio}`,
-        monto.toLocaleString("es-AR"),
-      ],
+      bodyParams: bodyBase,
+      buttonParam: cuota.pago_token,
     };
   }
 
@@ -100,6 +129,12 @@ function normalizePhone(telefono?: string | null): string | null {
   if (!telefono) return null;
   const digits = telefono.replace(/\D/g, "");
   return digits.length >= 10 ? digits : null;
+}
+
+function formatFecha(fechaIso?: string): string {
+  if (!fechaIso) return "-";
+  const [anio, mes, dia] = fechaIso.split("-");
+  return `${dia}/${mes}/${anio}`;
 }
 
 const MESES = ["", "enero", "febrero", "marzo", "abril", "mayo", "junio",

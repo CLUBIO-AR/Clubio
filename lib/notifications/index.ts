@@ -16,6 +16,15 @@ export type NotificationPayload = {
     anio: number;
     monto_total: number;
     pago_url: string;
+    // Token que identifica el link de pago (la parte final de pago_url, sin el dominio).
+    // Lo necesita el canal WhatsApp para el botón dinámico de la plantilla — si falta,
+    // sendWhatsApp tira error (no hay forma de armar el botón sin esto).
+    pago_token?: string;
+    // Fecha de vencimiento en formato ISO (YYYY-MM-DD) — usada por la plantilla de WhatsApp.
+    fecha_vencimiento?: string;
+    // Nombre de la actividad (ej: "Musculación") — usado por la plantilla de WhatsApp.
+    // Si falta, se muestra "Cuota" genérico.
+    actividad_nombre?: string | null;
     // Monto que va a regir desde mañana (con el recargo por mora ya aplicado).
     // Solo se usa en el tipo "aviso_vence_hoy_aumento".
     monto_incrementado?: number;
@@ -44,6 +53,14 @@ export type GymNotificationConfig = {
   whatsapp_access_token?: string | null;
   whatsapp_template_aviso?: string | null;
   whatsapp_template_confirmacion?: string | null;
+  // Modo transferencia (gym sin MP configurado, pide alias en vez de link de pago):
+  // ver gym_config.email_modo. whatsapp_template_transferencia es la plantilla sin
+  // botón dinámico de pago, usada en reemplazo de whatsapp_template_aviso en ese caso.
+  modo_pago?: "link" | "transferencia" | null;
+  transferencia_alias?: string | null;
+  transferencia_titular?: string | null;
+  transferencia_banco?: string | null;
+  whatsapp_template_transferencia?: string | null;
 };
 
 export async function sendNotification(

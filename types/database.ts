@@ -235,6 +235,9 @@ export type Database = {
           whatsapp_activo: boolean;
           whatsapp_phone_number_id: string | null;
           whatsapp_access_token: string | null;
+          whatsapp_template_aviso: string | null;
+          whatsapp_template_confirmacion: string | null;
+          whatsapp_template_transferencia: string | null;
           generar_cuota_al_alta: boolean;
           cuota_alta_proporcional: boolean;
           dias_minimos_para_cuota_alta: number;
@@ -278,6 +281,9 @@ export type Database = {
           whatsapp_activo?: boolean;
           whatsapp_phone_number_id?: string | null;
           whatsapp_access_token?: string | null;
+          whatsapp_template_aviso?: string | null;
+          whatsapp_template_confirmacion?: string | null;
+          whatsapp_template_transferencia?: string | null;
           generar_cuota_al_alta?: boolean;
           cuota_alta_proporcional?: boolean;
           dias_minimos_para_cuota_alta?: number;
@@ -317,6 +323,9 @@ export type Database = {
           whatsapp_activo?: boolean;
           whatsapp_phone_number_id?: string | null;
           whatsapp_access_token?: string | null;
+          whatsapp_template_aviso?: string | null;
+          whatsapp_template_confirmacion?: string | null;
+          whatsapp_template_transferencia?: string | null;
           generar_cuota_al_alta?: boolean;
           cuota_alta_proporcional?: boolean;
           dias_minimos_para_cuota_alta?: number;

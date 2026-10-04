@@ -4,7 +4,7 @@ import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { LayoutDashboard, Users, CreditCard, DollarSign, Settings, LogOut, Receipt, Menu, X, Dumbbell } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, DollarSign, Settings, LogOut, Receipt, Menu, X, Dumbbell, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { T } from "@/lib/theme";
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/alumnos",       label: "Alumnos",        icon: Users },
   { href: "/dashboard/cuotas",        label: "Cuotas",         icon: CreditCard },
   { href: "/dashboard/pagos",         label: "Pagos",          icon: DollarSign },
+  { href: "/dashboard/whatsapp",      label: "WhatsApp",       icon: MessageCircle },
   { href: "/dashboard/actividades",   label: "Actividades",    icon: Dumbbell },
   { href: "/dashboard/suscripcion",   label: "Suscripción",    icon: Receipt },
   { href: "/dashboard/configuracion", label: "Configuración",  icon: Settings },

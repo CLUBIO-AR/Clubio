@@ -805,6 +805,50 @@ export type Database = {
           }
         ];
       };
+      mensajes_whatsapp: {
+        Row: {
+          id: string;
+          gym_id: string;
+          alumno_id: string | null;
+          telefono: string;
+          direccion: "entrante" | "saliente";
+          cuerpo: string;
+          wa_message_id: string | null;
+          estado: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          alumno_id?: string | null;
+          telefono: string;
+          direccion: "entrante" | "saliente";
+          cuerpo: string;
+          wa_message_id?: string | null;
+          estado?: string;
+        };
+        Update: {
+          alumno_id?: string | null;
+          estado?: string;
+          wa_message_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "mensajes_whatsapp_gym_id_fkey";
+            columns: ["gym_id"];
+            isOneToOne: false;
+            referencedRelation: "gyms";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "mensajes_whatsapp_alumno_id_fkey";
+            columns: ["alumno_id"];
+            isOneToOne: false;
+            referencedRelation: "alumnos";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       cron_logs: {
         Row: {
           id: string;

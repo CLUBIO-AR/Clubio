@@ -29,6 +29,13 @@ export default async function WhatsappThreadPage({
   const alumno = primerMensaje?.alumnos as unknown as { nombre: string; apellido: string } | null;
   const nombre = alumno ? `${alumno.nombre} ${alumno.apellido}` : telefono;
 
+  // Meta solo permite texto libre dentro de las 24hs desde el último mensaje del
+  // alumno. Si nunca escribió o pasaron más de 24hs, el input queda deshabilitado
+  // (ver WhatsappThreadClient) — hay que iniciar con una plantilla aprobada.
+  const ultimoEntrante = [...(mensajes ?? [])].reverse().find((m) => m.direccion === "entrante");
+  const ventanaAbierta = !!ultimoEntrante
+    && new Date().getTime() - new Date(ultimoEntrante.created_at).getTime() < 24 * 60 * 60 * 1000;
+
   return (
     <div className="space-y-3 flex flex-col h-full">
       <div>
@@ -36,7 +43,7 @@ export default async function WhatsappThreadPage({
         <p className="text-xs" style={{ color: T.textDim }}>{telefono}</p>
       </div>
 
-      <WhatsappThreadClient telefono={telefono} mensajesIniciales={mensajes ?? []} />
+      <WhatsappThreadClient telefono={telefono} mensajesIniciales={mensajes ?? []} ventanaAbierta={ventanaAbierta} />
     </div>
   );
 }

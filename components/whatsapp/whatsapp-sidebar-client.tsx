@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search } from "lucide-react";
+import { Search, MessageCirclePlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { T } from "@/lib/theme";
 
@@ -16,9 +16,22 @@ export type Conversacion = {
   noLeidos: number;
 };
 
+// Alumno con teléfono cargado que todavía no tiene ninguna conversación — aparece
+// en los resultados de búsqueda para poder arrancar el chat.
+export type Contacto = {
+  telefono: string;
+  nombre: string;
+};
+
 type Filtro = "todos" | "no_leidos";
 
-export function WhatsappSidebarClient({ conversaciones }: { conversaciones: Conversacion[] }) {
+export function WhatsappSidebarClient({
+  conversaciones,
+  contactos,
+}: {
+  conversaciones: Conversacion[];
+  contactos: Contacto[];
+}) {
   const pathname = usePathname();
   const [busqueda, setBusqueda] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("todos");
@@ -35,6 +48,14 @@ export function WhatsappSidebarClient({ conversaciones }: { conversaciones: Conv
       return true;
     });
   }, [conversaciones, busqueda, filtro]);
+
+  // Solo tiene sentido buscar contactos nuevos con texto escrito — si no, la lista
+  // de alumnos sin conversación podría ser enorme y taparía los chats reales.
+  const contactosFiltrados = useMemo(() => {
+    const texto = busqueda.trim().toLowerCase();
+    if (!texto || filtro === "no_leidos") return [];
+    return contactos.filter((c) => c.nombre.toLowerCase().includes(texto));
+  }, [contactos, busqueda, filtro]);
 
   const totalNoLeidos = conversaciones.reduce((acc, c) => acc + (c.noLeidos > 0 ? 1 : 0), 0);
 
@@ -78,7 +99,7 @@ export function WhatsappSidebarClient({ conversaciones }: { conversaciones: Conv
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {filtradas.length === 0 && (
+        {filtradas.length === 0 && contactosFiltrados.length === 0 && (
           <p className="text-sm text-center mt-8 px-4" style={{ color: T.textDim }}>
             {busqueda || filtro === "no_leidos" ? "Sin resultados" : "Todavía no hay conversaciones"}
           </p>
@@ -124,6 +145,37 @@ export function WhatsappSidebarClient({ conversaciones }: { conversaciones: Conv
             </Link>
           );
         })}
+
+        {contactosFiltrados.length > 0 && (
+          <>
+            <p
+              className="px-4 pt-3 pb-1.5 text-[10px] font-bold uppercase tracking-widest"
+              style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}
+            >
+              Iniciar conversación
+            </p>
+            {contactosFiltrados.map((c) => (
+              <Link
+                key={c.telefono}
+                href={`/dashboard/whatsapp/${encodeURIComponent(c.telefono)}`}
+                className="flex items-center gap-3 px-4 py-3 transition-colors"
+                style={{ borderBottom: `1px solid ${T.border}` }}
+              >
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
+                  style={{ background: T.inputBg, color: T.textDim }}
+                >
+                  {c.nombre.slice(0, 2).toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold truncate text-sm" style={{ color: T.text }}>{c.nombre}</p>
+                  <p className="text-xs truncate" style={{ color: T.textDim }}>{c.telefono}</p>
+                </div>
+                <MessageCirclePlus className="w-4 h-4 shrink-0" style={{ color: T.accent }} />
+              </Link>
+            ))}
+          </>
+        )}
       </div>
     </aside>
   );

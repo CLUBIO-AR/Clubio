@@ -42,9 +42,20 @@ export function WhatsappThreadClient({
   const [texto, setTexto] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [sugerenciaIndex, setSugerenciaIndex] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const ultimoEntrante = [...mensajes].reverse().find((m) => m.direccion === "entrante");
+
+  // Sugerencias de comandos — solo mientras se está escribiendo el primer "token"
+  // (antes del primer espacio), para no interferir con texto libre normal.
+  const sugerencias = texto.startsWith("/") && !texto.includes(" ")
+    ? Object.keys(COMANDOS).filter((c) => c.startsWith(texto.toLowerCase()))
+    : [];
+
+  function elegirSugerencia(comando: string) {
+    setTexto(comando);
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -146,24 +157,69 @@ export function WhatsappThreadClient({
             pero podés usar <code className="px-1 rounded" style={{ background: T.inputBg }}>/aviso_cuota</code> para mandarle la plantilla.
           </p>
         )}
-        <div className="flex items-end gap-2">
-          <Textarea
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleEnviar();
-              }
-            }}
-            placeholder={ventanaAbierta ? "Escribí un mensaje..." : "/aviso_cuota"}
-            rows={1}
-            className="resize-none"
-            disabled={isPending}
-          />
-          <Button onClick={handleEnviar} disabled={isPending || !texto.trim()} size="icon">
-            <Send className="w-4 h-4" />
-          </Button>
+        <div className="relative">
+          {sugerencias.length > 0 && (
+            <div
+              className="absolute bottom-full left-0 right-0 mb-1.5 rounded-lg overflow-hidden"
+              style={{ background: T.card, border: `1px solid ${T.border}`, boxShadow: "0 4px 16px rgba(0,0,0,0.12)" }}
+            >
+              {sugerencias.map((comando, i) => (
+                <button
+                  key={comando}
+                  type="button"
+                  onClick={() => elegirSugerencia(comando)}
+                  onMouseEnter={() => setSugerenciaIndex(i)}
+                  className="w-full flex items-center justify-between px-3 py-2 text-left transition-colors"
+                  style={{ background: i === sugerenciaIndex ? T.accentBg : "transparent" }}
+                >
+                  <span className="text-sm font-mono" style={{ color: i === sugerenciaIndex ? T.accent : T.text }}>{comando}</span>
+                  <span className="text-xs" style={{ color: T.textDim }}>{COMANDOS[comando].label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-end gap-2">
+            <Textarea
+              value={texto}
+              onChange={(e) => { setTexto(e.target.value); setSugerenciaIndex(0); }}
+              onKeyDown={(e) => {
+                if (sugerencias.length > 0) {
+                  if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    setSugerenciaIndex((i) => (i + 1) % sugerencias.length);
+                    return;
+                  }
+                  if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    setSugerenciaIndex((i) => (i - 1 + sugerencias.length) % sugerencias.length);
+                    return;
+                  }
+                  if (e.key === "Tab" || e.key === "Enter") {
+                    e.preventDefault();
+                    elegirSugerencia(sugerencias[sugerenciaIndex]);
+                    return;
+                  }
+                  if (e.key === "Escape") {
+                    setTexto("");
+                    return;
+                  }
+                }
+
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleEnviar();
+                }
+              }}
+              placeholder={ventanaAbierta ? "Escribí un mensaje..." : "/aviso_cuota"}
+              rows={1}
+              className="resize-none"
+              disabled={isPending}
+            />
+            <Button onClick={handleEnviar} disabled={isPending || !texto.trim()} size="icon">
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
         {ventanaAbierta && (
           <p className="text-[11px] mt-1.5" style={{ color: T.textDim }}>

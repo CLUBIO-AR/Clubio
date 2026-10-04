@@ -815,6 +815,7 @@ export type Database = {
           cuerpo: string;
           wa_message_id: string | null;
           estado: string;
+          leido: boolean;
           created_at: string;
         };
         Insert: {
@@ -826,11 +827,13 @@ export type Database = {
           cuerpo: string;
           wa_message_id?: string | null;
           estado?: string;
+          leido?: boolean;
         };
         Update: {
           alumno_id?: string | null;
           estado?: string;
           wa_message_id?: string | null;
+          leido?: boolean;
         };
         Relationships: [
           {

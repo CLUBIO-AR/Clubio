@@ -94,3 +94,37 @@ export async function reenviarAvisoAction(cuotaId: string): Promise<ActionResult
   if (exitosos.length === 0) return { ok: false, error: "No se pudo enviar por ningún canal" };
   return { ok: true, data: { canales: exitosos.map((r) => r.canal) } };
 }
+
+// Atajo para el inbox de WhatsApp: escribir "/aviso_cuota" en el chat busca la cuota
+// pendiente/vencida más próxima a vencer de ese alumno y le reenvía la plantilla —
+// no depende de la ventana de 24hs porque es un mensaje de template, no texto libre.
+export async function enviarAvisoCuotaPorTelefonoAction(telefono: string): Promise<ActionResult<{ canales: string[] }>> {
+  const ctx = await getGymContext();
+  if (!ctx) return { ok: false, error: "Unauthorized" };
+
+  const admin = createAdminClient();
+  const ultimos10 = telefono.replace(/\D/g, "").slice(-10);
+
+  const { data: alumno } = await admin
+    .from("alumnos")
+    .select("id")
+    .eq("gym_id", ctx.gymId)
+    .ilike("telefono", `%${ultimos10}`)
+    .maybeSingle();
+
+  if (!alumno) return { ok: false, error: "No encontramos un alumno con este teléfono" };
+
+  const { data: cuota } = await admin
+    .from("cuotas")
+    .select("id")
+    .eq("gym_id", ctx.gymId)
+    .eq("alumno_id", alumno.id)
+    .in("estado", ["pendiente", "vencida"])
+    .order("fecha_vencimiento", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (!cuota) return { ok: false, error: "Este alumno no tiene cuotas pendientes" };
+
+  return reenviarAvisoAction(cuota.id);
+}

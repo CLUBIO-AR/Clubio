@@ -6,6 +6,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { T } from "@/lib/theme";
 import { enviarMensajeWhatsappAction } from "@/app/actions/whatsapp";
+import { enviarAvisoCuotaPorTelefonoAction } from "@/app/actions/avisos";
+
+// Atajos disponibles en el chat — no dependen de la ventana de 24hs porque mandan
+// una plantilla aprobada, no texto libre.
+const COMANDOS: Record<string, { label: string; run: (telefono: string) => Promise<{ ok: true; data: { canales: string[] } } | { ok: false; error: string }> }> = {
+  "/aviso_cuota": {
+    label: "Aviso de cuota",
+    run: enviarAvisoCuotaPorTelefonoAction,
+  },
+};
 
 type Mensaje = {
   id: string;
@@ -44,6 +54,39 @@ export function WhatsappThreadClient({
     const cuerpo = texto.trim();
     if (!cuerpo) return;
     setError(null);
+
+    const comando = COMANDOS[cuerpo.toLowerCase()];
+    if (comando) {
+      startTransition(async () => {
+        const res = await comando.run(telefono);
+        if (!res.ok) {
+          setError(res.error);
+          return;
+        }
+        setMensajes((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            cuerpo: `📋 Plantilla enviada: ${comando.label} (${res.data.canales.join(", ")})`,
+            direccion: "saliente",
+            estado: "enviado",
+            created_at: new Date().toISOString(),
+          },
+        ]);
+        setTexto("");
+      });
+      return;
+    }
+
+    if (cuerpo.startsWith("/")) {
+      setError(`Comando desconocido. Disponibles: ${Object.keys(COMANDOS).join(", ")}`);
+      return;
+    }
+
+    if (!ventanaAbierta) {
+      setError("Fuera de la ventana de 24hs no se puede mandar texto libre — usá /aviso_cuota.");
+      return;
+    }
 
     startTransition(async () => {
       const res = await enviarMensajeWhatsappAction(telefono, cuerpo);
@@ -95,38 +138,37 @@ export function WhatsappThreadClient({
 
       <div className="p-4" style={{ borderTop: `1px solid ${T.border}` }}>
         {error && <p className="text-xs mb-2" style={{ color: T.danger }}>{error}</p>}
-        {!ventanaAbierta ? (
-          <p className="text-xs" style={{ color: T.textDim }}>
+        {!ventanaAbierta && (
+          <p className="text-xs mb-2" style={{ color: T.textDim }}>
             {ultimoEntrante
-              ? "Pasaron más de 24hs desde el último mensaje del alumno — no se puede mandar texto libre."
-              : "Este alumno todavía no te escribió — no se puede iniciar con texto libre."}
-            {" "}Para contactarlo igual, usá &ldquo;Reenviar aviso&rdquo; desde una de sus cuotas.
+              ? "Pasaron más de 24hs desde el último mensaje del alumno — no se puede mandar texto libre, "
+              : "Este alumno todavía no te escribió — no se puede iniciar con texto libre, "}
+            pero podés usar <code className="px-1 rounded" style={{ background: T.inputBg }}>/aviso_cuota</code> para mandarle la plantilla.
           </p>
-        ) : (
-          <>
-            <div className="flex items-end gap-2">
-              <Textarea
-                value={texto}
-                onChange={(e) => setTexto(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleEnviar();
-                  }
-                }}
-                placeholder="Escribí un mensaje..."
-                rows={1}
-                className="resize-none"
-                disabled={isPending}
-              />
-              <Button onClick={handleEnviar} disabled={isPending || !texto.trim()} size="icon">
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
-            <p className="text-[11px] mt-1.5" style={{ color: T.textDim }}>
-              Solo podés responder dentro de las 24hs desde el último mensaje del alumno.
-            </p>
-          </>
+        )}
+        <div className="flex items-end gap-2">
+          <Textarea
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleEnviar();
+              }
+            }}
+            placeholder={ventanaAbierta ? "Escribí un mensaje..." : "/aviso_cuota"}
+            rows={1}
+            className="resize-none"
+            disabled={isPending}
+          />
+          <Button onClick={handleEnviar} disabled={isPending || !texto.trim()} size="icon">
+            <Send className="w-4 h-4" />
+          </Button>
+        </div>
+        {ventanaAbierta && (
+          <p className="text-[11px] mt-1.5" style={{ color: T.textDim }}>
+            Solo podés responder dentro de las 24hs desde el último mensaje del alumno.
+          </p>
         )}
       </div>
     </div>

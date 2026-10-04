@@ -10,8 +10,9 @@ import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { NuevaCuotaModal } from "@/components/cuotas/nueva-cuota-modal";
-import { Search, MoreHorizontal, Eye, CheckCircle, XCircle, ChevronLeft, ChevronRight, Loader2, Receipt, Plus } from "lucide-react";
+import { Search, MoreHorizontal, Eye, CheckCircle, XCircle, ChevronLeft, ChevronRight, Loader2, Receipt, Plus, Bell } from "lucide-react";
 import { T } from "@/lib/theme";
+import { reenviarAvisoAction } from "@/app/actions/avisos";
 
 const MESES_LARGO = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
@@ -61,6 +62,20 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
   const [isPending, startTransition] = useTransition();
   const [page, setPage] = useState(1);
   const [modalAlumno, setModalAlumno] = useState<{ id: string; nombre: string } | null>(null);
+  const [enviandoAviso, setEnviandoAviso] = useState<string | null>(null);
+
+  async function reenviarAviso(cuotaId: string) {
+    setEnviandoAviso(cuotaId);
+    try {
+      const result = await reenviarAvisoAction(cuotaId);
+      if (!result.ok) alert(result.error);
+      else alert(`Aviso enviado por: ${result.data.canales.join(", ")}`);
+    } catch {
+      alert("Error de red al reenviar el aviso");
+    } finally {
+      setEnviandoAviso(null);
+    }
+  }
 
   const totalPages = Math.max(1, Math.ceil(cuotas.length / PAGE_SIZE));
   const paginadas  = cuotas.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -263,6 +278,13 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
                           {c.alumno_id && c.alumnos && (
                             <DropdownMenuItem onClick={() => setModalAlumno({ id: c.alumno_id!, nombre: `${c.alumnos!.apellido}, ${c.alumnos!.nombre}` })}>
                               <Plus className="w-3.5 h-3.5" /> Nueva cuota especial
+                            </DropdownMenuItem>
+                          )}
+                          {c.estado !== "pagada" && c.estado !== "condonada" && (
+                            <DropdownMenuItem disabled={enviandoAviso === c.id} onClick={() => reenviarAviso(c.id)}>
+                              {enviandoAviso === c.id
+                                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                : <Bell className="w-3.5 h-3.5" />} Reenviar aviso (mail/WhatsApp)
                             </DropdownMenuItem>
                           )}
                           {c.estado !== "pagada" && c.estado !== "condonada" && (

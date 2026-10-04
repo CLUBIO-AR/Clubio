@@ -73,6 +73,43 @@ export async function sendWhatsApp(
   return messageId;
 }
 
+// Mensaje de texto libre — solo válido dentro de la ventana de 24hs desde el último
+// mensaje del alumno (fuera de esa ventana, Meta rechaza el envío). Se usa para el
+// inbox del dashboard (respuestas manuales), no para los avisos automáticos.
+export async function sendWhatsAppText(
+  config: Pick<GymNotificationConfig, "whatsapp_phone_number_id" | "whatsapp_access_token">,
+  params: { to: string; body: string }
+): Promise<string> {
+  const to = normalizePhone(params.to);
+  if (!to) throw new Error("Teléfono inválido o ausente");
+  if (!config.whatsapp_phone_number_id || !config.whatsapp_access_token) {
+    throw new Error("WhatsApp no configurado para este gym");
+  }
+
+  const url = `https://graph.facebook.com/${GRAPH_VERSION}/${config.whatsapp_phone_number_id}/messages`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${config.whatsapp_access_token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      to,
+      type: "text",
+      text: { body: params.body },
+    }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(`WhatsApp API error: ${data?.error?.message ?? res.statusText}`);
+
+  const messageId = data?.messages?.[0]?.id;
+  if (!messageId) throw new Error("WhatsApp API no devolvió message id");
+  return messageId;
+}
+
 function buildTemplate(
   config: GymNotificationConfig,
   payload: NotificationPayload

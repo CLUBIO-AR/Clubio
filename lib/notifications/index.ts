@@ -66,7 +66,7 @@ export type GymNotificationConfig = {
 export async function sendNotification(
   gymConfig: GymNotificationConfig,
   payload: NotificationPayload
-): Promise<{ canal: NotificationChannel; ok: boolean; provider_id?: string }[]> {
+): Promise<{ canal: NotificationChannel; ok: boolean; provider_id?: string; error?: string }[]> {
   const channels = getActiveChannels(gymConfig, payload);
 
   const results = await Promise.allSettled(
@@ -77,7 +77,26 @@ export async function sendNotification(
     canal: channels[i],
     ok: result.status === "fulfilled",
     provider_id: result.status === "fulfilled" ? result.value : undefined,
+    error: result.status === "rejected"
+      ? (result.reason instanceof Error ? result.reason.message : String(result.reason))
+      : undefined,
   }));
+}
+
+// Por qué un canal no se intentó siquiera (config incompleta) — para poder mostrar
+// un mensaje útil en vez de "no se pudo enviar" cuando ni se llegó a intentar.
+export function motivosCanalesInactivos(config: GymNotificationConfig, payload: NotificationPayload): string[] {
+  const motivos: string[] = [];
+
+  if (!config.email_activo) motivos.push("email: desactivado para este gym");
+  else if (!payload.alumno.email) motivos.push("email: el alumno no tiene email cargado");
+
+  if (!config.whatsapp_activo) motivos.push("whatsapp: desactivado para este gym");
+  else if (!config.whatsapp_access_token) motivos.push("whatsapp: falta el access token en la configuración");
+  else if (!config.whatsapp_phone_number_id) motivos.push("whatsapp: falta el phone number id en la configuración");
+  else if (!payload.alumno.telefono) motivos.push("whatsapp: el alumno no tiene teléfono cargado");
+
+  return motivos;
 }
 
 function getActiveChannels(

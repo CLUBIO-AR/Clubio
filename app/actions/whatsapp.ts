@@ -29,6 +29,7 @@ export async function enviarMensajeWhatsappAction(
     .single();
 
   if (!gymConfig?.whatsapp_phone_number_id || !gymConfig?.whatsapp_access_token) {
+    console.error("[enviarMensajeWhatsapp] falta whatsapp_phone_number_id o whatsapp_access_token en gym_config para gym:", ctx.gymId);
     return { ok: false, error: "WhatsApp no configurado para este gym" };
   }
 
@@ -43,10 +44,12 @@ export async function enviarMensajeWhatsappAction(
   try {
     waMessageId = await sendWhatsAppText(gymConfig, { to: telefono, body: cuerpo });
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Error enviando mensaje" };
+    const mensaje = err instanceof Error ? err.message : "Error enviando mensaje";
+    console.error("[enviarMensajeWhatsapp] gym:", ctx.gymId, "telefono:", telefono, "error:", mensaje);
+    return { ok: false, error: mensaje };
   }
 
-  await admin.from("mensajes_whatsapp").insert({
+  const { error: insertError } = await admin.from("mensajes_whatsapp").insert({
     gym_id: ctx.gymId,
     alumno_id: alumno?.id ?? null,
     telefono,
@@ -55,6 +58,9 @@ export async function enviarMensajeWhatsappAction(
     wa_message_id: waMessageId,
     estado: "enviado",
   });
+  if (insertError) {
+    console.error("[enviarMensajeWhatsapp] mensaje enviado por Meta pero falló al guardarlo en mensajes_whatsapp:", insertError.message);
+  }
 
   revalidatePath(`/dashboard/whatsapp/${encodeURIComponent(telefono)}`);
   return { ok: true, data: { wa_message_id: waMessageId } };

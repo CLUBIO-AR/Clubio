@@ -3,7 +3,7 @@
 import { SignJWT } from "jose";
 import { getGymContext } from "@/lib/supabase/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendNotification } from "@/lib/notifications";
+import { sendNotification, motivosCanalesInactivos } from "@/lib/notifications";
 import type { GymNotificationConfig, EmailTemplates } from "@/lib/notifications";
 
 type ActionResult<T = undefined> =
@@ -72,7 +72,7 @@ export async function reenviarAvisoAction(
 
   const tipo = cuota.estado === "vencida" ? "recordatorio_vencido" : "aviso_vencimiento";
 
-  const resultados = await sendNotification(notifConfig, {
+  const payload = {
     type: tipo,
     alumno: { nombre: alumno.nombre, email: alumno.email, telefono: alumno.telefono },
     cuota: {
@@ -81,7 +81,16 @@ export async function reenviarAvisoAction(
       fecha_vencimiento: cuota.fecha_vencimiento, actividad_nombre: actividad?.nombre,
     },
     gym: { nombre: gym.nombre, logo_url: gym.logo_url, color_acento: gymConfig.email_color_acento },
-  });
+  } as const;
+
+  const resultados = await sendNotification(notifConfig, payload);
+
+  // Ningún canal se intentó siquiera (config incompleta) — pasa antes de llegar a
+  // Meta/Resend, así que no hay nada que loguear, pero sí podemos decir por qué.
+  if (resultados.length === 0) {
+    const motivos = motivosCanalesInactivos(notifConfig, payload);
+    return { ok: false, error: `No hay ningún canal configurado para enviar. ${motivos.join(" · ")}` };
+  }
 
   for (const r of resultados) {
     const destino = r.canal === "email" ? (alumno.email ?? "") : (alumno.telefono ?? "");
@@ -90,11 +99,16 @@ export async function reenviarAvisoAction(
       tipo, enviado_a: destino || r.canal,
       estado: r.ok ? "enviado" : "error",
       provider_id: r.provider_id ?? null,
+      error_detail: r.error ?? null,
     });
+    if (!r.ok) console.error(`[reenviarAviso] canal=${r.canal} cuota=${cuotaId} error:`, r.error);
   }
 
   const exitosos = resultados.filter((r) => r.ok);
-  if (exitosos.length === 0) return { ok: false, error: "No se pudo enviar por ningún canal" };
+  if (exitosos.length === 0) {
+    const detalle = resultados.map((r) => `${r.canal}: ${r.error ?? "error desconocido"}`).join(" · ");
+    return { ok: false, error: `No se pudo enviar. ${detalle}` };
+  }
   return { ok: true, data: { canales: exitosos.map((r) => r.canal) } };
 }
 

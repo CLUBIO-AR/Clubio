@@ -108,6 +108,10 @@ export async function POST(request: Request) {
           .select("id")
           .eq("gym_id", gymId)
           .ilike("telefono", `%${telefono.slice(-10)}`)
+          .is("deleted_at", null)
+          // Teléfono compartido entre varios alumnos: tomamos el más reciente (ver actions/whatsapp.ts).
+          .order("created_at", { ascending: false })
+          .limit(1)
           .maybeSingle();
 
         const { error: insertError } = await admin.from("mensajes_whatsapp").insert({

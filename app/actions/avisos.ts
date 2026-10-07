@@ -122,26 +122,29 @@ export async function enviarAvisoCuotaPorTelefonoAction(telefono: string): Promi
   const admin = createAdminClient();
   const ultimos10 = telefono.replace(/\D/g, "").slice(-10);
 
-  const { data: alumno } = await admin
+  // Varios alumnos pueden compartir teléfono (hermanos, padre/madre que paga por sus hijos):
+  // buscamos todos y avisamos la cuota pendiente más antigua entre ellos.
+  const { data: alumnos } = await admin
     .from("alumnos")
     .select("id")
     .eq("gym_id", ctx.gymId)
+    .is("deleted_at", null)
     .ilike("telefono", `%${ultimos10}`)
-    .maybeSingle();
+    .limit(20);
 
-  if (!alumno) return { ok: false, error: "No encontramos un alumno con este teléfono" };
+  if (!alumnos?.length) return { ok: false, error: "No encontramos un alumno con este teléfono" };
 
   const { data: cuota } = await admin
     .from("cuotas")
     .select("id")
     .eq("gym_id", ctx.gymId)
-    .eq("alumno_id", alumno.id)
+    .in("alumno_id", alumnos.map((a) => a.id))
     .in("estado", ["pendiente", "vencida"])
     .order("fecha_vencimiento", { ascending: true })
     .limit(1)
     .maybeSingle();
 
-  if (!cuota) return { ok: false, error: "Este alumno no tiene cuotas pendientes" };
+  if (!cuota) return { ok: false, error: alumnos.length > 1 ? "Ninguno de los alumnos con este teléfono tiene cuotas pendientes" : "Este alumno no tiene cuotas pendientes" };
 
   // Disparado desde el chat de WhatsApp — no tiene sentido mandar también el email acá.
   return reenviarAvisoAction(cuota.id, { soloWhatsapp: true });

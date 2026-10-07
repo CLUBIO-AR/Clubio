@@ -38,6 +38,11 @@ export async function enviarMensajeWhatsappAction(
     .select("id")
     .eq("gym_id", ctx.gymId)
     .ilike("telefono", `%${telefono.slice(-10)}`)
+    .is("deleted_at", null)
+    // Varios alumnos pueden compartir teléfono (hermanos, padre/madre que paga): tomamos
+    // el más reciente en vez de dejar que maybeSingle() devuelva null por múltiples filas.
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   let waMessageId: string;

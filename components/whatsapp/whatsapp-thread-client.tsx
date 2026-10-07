@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useRef, useEffect } from "react";
 import { Send } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { T } from "@/lib/theme";
@@ -85,6 +86,19 @@ export function WhatsappThreadClient({
     setTexto(comando);
     inputRef.current?.focus();
   }
+
+  // Esc sale del chat y deja el panel en blanco para elegir otro. No actúa si otro
+  // componente ya usó la tecla (sugerencias de comandos, panel de notificaciones).
+  const router = useRouter();
+  useEffect(() => {
+    const salir = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      if (document.querySelector("[role=dialog], [role=menu]")) return;
+      router.push("/dashboard/whatsapp");
+    };
+    window.addEventListener("keydown", salir);
+    return () => window.removeEventListener("keydown", salir);
+  }, [router]);
 
   // Bajar al último mensaje solo cuando llega o se manda uno (no en cada tecla).
   const cantidadMensajes = mensajes.length;
@@ -243,6 +257,8 @@ export function WhatsappThreadClient({
                     return;
                   }
                   if (e.key === "Escape") {
+                    // Con sugerencias abiertas, Esc solo las cierra (no sale del chat).
+                    e.preventDefault();
                     setTexto("");
                     return;
                   }

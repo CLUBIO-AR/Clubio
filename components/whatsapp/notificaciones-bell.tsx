@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Bell, BellRing, CheckCheck } from "lucide-react";
 import { T } from "@/lib/theme";
@@ -20,15 +21,40 @@ function hace(fecha: string): string {
 export function NotificacionesBell({ lado }: { lado: "derecha" | "abajo" }) {
   const ctx = useWhatsappNotificaciones();
   const [abierto, setAbierto] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<React.CSSProperties>({});
+  const botonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // El panel se dibuja en document.body con position: fixed (portal), así ningún
+  // elemento de la página puede quedar por encima. Se ubica al lado del botón.
+  useLayoutEffect(() => {
+    if (!abierto) return;
+    const ubicar = () => {
+      const r = botonRef.current?.getBoundingClientRect();
+      if (!r) return;
+      const ancho = Math.min(340, window.innerWidth - 32);
+      if (lado === "derecha") {
+        setPos({ top: Math.max(16, r.top), left: Math.min(r.right + 12, window.innerWidth - ancho - 16), width: ancho });
+      } else {
+        setPos({ top: r.bottom + 8, left: Math.max(16, r.right - ancho), width: ancho });
+      }
+    };
+    ubicar();
+    window.addEventListener("resize", ubicar);
+    return () => window.removeEventListener("resize", ubicar);
+  }, [abierto, lado]);
 
   useEffect(() => {
     if (!abierto) return;
-    const cerrar = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setAbierto(false); };
-    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setAbierto(false); };
+    const cerrar = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (!panelRef.current?.contains(t) && !botonRef.current?.contains(t)) setAbierto(false);
+    };
+    // En captura y con preventDefault: Esc cierra el panel y no llega a cerrar el chat de atrás.
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") { e.preventDefault(); setAbierto(false); } };
     document.addEventListener("mousedown", cerrar);
-    document.addEventListener("keydown", esc);
-    return () => { document.removeEventListener("mousedown", cerrar); document.removeEventListener("keydown", esc); };
+    document.addEventListener("keydown", esc, true);
+    return () => { document.removeEventListener("mousedown", cerrar); document.removeEventListener("keydown", esc, true); };
   }, [abierto]);
 
   if (!ctx) return null;
@@ -43,13 +69,10 @@ export function NotificacionesBell({ lado }: { lado: "derecha" | "abajo" }) {
   }
   const filas = Array.from(porTelefono.values());
 
-  const panelPos = lado === "derecha"
-    ? "left-full top-0 ml-3"
-    : "right-0 top-full mt-2";
-
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative">
       <button
+        ref={botonRef}
         type="button"
         onClick={() => setAbierto((v) => !v)}
         aria-label={conversacionesSinLeer > 0 ? `Notificaciones: ${conversacionesSinLeer} conversaciones sin leer` : "Notificaciones"}
@@ -68,10 +91,13 @@ export function NotificacionesBell({ lado }: { lado: "derecha" | "abajo" }) {
         )}
       </button>
 
-      {abierto && (
+      {abierto && createPortal(
         <div
-          className={`absolute ${panelPos} z-[70] w-[min(340px,calc(100vw-2rem))] rounded-xl overflow-hidden`}
-          style={{ background: T.card, border: `1px solid ${T.border}`, boxShadow: "0 12px 32px rgba(0,0,0,0.22)" }}
+          ref={panelRef}
+          role="dialog"
+          aria-label="Mensajes nuevos de WhatsApp"
+          className="fixed z-[1000] rounded-xl overflow-hidden"
+          style={{ ...pos, background: T.card, border: `1px solid ${T.border}`, boxShadow: "0 12px 32px rgba(0,0,0,0.22)" }}
         >
           <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: `1px solid ${T.border}` }}>
             <p className="text-sm font-bold uppercase tracking-wider" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>
@@ -133,7 +159,8 @@ export function NotificacionesBell({ lado }: { lado: "derecha" | "abajo" }) {
               Las notificaciones del navegador están bloqueadas. Activalas desde el candado de la barra de direcciones.
             </p>
           )}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

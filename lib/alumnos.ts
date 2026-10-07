@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { z } from "zod";
+import { formatearTelefonoParaGuardar } from "@/lib/telefono";
 
 export type Alumno = Database["public"]["Tables"]["alumnos"]["Row"];
 
@@ -20,7 +21,8 @@ export const AlumnoInsertSchema = z.object({
   apellido: z.string().min(1, "Requerido"),
   dni: z.string().min(1).nullable().optional(),
   email: z.string().email("Email inválido").nullable().optional(),
-  telefono: z.string().nullable().optional(),
+  // Se guarda normalizado al formato de WhatsApp (+549 + área + número, sin 0 ni 15).
+  telefono: z.string().nullable().optional().transform((v) => (v == null ? v : formatearTelefonoParaGuardar(v))),
   fecha_nacimiento: z.string().nullable().optional(),
   fecha_alta: fechaAltaSchema.optional(),
   sucursal_id: z.string().uuid().nullable().optional(),

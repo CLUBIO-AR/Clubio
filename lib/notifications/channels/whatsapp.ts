@@ -10,9 +10,13 @@
 // ({{1}} nombre, {{2}} actividad, {{3}} mes/año, {{4}} monto, {{5}} fecha límite) +
 // un botón "Pagar ahora" con URL dinámica (base fija configurada en la plantilla + {{1}} = token).
 import type { NotificationPayload, GymNotificationConfig } from "../index";
+import { normalizarTelefonoAR } from "@/lib/telefono";
 
 const GRAPH_VERSION = "v21.0";
-const DEFAULT_LANGUAGE = "es_AR";
+// Las plantillas pueden estar aprobadas en "Español (ARG)" (es_AR) o en "Español" (es).
+// Probamos en este orden: si Meta responde #132001 (no existe en ese idioma), seguimos con el próximo.
+const TEMPLATE_LANGUAGES = ["es_AR", "es"] as const;
+const ERROR_TEMPLATE_NO_EXISTE = 132001;
 
 export async function sendWhatsApp(
   config: GymNotificationConfig,
@@ -44,27 +48,31 @@ export async function sendWhatsApp(
 
   const url = `https://graph.facebook.com/${GRAPH_VERSION}/${config.whatsapp_phone_number_id}/messages`;
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${config.whatsapp_access_token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      to,
-      type: "template",
-      template: {
-        name: templateName,
-        language: { code: DEFAULT_LANGUAGE },
-        components,
+  let data: { messages?: { id?: string }[]; error?: { message?: string; code?: number } } = {};
+  for (const [i, language] of TEMPLATE_LANGUAGES.entries()) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.whatsapp_access_token}`,
+        "Content-Type": "application/json",
       },
-    }),
-  });
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to,
+        type: "template",
+        template: {
+          name: templateName,
+          language: { code: language },
+          components,
+        },
+      }),
+    });
 
-  const data = await res.json();
+    data = await res.json();
+    if (res.ok) break;
 
-  if (!res.ok) {
+    const ultimoIdioma = i === TEMPLATE_LANGUAGES.length - 1;
+    if (data?.error?.code === ERROR_TEMPLATE_NO_EXISTE && !ultimoIdioma) continue;
     throw new Error(`WhatsApp API error: ${data?.error?.message ?? res.statusText}`);
   }
 
@@ -162,10 +170,9 @@ function buildTemplate(
 
 // Meta exige el número en formato E.164 sin "+" (ej: 5493625335586).
 // Los alumnos pueden tener el teléfono guardado con espacios, guiones o el "+" inicial.
+// Convierte lo que haya cargado el gym (con o sin 54/9/0/15) al formato que espera Meta.
 function normalizePhone(telefono?: string | null): string | null {
-  if (!telefono) return null;
-  const digits = telefono.replace(/\D/g, "");
-  return digits.length >= 10 ? digits : null;
+  return normalizarTelefonoAR(telefono);
 }
 
 function formatFecha(fechaIso?: string): string {

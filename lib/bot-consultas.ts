@@ -70,7 +70,8 @@ export async function responderConBot(
     }
 
     // Bienvenida: solo si en las últimas 24hs no le escribimos nada (ni el bot ni el gym),
-    // para no interrumpir una conversación que ya está atendiendo una persona.
+    // para no interrumpir una conversación que ya está atendiendo una persona. Los mensajes
+    // de una conversación eliminada desde el inbox no cuentan: el gym la dio por cerrada.
     const desde = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { count } = await admin
       .from("mensajes_whatsapp")
@@ -78,6 +79,7 @@ export async function responderConBot(
       .eq("gym_id", gymId)
       .eq("telefono", telefono)
       .eq("direccion", "saliente")
+      .is("deleted_at", null)
       .gte("created_at", desde);
     if ((count ?? 0) > 0) return;
 

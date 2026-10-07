@@ -25,6 +25,7 @@ import type { Database } from "@/types/database";
 import { sendWhatsAppButtons, sendWhatsAppList, sendWhatsAppText } from "@/lib/notifications/channels/whatsapp";
 import { describirCuando, proximasClases, resumenHorarios, type Horario } from "@/lib/horarios";
 import { linkPagarTodo, obtenerEstadoCuenta, textoEstadoCuenta } from "@/lib/estado-cuenta";
+import { aliasCobroDeAlumno } from "@/lib/transferencias/alias";
 
 type Admin = SupabaseClient<Database>;
 
@@ -450,9 +451,11 @@ async function mandarEstadoCuenta(ctx: Contexto, alumnoId: string): Promise<void
   const estado = await obtenerEstadoCuenta(ctx.admin, ctx.gymId, alumnoId);
   if (!estado) return enviar(ctx, RESPUESTA_HUMANO, [BOTON.menu]);
 
-  const porTransferencia = ctx.config.email_modo === "transferencia" && !!ctx.config.transferencia_alias;
+  // Si el alumno tiene alias propio, ese: así la transferencia se identifica sola.
+  const alias = (await aliasCobroDeAlumno(ctx.admin, ctx.gymId, alumnoId)) ?? ctx.config.transferencia_alias;
+  const porTransferencia = ctx.config.email_modo === "transferencia" && !!alias;
   const texto = textoEstadoCuenta(estado, porTransferencia
-    ? { modo: "transferencia", alias: ctx.config.transferencia_alias, titular: ctx.config.transferencia_titular }
+    ? { modo: "transferencia", alias, titular: ctx.config.transferencia_titular }
     : { modo: "link", url: await linkPagarTodo(ctx.gymId, estado) });
 
   const botones: Boton[] = porTransferencia && estado.pendientes.length > 0

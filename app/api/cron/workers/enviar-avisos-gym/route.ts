@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { SignJWT } from "jose";
 import { logCron } from "@/lib/cron-logger";
+import { cargarAliasCobro } from "@/lib/transferencias/alias";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendNotification } from "@/lib/notifications";
 import { registrarAvisoEnInbox } from "@/lib/notifications/inbox";
@@ -89,6 +90,7 @@ export async function POST(request: Request) {
 
   const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
   const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
+  const aliasCobro = await cargarAliasCobro(admin, gym_id);
 
   // Agrupar cuotas por alumno para email consolidado
   const byAlumno = new Map<string, typeof cuotas>();
@@ -128,7 +130,7 @@ export async function POST(request: Request) {
 
       const resultados = await sendNotification(notifConfig, {
         type: tipo,
-        alumno: { nombre: alumno.nombre, email: alumno.email, telefono: alumno.telefono },
+        alumno: { nombre: alumno.nombre, email: alumno.email, telefono: alumno.telefono, alias_cobro: aliasCobro.get(cuota.alumno_id) },
         cuota:  { mes: cuota.mes, anio: cuota.anio, monto_total: cuota.monto_total ?? 0, pago_url: pagoUrl, pago_token: token, fecha_vencimiento: cuota.fecha_vencimiento, actividad_nombre: actividadNombre },
         gym:    { nombre: gym.nombre, logo_url: gym.logo_url, color_acento: gymConfig.email_color_acento },
       });
@@ -237,7 +239,7 @@ export async function POST(request: Request) {
           { ...notifConfig, email_activo: false },
           {
             type: tipo,
-            alumno: { nombre: alumno.nombre, telefono: alumno.telefono },
+            alumno: { nombre: alumno.nombre, telefono: alumno.telefono, alias_cobro: aliasCobro.get(alumnoId) },
             cuota: {
               mes: primera.mes, anio: primera.anio, monto_total: montoTotal,
               pago_url: pagarTodoUrl,
@@ -323,6 +325,7 @@ async function enviarAvisosFechaFija(params: {
   startTime: number;
 }) {
   const { admin, gym_id, gym, gymConfig, startTime } = params;
+  const aliasCobro = await cargarAliasCobro(admin, gym_id);
 
   const hoy = new Date();
   const hoyDia = hoy.getDate();
@@ -409,7 +412,7 @@ async function enviarAvisosFechaFija(params: {
           emailRemitenteNombre: gymConfig.email_remitente_nombre,
           emailRemitenteAddress: gymConfig.email_remitente_address,
           cuotas: [{ mes: cuota.mes, anio: cuota.anio, monto_total: cuota.monto_total, actividadNombre: actividadInfo?.nombre ?? "Cuota", montoIncrementado }],
-          alias: gymConfig.transferencia_alias!,
+          alias: aliasCobro.get(cuota.alumno_id) ?? gymConfig.transferencia_alias!,
           titular: gymConfig.transferencia_titular,
           banco: gymConfig.transferencia_banco,
         });
@@ -431,7 +434,7 @@ async function enviarAvisosFechaFija(params: {
           { ...notifConfig, email_activo: false },
           {
             type: "aviso_vencimiento",
-            alumno: { nombre: alumno.nombre, telefono: alumno.telefono },
+            alumno: { nombre: alumno.nombre, telefono: alumno.telefono, alias_cobro: aliasCobro.get(cuota.alumno_id) },
             cuota: {
               mes: cuota.mes, anio: cuota.anio, monto_total: cuota.monto_total ?? 0,
               pago_url: "", fecha_vencimiento: cuota.fecha_vencimiento,
@@ -479,7 +482,7 @@ async function enviarAvisosFechaFija(params: {
 
     const resultados = await sendNotification(notifConfig, {
       type: tipo,
-      alumno: { nombre: alumno.nombre, email: alumno.email, telefono: alumno.telefono },
+      alumno: { nombre: alumno.nombre, email: alumno.email, telefono: alumno.telefono, alias_cobro: aliasCobro.get(cuota.alumno_id) },
       cuota: { mes: cuota.mes, anio: cuota.anio, monto_total: cuota.monto_total ?? 0, pago_url: pagoUrl, pago_token: token, fecha_vencimiento: cuota.fecha_vencimiento, actividad_nombre: actividadInfo?.nombre, monto_incrementado: montoIncrementado },
       gym: { nombre: gym.nombre, logo_url: gym.logo_url, color_acento: gymConfig.email_color_acento },
     });
@@ -529,6 +532,7 @@ async function enviarUltimoAviso(params: {
   hoy: Date;
 }) {
   const { admin, gym_id, gym, gymConfig, startTime, hoy } = params;
+  const aliasCobro = await cargarAliasCobro(admin, gym_id);
 
   if (!(gymConfig.email_modo === "transferencia" && gymConfig.transferencia_alias)) {
     // Por ahora solo implementado para gyms en modo transferencia (ver sendEmailAvisoUltimoLlamado).
@@ -585,7 +589,7 @@ async function enviarUltimoAviso(params: {
           mes: c.mes, anio: c.anio, monto_total: c.monto_total ?? 0,
           actividadNombre: (c.actividades as { nombre: string | null } | null)?.nombre ?? "Cuota",
         })),
-        alias: gymConfig.transferencia_alias!,
+        alias: aliasCobro.get(alumnoId) ?? gymConfig.transferencia_alias!,
         titular: gymConfig.transferencia_titular,
         banco: gymConfig.transferencia_banco,
       });

@@ -726,6 +726,7 @@ export type Database = {
           mp_status: string | null;
           mp_detail: Json | null;
           registrado_por: string | null;
+          transferencia_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -739,6 +740,7 @@ export type Database = {
           mp_status?: string | null;
           mp_detail?: Json | null;
           registrado_por?: string | null;
+          transferencia_id?: string | null;
         };
         Update: Record<string, never>;
         Relationships: [
@@ -822,6 +824,84 @@ export type Database = {
             referencedColumns: ["id"];
           }
         ];
+      };
+      cuentas_cobro_alumno: {
+        Row: {
+          id: string;
+          gym_id: string;
+          alumno_id: string;
+          proveedor: string;
+          cvu: string | null;
+          alias: string | null;
+          external_id: string | null;
+          activa: boolean;
+          created_at: string;
+          deleted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          alumno_id: string;
+          proveedor: string;
+          cvu?: string | null;
+          alias?: string | null;
+          external_id?: string | null;
+          activa?: boolean;
+          deleted_at?: string | null;
+        };
+        Update: {
+          cvu?: string | null;
+          alias?: string | null;
+          external_id?: string | null;
+          activa?: boolean;
+          deleted_at?: string | null;
+        };
+        Relationships: [];
+      };
+      transferencias: {
+        Row: {
+          id: string;
+          gym_id: string | null;
+          proveedor: string;
+          external_id: string;
+          cuenta_cobro_id: string | null;
+          alumno_id: string | null;
+          cvu_destino: string | null;
+          alias_destino: string | null;
+          monto: number;
+          fecha: string;
+          pagador_nombre: string | null;
+          pagador_cuit: string | null;
+          concepto: string | null;
+          estado: "pendiente" | "imputada" | "saldo_a_favor" | "sin_asignar";
+          monto_imputado: number;
+          asignada_por: string | null;
+          raw: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id?: string | null;
+          proveedor: string;
+          external_id: string;
+          cuenta_cobro_id?: string | null;
+          alumno_id?: string | null;
+          cvu_destino?: string | null;
+          alias_destino?: string | null;
+          monto: number;
+          fecha: string;
+          pagador_nombre?: string | null;
+          pagador_cuit?: string | null;
+          concepto?: string | null;
+          estado?: "pendiente" | "imputada" | "saldo_a_favor" | "sin_asignar";
+          raw?: Json | null;
+        };
+        Update: {
+          alumno_id?: string | null;
+          estado?: "pendiente" | "imputada" | "saldo_a_favor" | "sin_asignar";
+          asignada_por?: string | null;
+        };
+        Relationships: [];
       };
       push_suscripciones: {
         Row: {
@@ -1159,6 +1239,10 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      imputar_transferencia: {
+        Args: { p_transferencia_id: string };
+        Returns: Json;
+      };
       get_user_gym_id: {
         Args: Record<string, never>;
         Returns: string;

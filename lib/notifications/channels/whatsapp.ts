@@ -238,10 +238,11 @@ function buildTemplate(
 
     // Modo transferencia: no hay link de pago, se pide transferir al alias del gym —
     // plantilla sin botón dinámico (ver gym_config.email_modo).
-    if (config.modo_pago === "transferencia" && config.transferencia_alias) {
+    const alias = alumno.alias_cobro || config.transferencia_alias;
+    if (config.modo_pago === "transferencia" && alias) {
       return {
         templateName: config.whatsapp_template_transferencia,
-        bodyParams: [...bodyBase, config.transferencia_alias],
+        bodyParams: [...bodyBase, alias],
       };
     }
 

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { requireGymContext } from "@/lib/supabase/auth";
 import { DollarSign, CreditCard, TrendingUp } from "lucide-react";
@@ -56,11 +57,20 @@ export default async function PagosPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>
-          PAGOS
-        </h1>
-        <p className="text-sm mt-1" style={{ color: T.textDim }}>Historial de cobros — {mesLabel}</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>
+            PAGOS
+          </h1>
+          <p className="text-sm mt-1" style={{ color: T.textDim }}>Historial de cobros — {mesLabel}</p>
+        </div>
+        <Link
+          href="/dashboard/transferencias"
+          className="px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider"
+          style={{ fontFamily: "var(--font-fredoka)", background: T.accentBg, color: T.accent, border: `1px solid ${T.accentBorder}` }}
+        >
+          Transferencias recibidas →
+        </Link>
       </div>
 
       {/* Stats */}

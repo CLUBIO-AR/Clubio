@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsAppText } from "@/lib/notifications/channels/whatsapp";
 import { ejecutarPlan, planificarBot, resuelveSinPersona } from "@/lib/bot-consultas";
 import { enviarPushAlGym } from "@/lib/push";
+import { aliasCobroDeAlumno } from "@/lib/transferencias/alias";
 
 // Webhook único para TODOS los gyms (Meta no permite un callback distinto por número
 // dentro de la misma app). Cada evento trae metadata.phone_number_id, que se cruza
@@ -210,7 +211,9 @@ async function responderAlias(
     .eq("gym_id", gymId)
     .maybeSingle();
 
-  const alias = config?.transferencia_alias?.trim();
+  // El alias propio del alumno (si tiene) va primero: así su transferencia se identifica sola.
+  const aliasAlumno = alumnoId ? await aliasCobroDeAlumno(admin, gymId, alumnoId) : null;
+  const alias = (aliasAlumno ?? config?.transferencia_alias)?.trim();
   if (error || !config || !alias) {
     console.warn("[webhook:whatsapp] pidieron el alias pero el gym no tiene transferencia_alias cargado — gym:", gymId, error?.message ?? "");
     return;

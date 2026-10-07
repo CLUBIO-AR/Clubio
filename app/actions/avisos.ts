@@ -3,6 +3,7 @@
 import { SignJWT } from "jose";
 import { getGymContext } from "@/lib/supabase/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { aliasCobroDeAlumno } from "@/lib/transferencias/alias";
 import { sendNotification, motivosCanalesInactivos } from "@/lib/notifications";
 import type { GymNotificationConfig, EmailTemplates } from "@/lib/notifications";
 import { registrarAvisoEnInbox } from "@/lib/notifications/inbox";
@@ -75,7 +76,10 @@ export async function reenviarAvisoAction(
 
   const payload = {
     type: tipo,
-    alumno: { nombre: alumno.nombre, email: alumno.email, telefono: alumno.telefono },
+    alumno: {
+      nombre: alumno.nombre, email: alumno.email, telefono: alumno.telefono,
+      alias_cobro: await aliasCobroDeAlumno(admin, ctx.gymId, cuota.alumno_id),
+    },
     cuota: {
       mes: cuota.mes, anio: cuota.anio, monto_total: cuota.monto_total ?? 0,
       pago_url: `${appUrl}/pagar/${token}`, pago_token: token,

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Link2, CreditCard, ChevronLeft, ChevronRight, Copy, ExternalLink } from "lucide-react";
 import { T } from "@/lib/theme";
+import { useFilaLink } from "@/lib/hooks/use-fila-link";
 
 const MESES_CORTO = ["", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 const MESES_LARGO = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
@@ -40,6 +41,7 @@ interface Props {
 
 export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, alumnoNombre, nonPaidIds, filtros }: Props) {
   const router = useRouter();
+  const filaProps = useFilaLink();
   const sp = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
@@ -181,7 +183,9 @@ export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, 
                 const label = `${MESES_LARGO[c.mes]} ${c.anio}`;
                 const unpaid = c.estado !== "pagada" && c.estado !== "condonada";
                 return (
-                  <tr key={c.id} style={{ borderTop: i > 0 ? `1px solid ${T.borderSub}` : undefined }}>
+                  <tr key={c.id} {...filaProps(`/dashboard/cuotas/${c.id}`)}
+                    className="cursor-pointer transition-colors hover:bg-[var(--fila-hover)] focus-visible:outline focus-visible:outline-2"
+                    style={{ borderTop: i > 0 ? `1px solid ${T.borderSub}` : undefined, ["--fila-hover" as string]: T.cardHover }}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <div className="w-10 h-10 rounded-lg flex flex-col items-center justify-center shrink-0" style={{ background: T.bg, border: `1px solid ${T.border}` }}>

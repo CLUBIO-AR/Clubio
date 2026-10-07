@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useFilaLink } from "@/lib/hooks/use-fila-link";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -54,6 +55,7 @@ interface CuotasClientProps {
 
 export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, actividadDefault, actividades, stats }: CuotasClientProps) {
   const router = useRouter();
+  const filaProps = useFilaLink();
   const [search, setSearch]       = useState(searchDefault);
   const [estado, setEstado]       = useState(estadoDefault);
   const [actividad, setActividad] = useState(actividadDefault);
@@ -213,9 +215,9 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
                 const a = c.alumnos;
                 const vencida = new Date(c.fecha_vencimiento) < new Date() && c.estado === "vencida";
                 return (
-                  <TableRow key={c.id} className="transition-colors cursor-pointer" style={{ borderColor: T.borderSub }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = T.cardHover)}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+                  <TableRow key={c.id} {...filaProps(`/dashboard/cuotas/${c.id}`)}
+                    className="transition-colors cursor-pointer hover:bg-[var(--fila-hover)] focus-visible:outline focus-visible:outline-2"
+                    style={{ borderColor: T.borderSub, ["--fila-hover" as string]: T.cardHover }}>
                     <TableCell>
                       <div className="flex items-center gap-2.5">
                         <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"

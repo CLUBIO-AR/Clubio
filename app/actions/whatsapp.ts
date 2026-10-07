@@ -86,7 +86,73 @@ export async function marcarConversacionLeidaAction(telefono: string): Promise<A
     .eq("gym_id", ctx.gymId)
     .eq("telefono", telefono)
     .eq("direccion", "entrante")
-    .eq("leido", false);
+    .eq("leido", false)
+    .is("deleted_at", null);
 
   return { ok: true, data: undefined };
+}
+
+// ── Acciones múltiples del inbox (checkbox en la lista de conversaciones) ──────────
+
+const MAX_CONVERSACIONES_POR_ACCION = 200;
+
+function validarTelefonos(telefonos: string[]): string[] | null {
+  if (!Array.isArray(telefonos) || telefonos.length === 0) return null;
+  if (telefonos.length > MAX_CONVERSACIONES_POR_ACCION) return null;
+  const limpios = telefonos.filter((t) => typeof t === "string" && t.length > 0 && t.length <= 30);
+  return limpios.length === telefonos.length ? limpios : null;
+}
+
+export async function marcarConversacionesLeidasAction(
+  telefonos: string[]
+): Promise<ActionResult<{ actualizados: number }>> {
+  const ctx = await getGymContext();
+  if (!ctx) return { ok: false, error: "Unauthorized" };
+  const lista = validarTelefonos(telefonos);
+  if (!lista) return { ok: false, error: "Selección inválida" };
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("mensajes_whatsapp")
+    .update({ leido: true })
+    .eq("gym_id", ctx.gymId)
+    .in("telefono", lista)
+    .eq("direccion", "entrante")
+    .eq("leido", false)
+    .is("deleted_at", null)
+    .select("id");
+  if (error) {
+    console.error("[marcarConversacionesLeidas] gym:", ctx.gymId, error.message);
+    return { ok: false, error: "No se pudieron marcar como leídas" };
+  }
+
+  revalidatePath("/dashboard/whatsapp", "layout");
+  return { ok: true, data: { actualizados: data?.length ?? 0 } };
+}
+
+// Soft delete: los mensajes quedan en la base con deleted_at (regla del proyecto, nunca
+// DELETE físico). Si el alumno vuelve a escribir, la conversación reaparece solo con lo nuevo.
+export async function eliminarConversacionesAction(
+  telefonos: string[]
+): Promise<ActionResult<{ eliminados: number }>> {
+  const ctx = await getGymContext();
+  if (!ctx) return { ok: false, error: "Unauthorized" };
+  const lista = validarTelefonos(telefonos);
+  if (!lista) return { ok: false, error: "Selección inválida" };
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("mensajes_whatsapp")
+    .update({ deleted_at: new Date().toISOString(), leido: true })
+    .eq("gym_id", ctx.gymId)
+    .in("telefono", lista)
+    .is("deleted_at", null)
+    .select("id");
+  if (error) {
+    console.error("[eliminarConversaciones] gym:", ctx.gymId, error.message);
+    return { ok: false, error: "No se pudieron eliminar las conversaciones" };
+  }
+
+  revalidatePath("/dashboard/whatsapp", "layout");
+  return { ok: true, data: { eliminados: data?.length ?? 0 } };
 }

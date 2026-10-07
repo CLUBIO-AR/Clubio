@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendWhatsAppText } from "@/lib/notifications/channels/whatsapp";
 
 // Webhook único para TODOS los gyms (Meta no permite un callback distinto por número
 // dentro de la misma app). Cada evento trae metadata.phone_number_id, que se cruza
@@ -101,7 +102,7 @@ export async function POST(request: Request) {
       for (const message of value.messages ?? []) {
         eventosMensaje++;
         const telefono = message.from;
-        const cuerpo = message.text?.body ?? "[mensaje sin texto]";
+        const cuerpo = textoDelMensaje(message);
 
         const { data: alumno } = await admin
           .from("alumnos")
@@ -129,6 +130,11 @@ export async function POST(request: Request) {
           console.error("[webhook:whatsapp] error insertando mensaje entrante:", insertError.message);
         } else {
           console.log("[webhook:whatsapp] mensaje entrante guardado — gym:", gymId, "de:", telefono, "alumno match:", alumno?.id ?? "sin match");
+          // Solo si el insert salió bien: si Meta reintenta el mismo evento, el índice único
+          // de wa_message_id hace fallar el insert y no se responde el alias dos veces.
+          if (esPedidoDeAlias(message)) {
+            await responderAlias(admin, gymId, telefono, alumno?.id ?? null);
+          }
         }
       }
     }
@@ -136,6 +142,68 @@ export async function POST(request: Request) {
 
   console.log("[webhook:whatsapp] POST procesado — mensajes:", eventosMensaje, "| statuses:", eventosStatus);
   return NextResponse.json({ ok: true });
+}
+
+type MensajeEntrante = NonNullable<NonNullable<NonNullable<WhatsAppWebhookBody["entry"]>[number]["changes"]>[number]["value"]["messages"]>[number];
+
+// Texto a guardar en el inbox según el tipo de mensaje. Los botones de respuesta rápida
+// de las plantillas llegan como type "button" (sin text.body).
+function textoDelMensaje(message: MensajeEntrante): string {
+  if (message.text?.body) return message.text.body;
+  if (message.button?.text) return `🔘 ${message.button.text}`;
+  if (message.interactive?.button_reply?.title) return `🔘 ${message.interactive.button_reply.title}`;
+  if (message.type && message.type !== "text") return `[${message.type}]`;
+  return "[mensaje sin texto]";
+}
+
+function normalizar(texto: string | undefined): string {
+  return (texto ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+// Botón de respuesta rápida "Copiar Alias" de la plantilla de transferencia. Solo botones,
+// no texto libre: si el alumno escribe "alias" en una frase lo contesta el gym a mano.
+function esPedidoDeAlias(message: MensajeEntrante): boolean {
+  const textoBoton = message.button?.text ?? message.button?.payload ?? message.interactive?.button_reply?.title;
+  return !!textoBoton && normalizar(textoBoton).includes("alias");
+}
+
+// Responde con un mensaje que tiene SOLO el alias: en WhatsApp, mantener apretado copia el
+// mensaje entero, así el alumno lo pega directo en la app del banco. Va dentro de la
+// ventana de 24hs que abrió el propio botón, así que no necesita plantilla.
+async function responderAlias(
+  admin: ReturnType<typeof createAdminClient>,
+  gymId: string,
+  telefono: string,
+  alumnoId: string | null,
+): Promise<void> {
+  const { data: config, error } = await admin
+    .from("gym_config")
+    .select("whatsapp_phone_number_id, whatsapp_access_token, transferencia_alias")
+    .eq("gym_id", gymId)
+    .maybeSingle();
+
+  const alias = config?.transferencia_alias?.trim();
+  if (error || !config || !alias) {
+    console.warn("[webhook:whatsapp] pidieron el alias pero el gym no tiene transferencia_alias cargado — gym:", gymId, error?.message ?? "");
+    return;
+  }
+
+  try {
+    const waMessageId = await sendWhatsAppText(config, { to: telefono, body: alias });
+    const { error: insertError } = await admin.from("mensajes_whatsapp").insert({
+      gym_id: gymId,
+      alumno_id: alumnoId,
+      telefono,
+      direccion: "saliente",
+      cuerpo: alias,
+      wa_message_id: waMessageId,
+      estado: "enviado",
+    });
+    if (insertError) console.error("[webhook:whatsapp] alias enviado pero no se guardó en el inbox:", insertError.message);
+    else console.log("[webhook:whatsapp] alias enviado — gym:", gymId, "a:", telefono);
+  } catch (err) {
+    console.error("[webhook:whatsapp] error enviando el alias — gym:", gymId, err instanceof Error ? err.message : err);
+  }
 }
 
 function mapStatus(waStatus: string): string {
@@ -183,7 +251,16 @@ type WhatsAppWebhookBody = {
       value: {
         metadata?: { phone_number_id?: string };
         statuses?: Array<{ id: string; status: string; recipient_id?: string }>;
-        messages?: Array<{ from: string; id: string; text?: { body: string } }>;
+        messages?: Array<{
+          from: string;
+          id: string;
+          type?: string;
+          text?: { body: string };
+          // Botón de respuesta rápida de una plantilla.
+          button?: { text?: string; payload?: string };
+          // Botón de un mensaje interactivo (por si más adelante mandamos botones fuera de plantilla).
+          interactive?: { type?: string; button_reply?: { id?: string; title?: string } };
+        }>;
       };
     }>;
   }>;

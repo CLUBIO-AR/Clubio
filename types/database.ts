@@ -817,6 +817,7 @@ export type Database = {
           estado: string;
           leido: boolean;
           created_at: string;
+          deleted_at: string | null;
         };
         Insert: {
           id?: string;
@@ -828,12 +829,14 @@ export type Database = {
           wa_message_id?: string | null;
           estado?: string;
           leido?: boolean;
+          deleted_at?: string | null;
         };
         Update: {
           alumno_id?: string | null;
           estado?: string;
           wa_message_id?: string | null;
           leido?: boolean;
+          deleted_at?: string | null;
         };
         Relationships: [
           {

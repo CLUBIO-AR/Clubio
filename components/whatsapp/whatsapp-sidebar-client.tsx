@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Search, MessageCirclePlus } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Search, MessageCirclePlus, ListChecks, MailOpen, Trash2, X, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { T } from "@/lib/theme";
+import { marcarConversacionesLeidasAction, eliminarConversacionesAction } from "@/app/actions/whatsapp";
 
 export type Conversacion = {
   telefono: string;
@@ -33,8 +34,16 @@ export function WhatsappSidebarClient({
   contactos: Contacto[];
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [busqueda, setBusqueda] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("todos");
+
+  // Modo selección: checkboxes + acciones múltiples (marcar leídos / eliminar).
+  const [seleccionando, setSeleccionando] = useState(false);
+  const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
+  const [confirmandoEliminar, setConfirmandoEliminar] = useState(false);
+  const [errorAccion, setErrorAccion] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const activeTelefono = pathname.startsWith("/dashboard/whatsapp/")
     ? decodeURIComponent(pathname.split("/").pop() ?? "")
@@ -59,6 +68,58 @@ export function WhatsappSidebarClient({
 
   const totalNoLeidos = conversaciones.reduce((acc, c) => acc + (c.noLeidos > 0 ? 1 : 0), 0);
 
+  // Solo cuentan las seleccionadas que siguen visibles con el filtro/búsqueda actual,
+  // para no actuar sobre conversaciones que el usuario ya no está viendo.
+  const seleccionVisible = filtradas.filter((c) => seleccion.has(c.telefono)).map((c) => c.telefono);
+  const todasSeleccionadas = filtradas.length > 0 && seleccionVisible.length === filtradas.length;
+
+  function salirDeSeleccion() {
+    setSeleccionando(false);
+    setSeleccion(new Set());
+    setConfirmandoEliminar(false);
+    setErrorAccion(null);
+  }
+
+  function toggle(telefono: string) {
+    setConfirmandoEliminar(false);
+    setSeleccion((prev) => {
+      const next = new Set(prev);
+      if (next.has(telefono)) next.delete(telefono);
+      else next.add(telefono);
+      return next;
+    });
+  }
+
+  function toggleTodas() {
+    setConfirmandoEliminar(false);
+    setSeleccion(todasSeleccionadas ? new Set() : new Set(filtradas.map((c) => c.telefono)));
+  }
+
+  function marcarLeidas() {
+    if (seleccionVisible.length === 0) return;
+    setErrorAccion(null);
+    startTransition(async () => {
+      const res = await marcarConversacionesLeidasAction(seleccionVisible);
+      if (!res.ok) { setErrorAccion(res.error); return; }
+      salirDeSeleccion();
+      router.refresh();
+    });
+  }
+
+  function eliminar() {
+    if (seleccionVisible.length === 0) return;
+    if (!confirmandoEliminar) { setConfirmandoEliminar(true); return; }
+    setErrorAccion(null);
+    const borrandoActiva = !!activeTelefono && seleccionVisible.includes(activeTelefono);
+    startTransition(async () => {
+      const res = await eliminarConversacionesAction(seleccionVisible);
+      if (!res.ok) { setErrorAccion(res.error); setConfirmandoEliminar(false); return; }
+      salirDeSeleccion();
+      if (borrandoActiva) router.push("/dashboard/whatsapp");
+      router.refresh();
+    });
+  }
+
   return (
     <aside
       className="w-80 shrink-0 flex flex-col rounded-xl overflow-hidden"
@@ -77,6 +138,20 @@ export function WhatsappSidebarClient({
         </div>
 
         <div className="flex gap-1.5">
+          <button
+            type="button"
+            onClick={() => (seleccionando ? salirDeSeleccion() : setSeleccionando(true))}
+            title={seleccionando ? "Cancelar selección" : "Seleccionar conversaciones"}
+            aria-pressed={seleccionando}
+            className="px-2 py-1.5 rounded-lg transition-colors shrink-0"
+            style={{
+              background: seleccionando ? T.accentBg : "transparent",
+              color: seleccionando ? T.accent : T.textDim,
+              border: `1px solid ${seleccionando ? T.accentBorder : T.border}`,
+            }}
+          >
+            {seleccionando ? <X className="w-4 h-4" /> : <ListChecks className="w-4 h-4" />}
+          </button>
           {([
             { value: "todos" as const, label: "Todos" },
             { value: "no_leidos" as const, label: `No leídos${totalNoLeidos > 0 ? ` (${totalNoLeidos})` : ""}` },
@@ -96,6 +171,50 @@ export function WhatsappSidebarClient({
             </button>
           ))}
         </div>
+
+        {seleccionando && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleTodas}
+                className="flex items-center gap-2 text-xs"
+                style={{ color: T.textDim }}
+                disabled={filtradas.length === 0}
+              >
+                <Casilla marcada={todasSeleccionadas} />
+                {seleccionVisible.length > 0 ? `${seleccionVisible.length} seleccionada${seleccionVisible.length === 1 ? "" : "s"}` : "Seleccionar todas"}
+              </button>
+            </div>
+            <div className="flex gap-1.5">
+              <button
+                type="button"
+                onClick={marcarLeidas}
+                disabled={isPending || seleccionVisible.length === 0}
+                className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-semibold transition-opacity disabled:opacity-40"
+                style={{ background: T.inputBg, color: T.text, border: `1px solid ${T.border}` }}
+              >
+                <MailOpen className="w-3.5 h-3.5" /> Marcar leídas
+              </button>
+              <button
+                type="button"
+                onClick={eliminar}
+                onBlur={() => setConfirmandoEliminar(false)}
+                disabled={isPending || seleccionVisible.length === 0}
+                className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-semibold transition-opacity disabled:opacity-40"
+                style={{
+                  background: confirmandoEliminar ? T.danger : "transparent",
+                  color: confirmandoEliminar ? "#fff" : T.danger,
+                  border: `1px solid ${T.danger}`,
+                }}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                {confirmandoEliminar ? `¿Eliminar ${seleccionVisible.length}?` : "Eliminar"}
+              </button>
+            </div>
+            {errorAccion && <p className="text-xs" style={{ color: T.danger }}>{errorAccion}</p>}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -106,23 +225,26 @@ export function WhatsappSidebarClient({
         )}
         {filtradas.map((c) => {
           const active = c.telefono === activeTelefono;
-          return (
-            <Link
-              key={c.telefono}
-              href={`/dashboard/whatsapp/${encodeURIComponent(c.telefono)}`}
-              className={cn("flex items-center gap-3 px-4 py-3 transition-colors")}
-              style={{
-                background: active ? T.accentBg : "transparent",
-                borderLeft: `3px solid ${active ? T.accent : "transparent"}`,
-                borderBottom: `1px solid ${T.border}`,
-              }}
-            >
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
-                style={{ background: T.accentBg, color: T.accent }}
-              >
-                {c.nombre.slice(0, 2).toUpperCase()}
-              </div>
+          const marcada = seleccion.has(c.telefono);
+          const filaStyle = {
+            background: (seleccionando ? marcada : active) ? T.accentBg : "transparent",
+            borderLeft: `3px solid ${(seleccionando ? marcada : active) ? T.accent : "transparent"}`,
+            borderBottom: `1px solid ${T.border}`,
+          };
+          const contenido = (
+            <>
+              {seleccionando ? (
+                <div className="w-9 h-9 flex items-center justify-center shrink-0">
+                  <Casilla marcada={marcada} />
+                </div>
+              ) : (
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
+                  style={{ background: T.accentBg, color: T.accent }}
+                >
+                  {c.nombre.slice(0, 2).toUpperCase()}
+                </div>
+              )}
               <div className="min-w-0 flex-1">
                 <p className="font-semibold truncate text-sm" style={{ color: T.text }}>{c.nombre}</p>
                 <p className="text-xs truncate" style={{ color: c.noLeidos > 0 ? T.text : T.textDim }}>
@@ -142,11 +264,38 @@ export function WhatsappSidebarClient({
                   </span>
                 )}
               </div>
+            </>
+          );
+
+          if (seleccionando) {
+            return (
+              <button
+                key={c.telefono}
+                type="button"
+                role="checkbox"
+                aria-checked={marcada}
+                onClick={() => toggle(c.telefono)}
+                className="w-full text-left flex items-center gap-3 px-4 py-3 transition-colors"
+                style={filaStyle}
+              >
+                {contenido}
+              </button>
+            );
+          }
+
+          return (
+            <Link
+              key={c.telefono}
+              href={`/dashboard/whatsapp/${encodeURIComponent(c.telefono)}`}
+              className={cn("flex items-center gap-3 px-4 py-3 transition-colors")}
+              style={filaStyle}
+            >
+              {contenido}
             </Link>
           );
         })}
 
-        {contactosFiltrados.length > 0 && (
+        {!seleccionando && contactosFiltrados.length > 0 && (
           <>
             <p
               className="px-4 pt-3 pb-1.5 text-[10px] font-bold uppercase tracking-widest"
@@ -178,5 +327,19 @@ export function WhatsappSidebarClient({
         )}
       </div>
     </aside>
+  );
+}
+
+function Casilla({ marcada }: { marcada: boolean }) {
+  return (
+    <span
+      className="w-4 h-4 rounded flex items-center justify-center shrink-0"
+      style={{
+        background: marcada ? T.accent : "transparent",
+        border: `1.5px solid ${marcada ? T.accent : T.border}`,
+      }}
+    >
+      {marcada && <Check className="w-3 h-3" style={{ color: T.accentText }} strokeWidth={3} />}
+    </span>
   );
 }

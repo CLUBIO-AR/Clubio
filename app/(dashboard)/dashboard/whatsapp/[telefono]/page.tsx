@@ -20,6 +20,7 @@ export default async function WhatsappThreadPage({
     .select("id, cuerpo, direccion, estado, created_at, alumnos(nombre, apellido)")
     .eq("gym_id", ctx.gymId)
     .eq("telefono", telefono)
+    .is("deleted_at", null)
     .order("created_at", { ascending: true });
 
   // Idempotente: marca como leídos los entrantes de esta conversación al abrirla.

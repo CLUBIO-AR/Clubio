@@ -21,9 +21,6 @@ export function ConfigWhatsappBot(props: Props) {
   const bienvenidaDefault = `¡Hola {nombre}! 👋 Gracias por escribir a ${props.gymNombre || "nuestro gimnasio"}. ¿En qué te podemos ayudar?`;
 
   async function save() {
-    if (activo && !info.trim()) {
-      throw new Error("Cargá el texto de horarios y precios: es lo que más se consulta");
-    }
     const res = await fetch("/api/config", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -64,7 +61,11 @@ export function ConfigWhatsappBot(props: Props) {
         </div>
       </SubBlock>
 
-      <SubBlock title="Respuesta a «Horarios y precios»">
+      <SubBlock title="Información adicional para «Horarios y precios»">
+        <Hint>
+          El bot arma solo la lista de actividades con precio y horarios a partir de lo que cargues en <a href="/dashboard/actividades" style={{ color: T.accent, textDecoration: "underline" }}>Actividades</a> (descripción y horarios de cada una).
+          Acá podés sumar lo que no está ahí: matrícula, promos, qué traer. Si no tenés actividades cargadas, se manda solo este texto.
+        </Hint>
         <Field label="Texto">
           <Textarea
             value={info}
@@ -75,7 +76,8 @@ export function ConfigWhatsappBot(props: Props) {
           />
         </Field>
         <Hint>
-          «Clase de prueba» y «Hablar con alguien» responden un mensaje corto y dejan el chat sin leer para que lo atienda alguien del gym.
+          «Clase de prueba» propone las próximas clases según los horarios de cada actividad y confirma el turno elegido; vos lo ves en el panel como mensaje sin leer.
+          «Hablar con alguien» deja el chat sin leer para que lo atienda alguien del gym.
           El bot no vuelve a mandar la bienvenida si alguien del gym le escribió en las últimas 24 h.
         </Hint>
       </SubBlock>

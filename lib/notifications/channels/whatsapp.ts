@@ -166,6 +166,56 @@ export async function sendWhatsAppButtons(
   return messageId;
 }
 
+// Mensaje con lista desplegable (hasta 10 opciones). Igual que los botones, solo dentro de
+// la ventana de 24hs. Límites de Meta: texto del botón 20, título de fila 24, descripción 72.
+export async function sendWhatsAppList(
+  config: Pick<GymNotificationConfig, "whatsapp_phone_number_id" | "whatsapp_access_token">,
+  params: { to: string; body: string; button: string; rows: Array<{ id: string; title: string; description?: string }> }
+): Promise<string> {
+  const to = normalizePhone(params.to);
+  if (!to) throw new Error("Teléfono inválido o ausente");
+  if (!config.whatsapp_phone_number_id || !config.whatsapp_access_token) {
+    throw new Error("WhatsApp no configurado para este gym");
+  }
+  if (params.rows.length === 0) throw new Error("La lista necesita al menos una opción");
+
+  const url = `https://graph.facebook.com/${GRAPH_VERSION}/${config.whatsapp_phone_number_id}/messages`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${config.whatsapp_access_token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      to,
+      type: "interactive",
+      interactive: {
+        type: "list",
+        body: { text: params.body.slice(0, 1024) },
+        action: {
+          button: params.button.slice(0, 20),
+          sections: [{
+            title: "Opciones",
+            rows: params.rows.slice(0, 10).map((r) => ({
+              id: r.id.slice(0, 200),
+              title: r.title.slice(0, 24),
+              ...(r.description ? { description: r.description.slice(0, 72) } : {}),
+            })),
+          }],
+        },
+      },
+    }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(`WhatsApp API error: ${data?.error?.message ?? res.statusText}`);
+
+  const messageId = data?.messages?.[0]?.id;
+  if (!messageId) throw new Error("WhatsApp API no devolvió message id");
+  return messageId;
+}
+
 function buildTemplate(
   config: GymNotificationConfig,
   payload: NotificationPayload

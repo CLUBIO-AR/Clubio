@@ -158,6 +158,11 @@ function textoDelMensaje(message: MensajeEntrante): string {
   if (message.text?.body) return message.text.body;
   if (message.button?.text) return `🔘 ${message.button.text}`;
   if (message.interactive?.button_reply?.title) return `🔘 ${message.interactive.button_reply.title}`;
+  // Opción elegida de una lista del bot (ej. "Hoy 18:00 — Funcional" al reservar clase de prueba).
+  if (message.interactive?.list_reply?.title) {
+    const { title, description } = message.interactive.list_reply;
+    return `🔘 ${title}${description ? ` — ${description}` : ""}`;
+  }
   if (message.type && message.type !== "text") return `[${message.type}]`;
   return "[mensaje sin texto]";
 }
@@ -266,7 +271,11 @@ type WhatsAppWebhookBody = {
           // Botón de respuesta rápida de una plantilla.
           button?: { text?: string; payload?: string };
           // Botón de un mensaje interactivo (por si más adelante mandamos botones fuera de plantilla).
-          interactive?: { type?: string; button_reply?: { id?: string; title?: string } };
+          interactive?: {
+            type?: string;
+            button_reply?: { id?: string; title?: string };
+            list_reply?: { id?: string; title?: string; description?: string };
+          };
         }>;
       };
     }>;

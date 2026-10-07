@@ -3,9 +3,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { Bell, BellRing, CheckCheck } from "lucide-react";
+import { Bell, BellRing, CheckCheck, Volume2, VolumeX, Smartphone } from "lucide-react";
 import { T } from "@/lib/theme";
 import { useWhatsappNotificaciones } from "./whatsapp-realtime";
+import type { EstadoPush } from "@/lib/hooks/use-avisos-dispositivo";
 
 function hace(fecha: string): string {
   const min = Math.max(0, Math.round((Date.now() - new Date(fecha).getTime()) / 60000));
@@ -58,7 +59,7 @@ export function NotificacionesBell({ lado }: { lado: "derecha" | "abajo" }) {
   }, [abierto]);
 
   if (!ctx) return null;
-  const { noLeidos, conversacionesSinLeer, marcarTodasLeidas, permisoNavegador, pedirPermisoNavegador } = ctx;
+  const { noLeidos, conversacionesSinLeer, marcarTodasLeidas, sonido, setSonido, push, activarPush, desactivarPush } = ctx;
 
   // Una fila por conversación (el mensaje más nuevo), con cuántos sin leer tiene.
   const porTelefono = new Map<string, { ultimo: (typeof noLeidos)[number]; cantidad: number }>();
@@ -144,24 +145,51 @@ export function NotificacionesBell({ lado }: { lado: "derecha" | "abajo" }) {
             ))}
           </div>
 
-          {permisoNavegador === "default" && (
+          <div className="px-4 py-2.5 space-y-2" style={{ background: T.bg, borderTop: `1px solid ${T.border}` }}>
             <button
               type="button"
-              onClick={() => void pedirPermisoNavegador()}
-              className="w-full px-4 py-2.5 text-xs font-semibold text-left"
-              style={{ background: T.bg, color: T.accent, borderTop: `1px solid ${T.border}` }}
+              onClick={() => setSonido(!sonido)}
+              className="flex items-center gap-2 text-xs font-semibold"
+              style={{ color: sonido ? T.accent : T.textDim }}
             >
-              🔔 Avisarme aunque esté en otra pestaña
+              {sonido ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+              {sonido ? "Sonido activado" : "Sonido desactivado"}
             </button>
-          )}
-          {permisoNavegador === "denied" && (
-            <p className="px-4 py-2.5 text-[11px]" style={{ background: T.bg, color: T.textDim, borderTop: `1px solid ${T.border}` }}>
-              Las notificaciones del navegador están bloqueadas. Activalas desde el candado de la barra de direcciones.
-            </p>
-          )}
+            <AvisoPush estado={push} activar={activarPush} desactivar={desactivarPush} />
+          </div>
         </div>,
         document.body,
       )}
     </div>
   );
+}
+
+function AvisoPush({ estado, activar, desactivar }: { estado: EstadoPush; activar: () => Promise<void>; desactivar: () => Promise<void> }) {
+  const [trabajando, setTrabajando] = useState(false);
+  const correr = (fn: () => Promise<void>) => async () => { setTrabajando(true); try { await fn(); } finally { setTrabajando(false); } };
+  const nota = (texto: string) => <p className="text-[11px] leading-snug" style={{ color: T.textDim }}>{texto}</p>;
+
+  switch (estado) {
+    case "cargando":
+    case "no-configurado":
+      return null;
+    case "no-soportado":
+      return nota("Este navegador no permite notificaciones con la app cerrada.");
+    case "instalar-ios":
+      return nota("En iPhone: tocá Compartir → «Agregar a pantalla de inicio», abrí CLUBIO desde ese ícono y activá las notificaciones desde acá.");
+    case "bloqueado":
+      return nota("Las notificaciones están bloqueadas para este sitio. Activalas desde el candado de la barra de direcciones (o en los ajustes del navegador en el celu).");
+    case "activo":
+      return (
+        <button type="button" disabled={trabajando} onClick={correr(desactivar)} className="flex items-center gap-2 text-xs font-semibold" style={{ color: T.accent }}>
+          <Smartphone className="w-3.5 h-3.5" /> Notificaciones en este dispositivo: activadas
+        </button>
+      );
+    case "inactivo":
+      return (
+        <button type="button" disabled={trabajando} onClick={correr(activar)} className="flex items-center gap-2 text-xs font-semibold" style={{ color: T.accent }}>
+          <Smartphone className="w-3.5 h-3.5" /> 🔔 Avisarme en este dispositivo, aunque cierre el navegador
+        </button>
+      );
+  }
 }

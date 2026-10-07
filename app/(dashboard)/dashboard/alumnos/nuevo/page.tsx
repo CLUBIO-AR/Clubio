@@ -4,7 +4,16 @@ import { createClient } from "@/lib/supabase/server";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 
-export default async function NuevoAlumnoPage() {
+export default async function NuevoAlumnoPage({
+  searchParams,
+}: {
+  // ?telefono=… cuando se da de alta desde una consulta de WhatsApp.
+  searchParams: Promise<{ telefono?: string }>;
+}) {
+  const { telefono } = await searchParams;
+  const telefonoInicial = telefono && /^\+?\d{8,15}$/.test(telefono)
+    ? (telefono.startsWith("+") ? telefono : `+${telefono}`)
+    : undefined;
   const ctx = await requireGymContext();
   const supabase = await createClient();
 
@@ -31,6 +40,7 @@ export default async function NuevoAlumnoPage() {
       <NuevoAlumnoFlow
         sucursales={sucursalesRes.data ?? []}
         actividadesDisponibles={actividadesRes.data ?? []}
+        telefonoInicial={telefonoInicial}
       />
     </div>
   );

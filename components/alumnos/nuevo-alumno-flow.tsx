@@ -13,9 +13,10 @@ type Actividad = { id: string; nombre: string; monto_base: number; color: string
 interface Props {
   sucursales: Sucursal[];
   actividadesDisponibles: Actividad[];
+  telefonoInicial?: string;
 }
 
-export function NuevoAlumnoFlow({ sucursales, actividadesDisponibles }: Props) {
+export function NuevoAlumnoFlow({ sucursales, actividadesDisponibles, telefonoInicial }: Props) {
   const router = useRouter();
   const [alumnoId, setAlumnoId] = useState<string | null>(null);
 
@@ -24,6 +25,7 @@ export function NuevoAlumnoFlow({ sucursales, actividadesDisponibles }: Props) {
       <AlumnoForm
         sucursales={sucursales}
         mode="create"
+        alumno={telefonoInicial ? { telefono: telefonoInicial } : undefined}
         onCreated={setAlumnoId}
       />
     );

@@ -9,6 +9,7 @@ import { ConfigCobro } from "@/components/configuracion/config-cobro";
 import { ConfigAvisos } from "@/components/configuracion/config-avisos";
 import { ConfigPlantillas } from "@/components/configuracion/config-plantillas";
 import { ConfigWhatsapp } from "@/components/configuracion/config-whatsapp";
+import { ConfigWhatsappBot } from "@/components/configuracion/config-whatsapp-bot";
 import { whatsappConfigurado } from "@/lib/whatsapp-config";
 import { T } from "@/lib/theme";
 import { Activity, ChevronRight, Mail } from "lucide-react";
@@ -154,6 +155,15 @@ export default async function ConfiguracionPage({
           templateAviso={config?.whatsapp_template_aviso ?? ""}
           templateTransferencia={config?.whatsapp_template_transferencia ?? ""}
           templateConfirmacion={config?.whatsapp_template_confirmacion ?? ""}
+        />
+      )}
+
+      {tab === "whatsapp" && waConectado && (
+        <ConfigWhatsappBot
+          activo={config?.whatsapp_bot_activo ?? false}
+          bienvenida={config?.whatsapp_bot_bienvenida ?? ""}
+          info={config?.whatsapp_bot_info ?? ""}
+          gymNombre={gym?.nombre ?? ""}
         />
       )}
 

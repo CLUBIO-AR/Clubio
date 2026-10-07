@@ -118,6 +118,54 @@ export async function sendWhatsAppText(
   return messageId;
 }
 
+// Mensaje con botones de respuesta (hasta 3). Solo se puede mandar dentro de la ventana
+// de 24hs desde el último mensaje del alumno, igual que el texto libre. Meta limita el
+// título de cada botón a 20 caracteres y el id a 256.
+export async function sendWhatsAppButtons(
+  config: Pick<GymNotificationConfig, "whatsapp_phone_number_id" | "whatsapp_access_token">,
+  params: { to: string; body: string; buttons: Array<{ id: string; title: string }> }
+): Promise<string> {
+  const to = normalizePhone(params.to);
+  if (!to) throw new Error("Teléfono inválido o ausente");
+  if (!config.whatsapp_phone_number_id || !config.whatsapp_access_token) {
+    throw new Error("WhatsApp no configurado para este gym");
+  }
+  if (params.buttons.length === 0 || params.buttons.length > 3) {
+    throw new Error("Un mensaje con botones lleva entre 1 y 3 botones");
+  }
+
+  const url = `https://graph.facebook.com/${GRAPH_VERSION}/${config.whatsapp_phone_number_id}/messages`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${config.whatsapp_access_token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      to,
+      type: "interactive",
+      interactive: {
+        type: "button",
+        body: { text: params.body.slice(0, 1024) },
+        action: {
+          buttons: params.buttons.map((b) => ({
+            type: "reply",
+            reply: { id: b.id.slice(0, 256), title: b.title.slice(0, 20) },
+          })),
+        },
+      },
+    }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(`WhatsApp API error: ${data?.error?.message ?? res.statusText}`);
+
+  const messageId = data?.messages?.[0]?.id;
+  if (!messageId) throw new Error("WhatsApp API no devolvió message id");
+  return messageId;
+}
+
 function buildTemplate(
   config: GymNotificationConfig,
   payload: NotificationPayload

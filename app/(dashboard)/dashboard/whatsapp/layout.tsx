@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireGymContext } from "@/lib/supabase/auth";
 import { WhatsappSidebarClient, type Conversacion, type Contacto } from "@/components/whatsapp/whatsapp-sidebar-client";
-import { T } from "@/lib/theme";
+import { InboxResponsive } from "@/components/whatsapp/inbox-responsive";
 import { redirect } from "next/navigation";
 import { whatsappConfigurado } from "@/lib/whatsapp-config";
 
@@ -81,18 +81,8 @@ export default async function WhatsappLayout({ children }: { children: React.Rea
     .map((a) => ({ telefono: a.telefono!, nombre: `${a.nombre} ${a.apellido}` }));
 
   return (
-    <div className="space-y-4 h-[calc(100vh-8rem)] flex flex-col">
-      <div>
-        <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>
-          WHATSAPP
-        </h1>
-        <p className="text-sm mt-1" style={{ color: T.textDim }}>Conversaciones con alumnos</p>
-      </div>
-
-      <div className="flex-1 flex gap-4 min-h-0">
-        <WhatsappSidebarClient conversaciones={conversaciones} contactos={contactos} />
-        <div className="flex-1 min-w-0">{children}</div>
-      </div>
-    </div>
+    <InboxResponsive lista={<WhatsappSidebarClient conversaciones={conversaciones} contactos={contactos} />}>
+      {children}
+    </InboxResponsive>
   );
 }

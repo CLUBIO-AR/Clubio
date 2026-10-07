@@ -59,28 +59,38 @@ export function useAvisosDispositivo() {
     })();
   }, []);
 
-  // El navegador solo deja reproducir audio después de que el usuario tocó la página una
-  // vez: se crea el AudioContext en el primer click/tecla para que el sonido ya esté listo.
+  // El navegador solo deja reproducir audio después de que el usuario tocó la página, y el
+  // celular lo vuelve a "dormir" cuando la pantalla se apaga o cambiás de app. Por eso se
+  // (re)habilita en cada toque mientras no esté andando. En iPhone además hay que hacer
+  // sonar algo dentro del mismo toque (un buffer en silencio) y escuchar touchend.
   useEffect(() => {
-    const preparar = () => {
-      if (!audioRef.current) {
-        try { audioRef.current = new AudioContext(); } catch { /* sin audio */ }
-      }
-      void audioRef.current?.resume();
+    const habilitar = () => {
+      try {
+        if (!audioRef.current) {
+          const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+          if (!Ctor) return;
+          audioRef.current = new Ctor();
+        }
+        const ctx = audioRef.current;
+        if (ctx.state === "running") return;
+        void ctx.resume();
+        const silencio = ctx.createBufferSource();
+        silencio.buffer = ctx.createBuffer(1, 1, 22050);
+        silencio.connect(ctx.destination);
+        silencio.start(0);
+      } catch { /* sin audio */ }
     };
-    window.addEventListener("pointerdown", preparar, { once: true });
-    window.addEventListener("keydown", preparar, { once: true });
-    return () => {
-      window.removeEventListener("pointerdown", preparar);
-      window.removeEventListener("keydown", preparar);
-    };
+    const eventos = ["pointerdown", "touchend", "keydown"] as const;
+    for (const ev of eventos) window.addEventListener(ev, habilitar, { passive: true });
+    return () => { for (const ev of eventos) window.removeEventListener(ev, habilitar); };
   }, []);
 
   /** "Ding-dong" corto generado con Web Audio (no hace falta archivo de sonido). */
   const sonar = useCallback(() => {
     if (!sonido) return;
     const ctx = audioRef.current;
-    if (!ctx || ctx.state !== "running") return;
+    if (!ctx) return;
+    if (ctx.state !== "running") void ctx.resume();
     const t = ctx.currentTime;
     for (const [i, frecuencia] of [880, 1320].entries()) {
       const osc = ctx.createOscillator();

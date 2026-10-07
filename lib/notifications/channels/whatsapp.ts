@@ -10,6 +10,7 @@
 // ({{1}} nombre, {{2}} actividad, {{3}} mes/año, {{4}} monto, {{5}} fecha límite) +
 // un botón "Pagar ahora" con URL dinámica (base fija configurada en la plantilla + {{1}} = token).
 import type { NotificationPayload, GymNotificationConfig } from "../index";
+import { normalizarTelefonoAR } from "@/lib/telefono";
 
 const GRAPH_VERSION = "v21.0";
 const DEFAULT_LANGUAGE = "es_AR";
@@ -162,10 +163,9 @@ function buildTemplate(
 
 // Meta exige el número en formato E.164 sin "+" (ej: 5493625335586).
 // Los alumnos pueden tener el teléfono guardado con espacios, guiones o el "+" inicial.
+// Convierte lo que haya cargado el gym (con o sin 54/9/0/15) al formato que espera Meta.
 function normalizePhone(telefono?: string | null): string | null {
-  if (!telefono) return null;
-  const digits = telefono.replace(/\D/g, "");
-  return digits.length >= 10 ? digits : null;
+  return normalizarTelefonoAR(telefono);
 }
 
 function formatFecha(fechaIso?: string): string {

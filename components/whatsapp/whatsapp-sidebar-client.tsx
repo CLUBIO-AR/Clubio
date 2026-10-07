@@ -136,7 +136,7 @@ export function WhatsappSidebarClient({
 
   return (
     <aside
-      className="w-80 shrink-0 flex flex-col rounded-xl overflow-hidden"
+      className="w-full flex flex-col rounded-xl overflow-hidden"
       style={{ background: T.card, border: `1px solid ${T.border}` }}
     >
       <div className="p-3 space-y-3" style={{ borderBottom: `1px solid ${T.border}` }}>

@@ -117,12 +117,13 @@ export function WhatsappRealtimeProvider({
     const notif: NotificacionWhatsapp = { id: fila.id, telefono: fila.telefono, nombre, cuerpo: fila.cuerpo, created_at: fila.created_at };
 
     setNoLeidos((prev) => [notif, ...prev.filter((n) => n.id !== notif.id)].slice(0, MAX_NOTIFICACIONES));
+    // Suena siempre que llega un mensaje, aunque estés mirando ese chat (como WhatsApp).
+    sonar();
 
     // Si ya estás mirando ese chat, no hace falta avisar (la página lo marca leído sola).
     const mirandoEseChat = pathnameRef.current === hrefChat(fila.telefono) && !document.hidden;
     if (mirandoEseChat) return;
 
-    sonar();
     setToasts((prev) => [notif, ...prev].slice(0, 3));
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== notif.id)), 7000);
 

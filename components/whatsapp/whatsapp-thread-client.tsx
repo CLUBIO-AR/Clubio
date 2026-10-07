@@ -169,15 +169,15 @@ export function WhatsappThreadClient({
   }
 
   return (
-    <div className="flex-1 flex flex-col rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>
-      <div className="flex-1 overflow-y-auto p-5 space-y-3">
+    <div className="flex-1 min-h-0 flex flex-col rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+      <div className="flex-1 overflow-y-auto p-3 md:p-5 space-y-3">
         {mensajes.length === 0 && (
           <p className="text-sm text-center mt-10" style={{ color: T.textDim }}>Todavía no hay mensajes con este número.</p>
         )}
         {mensajes.map((m) => (
           <div key={m.id} className={m.direccion === "saliente" ? "flex justify-end" : "flex justify-start"}>
             <div
-              className="max-w-[70%] rounded-2xl px-4 py-2.5"
+              className="max-w-[85%] md:max-w-[70%] rounded-2xl px-3.5 md:px-4 py-2.5"
               style={{
                 background: m.direccion === "saliente" ? T.accent : T.inputBg,
                 color: m.direccion === "saliente" ? T.accentText : T.text,
@@ -196,7 +196,7 @@ export function WhatsappThreadClient({
         <div ref={bottomRef} />
       </div>
 
-      <div className="p-4" style={{ borderTop: `1px solid ${T.border}` }}>
+      <div className="p-2.5 md:p-4" style={{ borderTop: `1px solid ${T.border}` }}>
         {error && <p className="text-xs mb-2" style={{ color: T.danger }}>{error}</p>}
         {!ventanaAbierta && (
           <p className="text-xs mb-2" style={{ color: T.textDim }}>
@@ -271,7 +271,8 @@ export function WhatsappThreadClient({
               }}
               placeholder={ventanaAbierta ? "Escribí un mensaje..." : "/aviso_cuota"}
               rows={1}
-              className="resize-none"
+              // 16px en el celular: con menos, el iPhone hace zoom al tocar la caja de texto.
+              className="resize-none text-base md:text-sm"
             />
             <Button onClick={() => handleEnviar()} disabled={isPending || !texto.trim()} size="icon">
               <Send className="w-4 h-4" />

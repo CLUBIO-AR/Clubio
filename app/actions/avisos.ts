@@ -5,6 +5,7 @@ import { getGymContext } from "@/lib/supabase/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendNotification, motivosCanalesInactivos } from "@/lib/notifications";
 import type { GymNotificationConfig, EmailTemplates } from "@/lib/notifications";
+import { registrarAvisoEnInbox } from "@/lib/notifications/inbox";
 
 type ActionResult<T = undefined> =
   | { ok: true; data: T }
@@ -96,12 +97,18 @@ export async function reenviarAvisoAction(
     const destino = r.canal === "email" ? (alumno.email ?? "") : (alumno.telefono ?? "");
     await admin.from("notificaciones_log").insert({
       gym_id: ctx.gymId, alumno_id: cuota.alumno_id, cuota_id: cuota.id,
-      tipo, enviado_a: destino || r.canal,
+      tipo, enviado_a: destino || r.canal, canal: r.canal,
       estado: r.ok ? "enviado" : "error",
       provider_id: r.provider_id ?? null,
       error_detail: r.error ?? null,
     });
     if (!r.ok) console.error(`[reenviarAviso] canal=${r.canal} cuota=${cuotaId} error:`, r.error);
+    if (r.ok && r.canal === "whatsapp") {
+      await registrarAvisoEnInbox(admin, {
+        gymId: ctx.gymId, alumnoId: cuota.alumno_id, telefono: alumno.telefono,
+        waMessageId: r.provider_id, tipo, cuota,
+      });
+    }
   }
 
   const exitosos = resultados.filter((r) => r.ok);

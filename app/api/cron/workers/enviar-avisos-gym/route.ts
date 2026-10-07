@@ -3,6 +3,7 @@ import { SignJWT } from "jose";
 import { logCron } from "@/lib/cron-logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendNotification } from "@/lib/notifications";
+import { registrarAvisoEnInbox } from "@/lib/notifications/inbox";
 import type { GymNotificationConfig, EmailTemplates } from "@/lib/notifications";
 import { sendEmailAvisosLote, sendEmailAvisoTransferencia, sendEmailAvisoUltimoLlamado } from "@/lib/notifications/channels/email";
 import { z } from "zod";
@@ -136,10 +137,13 @@ export async function POST(request: Request) {
         const destino = r.canal === "email" ? (alumno.email ?? "") : (alumno.telefono ?? "");
         await admin.from("notificaciones_log").insert({
           gym_id, alumno_id: alumnoId, cuota_id: cuota.id,
-          tipo, enviado_a: destino || r.canal,
+          tipo, enviado_a: destino || r.canal, canal: r.canal,
           estado: r.ok ? "enviado" : "error",
           provider_id: r.provider_id ?? null,
         });
+        if (r.ok && r.canal === "whatsapp") {
+          await registrarAvisoEnInbox(admin, { gymId: gym_id, alumnoId, telefono: alumno.telefono, waMessageId: r.provider_id, tipo, cuota });
+        }
       }
 
       if (resultados.some((r) => r.ok)) {
@@ -389,10 +393,13 @@ async function enviarAvisosFechaFija(params: {
         for (const r of wsResultados) {
           await admin.from("notificaciones_log").insert({
             gym_id, alumno_id: cuota.alumno_id, cuota_id: cuota.id,
-            tipo: "aviso_vencimiento", enviado_a: alumno.telefono,
+            tipo: "aviso_vencimiento", enviado_a: alumno.telefono, canal: "whatsapp",
             estado: r.ok ? "enviado" : "error",
             provider_id: r.provider_id ?? null,
           });
+          if (r.ok) {
+            await registrarAvisoEnInbox(admin, { gymId: gym_id, alumnoId: cuota.alumno_id, telefono: alumno.telefono, waMessageId: r.provider_id, tipo: "aviso_vencimiento", cuota });
+          }
         }
       }
 
@@ -431,10 +438,13 @@ async function enviarAvisosFechaFija(params: {
       const destino = r.canal === "email" ? (alumno.email ?? "") : (alumno.telefono ?? "");
       await admin.from("notificaciones_log").insert({
         gym_id, alumno_id: cuota.alumno_id, cuota_id: cuota.id,
-        tipo, enviado_a: destino || r.canal,
+        tipo, enviado_a: destino || r.canal, canal: r.canal,
         estado: r.ok ? "enviado" : "error",
         provider_id: r.provider_id ?? null,
       });
+      if (r.ok && r.canal === "whatsapp") {
+        await registrarAvisoEnInbox(admin, { gymId: gym_id, alumnoId: cuota.alumno_id, telefono: alumno.telefono, waMessageId: r.provider_id, tipo, cuota });
+      }
     }
 
     if (resultados.some((r) => r.ok)) {

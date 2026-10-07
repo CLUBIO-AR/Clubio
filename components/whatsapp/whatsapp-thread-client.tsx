@@ -52,7 +52,17 @@ export function WhatsappThreadClient({
   // hay que iniciar con una plantilla aprobada (ver "Reenviar aviso" en Cuotas).
   ventanaAbierta: boolean;
 }) {
-  const [mensajes, setMensajes] = useState(mensajesIniciales);
+  // Los mensajes vienen del server y se actualizan solos (Realtime → router.refresh()).
+  // Lo que mandás desde acá se muestra al toque como "pendiente" hasta que llega la
+  // versión del server; cuando cambian los mensajes del server, los pendientes se descartan.
+  const [pendientes, setPendientes] = useState<Mensaje[]>([]);
+  const [inicialesPrevios, setInicialesPrevios] = useState(mensajesIniciales);
+  if (mensajesIniciales !== inicialesPrevios) {
+    setInicialesPrevios(mensajesIniciales);
+    setPendientes([]);
+  }
+  const mensajes = [...mensajesIniciales, ...pendientes];
+  const setMensajes = setPendientes;
   const [texto, setTexto] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -76,9 +86,11 @@ export function WhatsappThreadClient({
     inputRef.current?.focus();
   }
 
+  // Bajar al último mensaje solo cuando llega o se manda uno (no en cada tecla).
+  const cantidadMensajes = mensajes.length;
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [mensajes]);
+  }, [cantidadMensajes]);
 
   function handleEnviar(textoAEnviar: string = texto) {
     const cuerpo = textoAEnviar.trim();

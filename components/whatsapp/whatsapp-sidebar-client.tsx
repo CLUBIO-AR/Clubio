@@ -53,7 +53,13 @@ export function WhatsappSidebarClient({
   // Se marca la conversación clickeada al toque, sin esperar a que el server responda
   // y cambie la URL. Cuando la URL se actualiza, manda la URL.
   const [clickeado, setClickeado] = useState<{ telefono: string; desde: string | null } | null>(null);
-  const activeTelefono = clickeado && clickeado.desde === telefonoEnUrl ? clickeado.telefono : telefonoEnUrl;
+  // Cuando la URL cambia (llegó el chat clickeado, o Esc volvió al panel en blanco), manda la URL.
+  const [urlPrevia, setUrlPrevia] = useState(telefonoEnUrl);
+  if (urlPrevia !== telefonoEnUrl) {
+    setUrlPrevia(telefonoEnUrl);
+    setClickeado(null);
+  }
+  const activeTelefono = clickeado ? clickeado.telefono : telefonoEnUrl;
 
   const filtradas = useMemo(() => {
     const texto = busqueda.trim().toLowerCase();

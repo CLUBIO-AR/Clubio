@@ -129,36 +129,71 @@ export function WhatsappRealtimeProvider({
 
   useEffect(() => {
     const supabase = createClient();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelado = false;
 
-    const channel = supabase
-      .channel(`wa-${gymId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "mensajes_whatsapp", filter: `gym_id=eq.${gymId}` },
-        (payload) => {
-          refrescarInbox();
-          const fila = payload.new as Partial<FilaMensaje>;
-          if (!fila?.id) return;
+    // IMPORTANTE: la suscripción tiene que salir con el token del usuario logueado. Sin
+    // esto Realtime se conecta como "anon", la política RLS (gym_isolation) no deja ver
+    // ninguna fila y nunca llega un evento — el inbox no se actualizaba sin F5 por eso.
+    const conectar = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (cancelado) return;
+      if (!session) {
+        console.warn("[whatsapp-realtime] sin sesión, no se puede escuchar en tiempo real");
+        setRealtimeCaido(true);
+        return;
+      }
+      await supabase.realtime.setAuth(session.access_token);
+      if (cancelado) return;
 
-          if (payload.eventType === "INSERT" && fila.direccion === "entrante" && !fila.leido) {
-            void notificar(fila as FilaMensaje);
+      channel = supabase
+        .channel(`wa-${gymId}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "mensajes_whatsapp", filter: `gym_id=eq.${gymId}` },
+          (payload) => {
+            refrescarInbox();
+            const fila = payload.new as Partial<FilaMensaje>;
+            if (!fila?.id) return;
+
+            if (payload.eventType === "INSERT" && fila.direccion === "entrante" && !fila.leido) {
+              void notificar(fila as FilaMensaje);
+            }
+            // Leído (al abrir el chat, aunque sea en otra pestaña) o eliminado → sale de la lista.
+            if (payload.eventType === "UPDATE" && (fila.leido || fila.deleted_at)) {
+              setNoLeidos((prev) => prev.filter((n) => n.id !== fila.id));
+            }
+          },
+        )
+        .subscribe((status) => {
+          if (status === "SUBSCRIBED") setRealtimeCaido(false);
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            console.warn("[whatsapp-realtime] sin conexión en tiempo real, refrescando cada 15 s:", status);
+            setRealtimeCaido(true);
           }
-          // Leído (al abrir el chat, aunque sea en otra pestaña) o eliminado → sale de la lista.
-          if (payload.eventType === "UPDATE" && (fila.leido || fila.deleted_at)) {
-            setNoLeidos((prev) => prev.filter((n) => n.id !== fila.id));
-          }
-        },
-      )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") setRealtimeCaido(false);
-        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-          console.warn("[whatsapp-realtime] sin conexión en tiempo real, refrescando cada 15 s:", status);
-          setRealtimeCaido(true);
-        }
-      });
+        });
+    };
+    void conectar();
 
-    return () => { void supabase.removeChannel(channel); };
+    // El token de Supabase dura ~1 h: al renovarse, Realtime tiene que usar el nuevo.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) void supabase.realtime.setAuth(session.access_token);
+    });
+
+    return () => {
+      cancelado = true;
+      subscription.unsubscribe();
+      if (channel) void supabase.removeChannel(channel);
+    };
   }, [gymId, notificar, refrescarInbox]);
+
+  // Al volver a la pestaña después de un rato (la compu se suspendió, se cortó internet),
+  // se pudo haber perdido algún evento: refrescamos una vez para ponernos al día.
+  useEffect(() => {
+    const alVolver = () => { if (!document.hidden) refrescarInbox(); };
+    document.addEventListener("visibilitychange", alVolver);
+    return () => document.removeEventListener("visibilitychange", alVolver);
+  }, [refrescarInbox]);
 
   // Plan B si Realtime no conecta: refrescar el inbox cada 15 s mientras estás ahí.
   useEffect(() => {
@@ -196,7 +231,7 @@ export function WhatsappRealtimeProvider({
     <WhatsappNotifContext.Provider value={value}>
       {children}
       {toasts.length > 0 && (
-        <div className="fixed bottom-4 right-4 z-[60] flex flex-col gap-2 w-[min(340px,calc(100vw-2rem))]" aria-live="polite">
+        <div className="fixed bottom-4 right-4 z-[1000] flex flex-col gap-2 w-[min(340px,calc(100vw-2rem))]" aria-live="polite">
           {toasts.map((t) => (
             <div
               key={t.id}

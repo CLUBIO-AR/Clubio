@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsAppText } from "@/lib/notifications/channels/whatsapp";
+import { responderConBot } from "@/lib/bot-consultas";
 
 // Webhook único para TODOS los gyms (Meta no permite un callback distinto por número
 // dentro de la misma app). Cada evento trae metadata.phone_number_id, que se cruza
@@ -134,6 +135,8 @@ export async function POST(request: Request) {
           // de wa_message_id hace fallar el insert y no se responde el alias dos veces.
           if (esPedidoDeAlias(message)) {
             await responderAlias(admin, gymId, telefono, alumno?.id ?? null);
+          } else {
+            await responderConBot(admin, { gymId, telefono, alumnoId: alumno?.id ?? null, message });
           }
         }
       }

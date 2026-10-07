@@ -15,6 +15,8 @@ export type Conversacion = {
   ultimaDireccion: "entrante" | "saliente";
   ultimaFecha: string;
   noLeidos: number;
+  // El teléfono no es de ningún alumno: alguien que escribe para consultar.
+  esConsulta: boolean;
 };
 
 // Alumno con teléfono cargado que todavía no tiene ninguna conversación — aparece
@@ -24,7 +26,7 @@ export type Contacto = {
   nombre: string;
 };
 
-type Filtro = "todos" | "no_leidos";
+type Filtro = "todos" | "no_leidos" | "consultas";
 
 export function WhatsappSidebarClient({
   conversaciones,
@@ -57,6 +59,7 @@ export function WhatsappSidebarClient({
     const texto = busqueda.trim().toLowerCase();
     return conversaciones.filter((c) => {
       if (filtro === "no_leidos" && c.noLeidos === 0) return false;
+      if (filtro === "consultas" && !c.esConsulta) return false;
       if (texto && !c.nombre.toLowerCase().includes(texto) && !c.telefono.includes(texto)) return false;
       return true;
     });
@@ -66,11 +69,12 @@ export function WhatsappSidebarClient({
   // de alumnos sin conversación podría ser enorme y taparía los chats reales.
   const contactosFiltrados = useMemo(() => {
     const texto = busqueda.trim().toLowerCase();
-    if (!texto || filtro === "no_leidos") return [];
+    if (!texto || filtro !== "todos") return [];
     return contactos.filter((c) => c.nombre.toLowerCase().includes(texto));
   }, [contactos, busqueda, filtro]);
 
   const totalNoLeidos = conversaciones.reduce((acc, c) => acc + (c.noLeidos > 0 ? 1 : 0), 0);
+  const consultasSinLeer = conversaciones.filter((c) => c.esConsulta && c.noLeidos > 0).length;
 
   // Solo cuentan las seleccionadas que siguen visibles con el filtro/búsqueda actual,
   // para no actuar sobre conversaciones que el usuario ya no está viendo.
@@ -159,11 +163,12 @@ export function WhatsappSidebarClient({
           {([
             { value: "todos" as const, label: "Todos" },
             { value: "no_leidos" as const, label: `No leídos${totalNoLeidos > 0 ? ` (${totalNoLeidos})` : ""}` },
+            { value: "consultas" as const, label: `Consultas${consultasSinLeer > 0 ? ` (${consultasSinLeer})` : ""}` },
           ]).map((t) => (
             <button
               key={t.value}
               onClick={() => setFiltro(t.value)}
-              className="flex-1 px-2 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-colors"
+              className="flex-1 px-1 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wide whitespace-nowrap transition-colors"
               style={{
                 fontFamily: "var(--font-fredoka)",
                 background: filtro === t.value ? T.accentBg : "transparent",
@@ -224,7 +229,7 @@ export function WhatsappSidebarClient({
       <div className="flex-1 overflow-y-auto">
         {filtradas.length === 0 && contactosFiltrados.length === 0 && (
           <p className="text-sm text-center mt-8 px-4" style={{ color: T.textDim }}>
-            {busqueda || filtro === "no_leidos" ? "Sin resultados" : "Todavía no hay conversaciones"}
+            {busqueda || filtro !== "todos" ? "Sin resultados" : "Todavía no hay conversaciones"}
           </p>
         )}
         {filtradas.map((c) => {
@@ -250,7 +255,17 @@ export function WhatsappSidebarClient({
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <p className="font-semibold truncate text-sm" style={{ color: active && !seleccionando ? T.accent : T.text }}>{c.nombre}</p>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <p className="font-semibold truncate text-sm" style={{ color: active && !seleccionando ? T.accent : T.text }}>{c.nombre}</p>
+                  {c.esConsulta && (
+                    <span
+                      className="shrink-0 px-1.5 py-px rounded text-[9px] font-bold uppercase tracking-wider"
+                      style={{ fontFamily: "var(--font-fredoka)", background: `color-mix(in oklch, ${T.blue} 12%, transparent)`, color: T.blue, border: `1px solid color-mix(in oklch, ${T.blue} 30%, transparent)` }}
+                    >
+                      Consulta
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs truncate" style={{ color: c.noLeidos > 0 ? T.text : T.textDim }}>
                   {c.ultimaDireccion === "saliente" ? "Vos: " : ""}{c.ultimoMensaje}
                 </p>

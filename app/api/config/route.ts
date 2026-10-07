@@ -16,6 +16,7 @@ export async function GET() {
       "email_activo, dias_aviso_antes, dias_aviso_fijos, dia_ultimo_aviso, aviso_post_vencimiento_dias, max_avisos_post, " +
       "email_remitente_nombre, email_remitente_address, email_color_acento, email_templates, " +
       "mp_public_key, mp_solo_dinero_cuenta, whatsapp_activo, whatsapp_phone_number_id, " +
+      "whatsapp_bot_activo, whatsapp_bot_bienvenida, whatsapp_bot_info, " +
       "generar_cuota_al_alta, cuota_alta_proporcional, dias_minimos_para_cuota_alta, " +
       "dias_mora_desactivacion, mora_desactivar_mes_siguiente, " +
       "email_modo, transferencia_alias, transferencia_titular, transferencia_banco"
@@ -82,6 +83,10 @@ const PatchSchema = z.object({
   whatsapp_template_aviso: z.string().max(100).nullable().optional(),
   whatsapp_template_transferencia: z.string().max(100).nullable().optional(),
   whatsapp_template_confirmacion: z.string().max(100).nullable().optional(),
+  whatsapp_bot_activo: z.boolean().optional(),
+  // Meta limita el cuerpo de un mensaje interactivo a 1024 caracteres y uno de texto a 4096.
+  whatsapp_bot_bienvenida: z.string().max(900).nullable().optional(),
+  whatsapp_bot_info: z.string().max(3500).nullable().optional(),
   // Config: cuota al alta
   generar_cuota_al_alta: z.boolean().optional(),
   cuota_alta_proporcional: z.boolean().optional(),
@@ -151,6 +156,9 @@ export async function PATCH(request: Request) {
     whatsapp_template_aviso: string | null;
     whatsapp_template_transferencia: string | null;
     whatsapp_template_confirmacion: string | null;
+    whatsapp_bot_activo: boolean;
+    whatsapp_bot_bienvenida: string | null;
+    whatsapp_bot_info: string | null;
     generar_cuota_al_alta: boolean;
     cuota_alta_proporcional: boolean;
     dias_minimos_para_cuota_alta: number;
@@ -168,6 +176,7 @@ export async function PATCH(request: Request) {
     "mp_access_token", "mp_public_key", "mp_solo_dinero_cuenta",
     "whatsapp_activo", "whatsapp_phone_number_id", "whatsapp_access_token",
     "whatsapp_template_aviso", "whatsapp_template_transferencia", "whatsapp_template_confirmacion",
+    "whatsapp_bot_activo", "whatsapp_bot_bienvenida", "whatsapp_bot_info",
     "generar_cuota_al_alta", "cuota_alta_proporcional", "dias_minimos_para_cuota_alta",
   ] as const;
 

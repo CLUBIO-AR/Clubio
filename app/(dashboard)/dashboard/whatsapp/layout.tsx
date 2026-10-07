@@ -34,6 +34,7 @@ export default async function WhatsappLayout({ children }: { children: React.Rea
       .from("alumnos")
       .select("id, nombre, apellido, telefono")
       .eq("gym_id", ctx.gymId)
+      .is("deleted_at", null)
       .not("telefono", "is", null)
       .order("nombre"),
   ]);
@@ -46,12 +47,21 @@ export default async function WhatsappLayout({ children }: { children: React.Rea
     porTelefono.set(m.telefono, lista);
   }
 
+  // Nombre por teléfono contra los alumnos actuales (no solo el alumno_id guardado en el
+  // mensaje): así una consulta que después se dio de alta como alumno muestra su nombre.
+  const alumnoPorTelefono = new Map<string, { nombre: string; apellido: string }>();
+  for (const a of alumnos ?? []) {
+    if (a.telefono && !alumnoPorTelefono.has(telefonoKey(a.telefono))) alumnoPorTelefono.set(telefonoKey(a.telefono), a);
+  }
+
   const conversaciones: Conversacion[] = Array.from(porTelefono.entries())
     .map(([telefono, msgs]) => {
-      const alumno = msgs[0].alumnos as unknown as { nombre: string; apellido: string } | null;
+      const alumno = alumnoPorTelefono.get(telefonoKey(telefono))
+        ?? (msgs.find((m) => m.alumnos)?.alumnos as unknown as { nombre: string; apellido: string } | null);
       return {
         telefono,
         nombre: alumno ? `${alumno.nombre} ${alumno.apellido}` : telefono,
+        esConsulta: !alumno,
         ultimoMensaje: msgs[0].cuerpo,
         ultimaDireccion: msgs[0].direccion,
         ultimaFecha: msgs[0].created_at,

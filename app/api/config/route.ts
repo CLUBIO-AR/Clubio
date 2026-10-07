@@ -75,6 +75,13 @@ const PatchSchema = z.object({
   mp_access_token: z.string().nullable().optional(),
   mp_public_key: z.string().nullable().optional(),
   mp_solo_dinero_cuenta: z.boolean().optional(),
+  // Config: WhatsApp (Meta Cloud API)
+  whatsapp_activo: z.boolean().optional(),
+  whatsapp_phone_number_id: z.string().regex(/^\d{10,20}$/, "El Phone Number ID son solo números").nullable().optional(),
+  whatsapp_access_token: z.string().min(20).nullable().optional(),
+  whatsapp_template_aviso: z.string().max(100).nullable().optional(),
+  whatsapp_template_transferencia: z.string().max(100).nullable().optional(),
+  whatsapp_template_confirmacion: z.string().max(100).nullable().optional(),
   // Config: cuota al alta
   generar_cuota_al_alta: z.boolean().optional(),
   cuota_alta_proporcional: z.boolean().optional(),
@@ -138,6 +145,12 @@ export async function PATCH(request: Request) {
     mp_access_token: string | null;
     mp_public_key: string | null;
     mp_solo_dinero_cuenta: boolean;
+    whatsapp_activo: boolean;
+    whatsapp_phone_number_id: string | null;
+    whatsapp_access_token: string | null;
+    whatsapp_template_aviso: string | null;
+    whatsapp_template_transferencia: string | null;
+    whatsapp_template_confirmacion: string | null;
     generar_cuota_al_alta: boolean;
     cuota_alta_proporcional: boolean;
     dias_minimos_para_cuota_alta: number;
@@ -153,6 +166,8 @@ export async function PATCH(request: Request) {
     "email_modo", "transferencia_alias", "transferencia_titular", "transferencia_banco",
     "email_color_acento", "email_templates",
     "mp_access_token", "mp_public_key", "mp_solo_dinero_cuenta",
+    "whatsapp_activo", "whatsapp_phone_number_id", "whatsapp_access_token",
+    "whatsapp_template_aviso", "whatsapp_template_transferencia", "whatsapp_template_confirmacion",
     "generar_cuota_al_alta", "cuota_alta_proporcional", "dias_minimos_para_cuota_alta",
   ] as const;
 

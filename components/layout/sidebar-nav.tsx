@@ -24,9 +24,13 @@ interface SidebarNavProps {
   gymNombre: string;
   usuarioNombre: string;
   usuarioRol: string;
+  // El inbox de WhatsApp solo aparece si el gym tiene WhatsApp conectado
+  // (ver lib/whatsapp-config.ts); si no, sería una pantalla vacía.
+  mostrarWhatsapp: boolean;
 }
 
-export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavProps) {
+export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol, mostrarWhatsapp }: SidebarNavProps) {
+  const navItems = NAV_ITEMS.filter((i) => mostrarWhatsapp || i.href !== "/dashboard/whatsapp");
   const pathname = usePathname();
   const router   = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -162,7 +166,7 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol }: SidebarNavP
 
         {/* Nav */}
         <nav className="flex-1 px-3 pt-2 pb-2 space-y-0.5">
-          {NAV_ITEMS.map(({ href, label, icon: Icon, exact }) => {
+          {navItems.map(({ href, label, icon: Icon, exact }) => {
             const active = exact ? pathname === href : pathname.startsWith(href);
             return (
               <Link

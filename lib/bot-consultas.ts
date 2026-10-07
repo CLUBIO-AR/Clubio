@@ -56,6 +56,29 @@ const RESPUESTA_OTRO_HORARIO = "Dale 🙌 Contanos qué día y horario te queda 
 const RESPUESTA_HUMANO = "Listo, ya le avisamos al equipo. En un rato te escribe alguien 🙌";
 const RESPUESTA_INFO_VACIA = "Ya le avisamos al equipo, en un rato te pasan horarios y precios 🙌";
 
+// Estado de cuenta con DNI. PEDIDO_DNI y DNI_NO_ENCONTRADO también se usan para reconocer,
+// en el historial, que el bot está esperando un DNI y cuántos intentos fallaron.
+const PEDIDO_DNI = "📇 Para ver tu estado de cuenta, escribime tu *DNI* (solo números).";
+const MARCA_PEDIDO_DNI = "escribime tu *DNI*";
+const DNI_NO_ENCONTRADO = "No encontramos ese DNI entre los alumnos del gym 🤔 Revisalo y mandalo de nuevo (solo números).";
+const MARCA_DNI_NO_ENCONTRADO = "No encontramos ese DNI";
+const DNI_OTRO_TELEFONO = "Ese DNI tiene otro teléfono registrado, así que por seguridad no podemos mostrar la cuenta desde este número. Ya le avisamos al gym para que lo revise 🙌";
+const DNI_BLOQUEADO = "Hubo varios intentos con un DNI que no coincide. Por seguridad, en un rato te escribe alguien del gym 🙌";
+const MAX_INTENTOS_DNI = 3;
+const ESPERA_DNI_MIN = 30;
+
+/** "12.345.678" o "12345678" → "12345678"; null si no parece un DNI. */
+export function extraerDni(texto: string | undefined): string | null {
+  const limpio = (texto ?? "").trim().replace(/[.\s-]/g, "");
+  return /^\d{7,8}$/.test(limpio) ? limpio : null;
+}
+
+/** Variantes con las que puede estar cargado un DNI en la ficha ("12345678", "12.345.678"). */
+function variantesDni(dni: string): string[] {
+  const conPuntos = dni.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return Array.from(new Set([dni, conPuntos]));
+}
+
 export type MensajeBot = {
   id: string;
   type?: string;
@@ -75,7 +98,23 @@ type Accion =
   | { tipo: "otro_horario" }
   | { tipo: "humano" }
   | { tipo: "menu" }
-  | { tipo: "cuenta"; alumnoId?: string };
+  | { tipo: "cuenta" }
+  | { tipo: "dni"; resultado: ResultadoDni };
+
+/**
+ * Resultado de buscar el DNI que mandó la persona (se resuelve al planificar, para saber
+ * antes de guardar el mensaje si hay que avisarle al gym).
+ * - ok: el DNI es de un alumno y este teléfono es el suyo → se muestra la cuenta.
+ * - sin_telefono: el alumno no tiene teléfono cargado → se muestra la cuenta y se avisa al
+ *   gym para que cargue este número.
+ * - otro_telefono: el alumno tiene OTRO teléfono cargado → no se muestra nada (podría ser
+ *   alguien que conoce el DNI de otra persona) y se avisa al gym.
+ * - no_encontrado: ningún alumno del gym tiene ese DNI → se pide de nuevo.
+ * - bloqueado: demasiados DNI equivocados desde este número → se corta y se avisa al gym.
+ */
+type ResultadoDni =
+  | { estado: "ok" | "sin_telefono" | "otro_telefono"; alumnoId: string }
+  | { estado: "no_encontrado" | "bloqueado" };
 
 /** Qué pidió la persona: un botón/lista del bot, un ice breaker, un comando o "menú". */
 export function interpretar(message: MensajeBot): Accion | null {
@@ -94,7 +133,7 @@ export function interpretar(message: MensajeBot): Accion | null {
       case "bot_turno_otro": return { tipo: "otro_horario" };
       case "bot_humano": return { tipo: "humano" };
       case "bot_menu": return { tipo: "menu" };
-      case "bot_cuenta": return { tipo: "cuenta", alumnoId: a || undefined };
+      case "bot_cuenta": return { tipo: "cuenta" };
     }
     return null;
   }
@@ -156,10 +195,12 @@ type ArgsBot = { gymId: string; telefono: string; alumnoId: string | null; messa
  */
 export async function planificarBot(admin: Admin, args: ArgsBot): Promise<PlanBot | null> {
   const { gymId, telefono, alumnoId, message } = args;
-  const accion = interpretar(message);
+  let accion: Accion | null = interpretar(message);
+  const dni = !accion && message.type === "text" ? extraerDni(message.text?.body) : null;
 
-  // Sin un pedido explícito, el bot solo saluda a números que no son alumnos y escriben texto.
-  if (!accion && (alumnoId || message.type !== "text")) return null;
+  // Sin un pedido explícito, el bot solo saluda a números que no son alumnos y escriben texto
+  // (o responde un DNI si se lo acaba de pedir).
+  if (!accion && !dni && (alumnoId || message.type !== "text")) return null;
 
   const { data: config } = await admin
     .from("gym_config")
@@ -187,6 +228,19 @@ export async function planificarBot(admin: Admin, args: ArgsBot): Promise<PlanBo
     },
   };
 
+  if (!accion && dni) {
+    // Un número suelto solo es un DNI si el bot lo pidió hace poco; si no, es charla normal.
+    const desdeDni = new Date(ctx.ahora.getTime() - ESPERA_DNI_MIN * 60000).toISOString();
+    const { count: pedidos } = await admin
+      .from("mensajes_whatsapp")
+      .select("id", { count: "exact", head: true })
+      .eq("gym_id", gymId).eq("telefono", telefono).eq("direccion", "saliente")
+      .ilike("cuerpo", `%${MARCA_PEDIDO_DNI}%`)
+      .gte("created_at", desdeDni);
+    if ((pedidos ?? 0) > 0) accion = { tipo: "dni", resultado: await buscarDni(admin, gymId, telefono, dni, ctx.ahora) };
+    else if (alumnoId) return null;
+  }
+
   if (accion) return { ctx, accion };
 
   // Bienvenida: solo si en las últimas 24hs no le escribimos nada (ni el bot ni el gym),
@@ -211,7 +265,37 @@ export async function planificarBot(admin: Admin, args: ArgsBot): Promise<PlanBo
  * con alguien", la reserva de una clase de prueba y "otro día u horario".
  */
 export function resuelveSinPersona(plan: PlanBot): boolean {
-  return !["humano", "confirmar", "otro_horario"].includes(plan.accion.tipo);
+  const a = plan.accion;
+  if (a.tipo === "dni") return a.resultado.estado === "ok" || a.resultado.estado === "no_encontrado";
+  return !["humano", "confirmar", "otro_horario"].includes(a.tipo);
+}
+
+async function buscarDni(admin: Admin, gymId: string, telefono: string, dni: string, ahora: Date): Promise<ResultadoDni> {
+  // Tope de intentos: evita que alguien pruebe DNIs hasta dar con uno.
+  const desde = new Date(ahora.getTime() - 24 * 60 * 60 * 1000).toISOString();
+  const { count: fallidos } = await admin
+    .from("mensajes_whatsapp")
+    .select("id", { count: "exact", head: true })
+    .eq("gym_id", gymId).eq("telefono", telefono).eq("direccion", "saliente")
+    .ilike("cuerpo", `${MARCA_DNI_NO_ENCONTRADO}%`)
+    .gte("created_at", desde);
+  if ((fallidos ?? 0) >= MAX_INTENTOS_DNI) return { estado: "bloqueado" };
+
+  const { data: alumno } = await admin
+    .from("alumnos")
+    .select("id, telefono")
+    .eq("gym_id", gymId)
+    .in("dni", variantesDni(dni))
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!alumno) return { estado: "no_encontrado" };
+
+  const tel = (alumno.telefono ?? "").replace(/\D/g, "");
+  if (!tel) return { estado: "sin_telefono", alumnoId: alumno.id };
+  if (tel.slice(-10) === telefono.replace(/\D/g, "").slice(-10)) return { estado: "ok", alumnoId: alumno.id };
+  return { estado: "otro_telefono", alumnoId: alumno.id };
 }
 
 /** Manda la respuesta del bot. Devuelve false si falló (para que el gym lo vea y conteste). */
@@ -246,7 +330,8 @@ async function ejecutar(ctx: Contexto, accion: Accion): Promise<void> {
     case "confirmar": return confirmarTurno(ctx, accion.actividadId, accion.cuando);
     case "otro_horario": return enviar(ctx, RESPUESTA_OTRO_HORARIO);
     case "humano": return enviar(ctx, RESPUESTA_HUMANO, [BOTON.info, BOTON.menu]);
-    case "cuenta": return mandarCuenta(ctx, accion.alumnoId);
+    case "cuenta": return enviar(ctx, PEDIDO_DNI);
+    case "dni": return responderDni(ctx, accion.resultado);
   }
 }
 
@@ -349,36 +434,20 @@ async function confirmarTurno(ctx: Contexto, actividadId: string, cuando: string
   await enviar(ctx, lineas.join("\n"), [BOTON.menu]);
 }
 
-/**
- * Estado de cuenta del alumno que escribe, identificado por su teléfono. Si el teléfono
- * está cargado en varios alumnos (hermanos, padre/madre que paga), pregunta de cuál.
- * Un id de alumno que viene en la respuesta de la lista solo se acepta si ese alumno tiene
- * este mismo teléfono (nadie puede pedir la cuenta de otro cambiando el id).
- */
-async function mandarCuenta(ctx: Contexto, alumnoIdElegido?: string): Promise<void> {
-  const { data: candidatos } = await ctx.admin
-    .from("alumnos")
-    .select("id, nombre, apellido")
-    .eq("gym_id", ctx.gymId)
-    .ilike("telefono", `%${ctx.telefono.replace(/\D/g, "").slice(-10)}`)
-    .is("deleted_at", null)
-    .order("nombre")
-    .limit(10);
-  const alumnos = candidatos ?? [];
-
-  if (alumnos.length === 0) {
-    return enviar(ctx,
-      "No encontramos este número entre los alumnos del gym 🤔 Si ya sos alumno, puede que tengamos cargado otro teléfono: escribinos y lo actualizamos.",
-      [BOTON.humano, BOTON.menu]);
+/** Respuesta al DNI que mandó la persona (ver ResultadoDni). */
+async function responderDni(ctx: Contexto, r: ResultadoDni): Promise<void> {
+  switch (r.estado) {
+    case "no_encontrado": return enviar(ctx, DNI_NO_ENCONTRADO, [BOTON.humano, BOTON.menu]);
+    case "bloqueado": return enviar(ctx, DNI_BLOQUEADO);
+    case "otro_telefono": return enviar(ctx, DNI_OTRO_TELEFONO, [BOTON.menu]);
+    case "ok":
+    case "sin_telefono":
+      return mandarEstadoCuenta(ctx, r.alumnoId);
   }
+}
 
-  const elegido = alumnoIdElegido ? alumnos.find((a) => a.id === alumnoIdElegido) : alumnos.length === 1 ? alumnos[0] : undefined;
-  if (!elegido) {
-    return enviarLista(ctx, "Este número está cargado en varios alumnos. ¿De quién querés ver el estado de cuenta?", "Elegir alumno",
-      alumnos.map((a) => ({ id: `bot_cuenta:${a.id}`, title: `${a.nombre} ${a.apellido}` })));
-  }
-
-  const estado = await obtenerEstadoCuenta(ctx.admin, ctx.gymId, elegido.id);
+async function mandarEstadoCuenta(ctx: Contexto, alumnoId: string): Promise<void> {
+  const estado = await obtenerEstadoCuenta(ctx.admin, ctx.gymId, alumnoId);
   if (!estado) return enviar(ctx, RESPUESTA_HUMANO, [BOTON.menu]);
 
   const porTransferencia = ctx.config.email_modo === "transferencia" && !!ctx.config.transferencia_alias;

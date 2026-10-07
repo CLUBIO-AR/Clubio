@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Bell, Loader2, MessageCircle } from "lucide-react";
 import { T } from "@/lib/theme";
 import { reenviarAvisoAction } from "@/app/actions/avisos";
+import { useFilaLink } from "@/lib/hooks/use-fila-link";
 
 const ESTADO_STYLES: Record<string, { bg: string; color: string }> = {
   pendiente:      { bg: `${T.warning}15`, color: T.warning },
@@ -32,6 +33,7 @@ export function AlumnoCuotasList({
   alumnoId: string;
   telefono?: string | null;
 }) {
+  const filaProps = useFilaLink();
   const [enviando, setEnviando] = useState<string | null>(null);
 
   async function reenviarAviso(cuotaId: string) {
@@ -66,7 +68,9 @@ export function AlumnoCuotasList({
           const s = ESTADO_STYLES[c.estado] ?? ESTADO_STYLES.pendiente;
           const puedeAvisar = c.estado !== "pagada" && c.estado !== "condonada";
           return (
-            <div key={c.id} className="px-5 py-3 flex items-center justify-between border-b last:border-b-0" style={{ borderColor: T.borderSub }}>
+            <div key={c.id} {...filaProps(`/dashboard/cuotas/${c.id}`)}
+              className="px-5 py-3 flex items-center justify-between border-b last:border-b-0 cursor-pointer transition-colors hover:bg-[var(--fila-hover)] focus-visible:outline focus-visible:outline-2"
+              style={{ borderColor: T.borderSub, ["--fila-hover" as string]: T.cardHover }}>
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-lg flex flex-col items-center justify-center shrink-0" style={{ background: T.bg, border: `1px solid ${T.border}` }}>
                   <span className="text-xs font-bold" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>{MESES[c.mes]}</span>

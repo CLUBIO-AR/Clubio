@@ -45,9 +45,13 @@ export function WhatsappSidebarClient({
   const [errorAccion, setErrorAccion] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const activeTelefono = pathname.startsWith("/dashboard/whatsapp/")
+  const telefonoEnUrl = pathname.startsWith("/dashboard/whatsapp/")
     ? decodeURIComponent(pathname.split("/").pop() ?? "")
     : null;
+  // Se marca la conversación clickeada al toque, sin esperar a que el server responda
+  // y cambie la URL. Cuando la URL se actualiza, manda la URL.
+  const [clickeado, setClickeado] = useState<{ telefono: string; desde: string | null } | null>(null);
+  const activeTelefono = clickeado && clickeado.desde === telefonoEnUrl ? clickeado.telefono : telefonoEnUrl;
 
   const filtradas = useMemo(() => {
     const texto = busqueda.trim().toLowerCase();
@@ -246,7 +250,7 @@ export function WhatsappSidebarClient({
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <p className="font-semibold truncate text-sm" style={{ color: T.text }}>{c.nombre}</p>
+                <p className="font-semibold truncate text-sm" style={{ color: active && !seleccionando ? T.accent : T.text }}>{c.nombre}</p>
                 <p className="text-xs truncate" style={{ color: c.noLeidos > 0 ? T.text : T.textDim }}>
                   {c.ultimaDireccion === "saliente" ? "Vos: " : ""}{c.ultimoMensaje}
                 </p>
@@ -287,8 +291,10 @@ export function WhatsappSidebarClient({
             <Link
               key={c.telefono}
               href={`/dashboard/whatsapp/${encodeURIComponent(c.telefono)}`}
-              className={cn("flex items-center gap-3 px-4 py-3 transition-colors")}
-              style={filaStyle}
+              onClick={() => setClickeado({ telefono: c.telefono, desde: telefonoEnUrl })}
+              aria-current={active ? "page" : undefined}
+              className={cn("flex items-center gap-3 px-4 py-3 transition-colors hover:bg-[var(--fila-hover)]")}
+              style={{ ...filaStyle, ["--fila-hover" as string]: active ? T.accentBg : T.cardHover }}
             >
               {contenido}
             </Link>

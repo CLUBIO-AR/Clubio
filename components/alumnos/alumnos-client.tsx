@@ -3,6 +3,7 @@
 import { useState, useTransition, useMemo } from "react";
 
 const PAGE_SIZE = 25;
+import { useFilaLink } from "@/lib/hooks/use-fila-link";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -57,6 +58,7 @@ function cuotaEstadoPeor(cuotas: CuotaResumen[]): string {
 
 export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividadDefault, actividades, mesActual, anioActual }: AlumnosClientProps) {
   const router = useRouter();
+  const filaProps = useFilaLink();
   const [search, setSearch] = useState(searchDefault);
   const [activo, setActivo] = useState(activoDefault);
   const [actividad, setActividad] = useState(actividadDefault);
@@ -208,10 +210,9 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
                 return (
                   <TableRow
                     key={alumno.id}
-                    className="transition-colors cursor-pointer"
-                    style={{ borderColor: T.borderSub }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = T.cardHover)}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    {...filaProps(`/dashboard/alumnos/${alumno.id}`)}
+                    className="transition-colors cursor-pointer hover:bg-[var(--fila-hover)] focus-visible:outline focus-visible:outline-2"
+                    style={{ borderColor: T.borderSub, ["--fila-hover" as string]: T.cardHover }}
                   >
                     <TableCell>
                       <div className="flex items-center gap-3">

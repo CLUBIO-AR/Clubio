@@ -15,16 +15,18 @@ export default async function WhatsappThreadPage({
   const ctx = await requireGymContext();
   const supabase = await createClient();
 
-  const { data: mensajes } = await supabase
-    .from("mensajes_whatsapp")
-    .select("id, cuerpo, direccion, estado, created_at, alumnos(nombre, apellido)")
-    .eq("gym_id", ctx.gymId)
-    .eq("telefono", telefono)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: true });
-
-  // Idempotente: marca como leídos los entrantes de esta conversación al abrirla.
-  await marcarConversacionLeidaAction(telefono);
+  // En paralelo: traer los mensajes y marcar como leídos los entrantes (idempotente).
+  // Antes se hacía uno después del otro y sumaba un viaje a la base a cada apertura.
+  const [{ data: mensajes }] = await Promise.all([
+    supabase
+      .from("mensajes_whatsapp")
+      .select("id, cuerpo, direccion, estado, created_at, alumnos(nombre, apellido)")
+      .eq("gym_id", ctx.gymId)
+      .eq("telefono", telefono)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: true }),
+    marcarConversacionLeidaAction(telefono),
+  ]);
 
   const primerMensaje = mensajes?.[0];
   const alumno = primerMensaje?.alumnos as unknown as { nombre: string; apellido: string } | null;

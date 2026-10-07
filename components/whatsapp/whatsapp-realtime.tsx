@@ -46,6 +46,7 @@ type FilaMensaje = {
   leido: boolean;
   created_at: string;
   deleted_at: string | null;
+  perfil_nombre: string | null;
 };
 
 const MAX_NOTIFICACIONES = 30;
@@ -101,8 +102,9 @@ export function WhatsappRealtimeProvider({
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    const nombre = data ? `${data.nombre} ${data.apellido}` : `+${fila.telefono}`;
-    nombresRef.current.set(key, nombre);
+    const nombre = data ? `${data.nombre} ${data.apellido}` : (fila.perfil_nombre ?? `+${fila.telefono}`);
+    // Solo se cachean los alumnos: el nombre de perfil puede llegar recién en un mensaje posterior.
+    if (data) nombresRef.current.set(key, nombre);
     return nombre;
   }, [gymId]);
 

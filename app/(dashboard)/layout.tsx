@@ -39,7 +39,7 @@ export default async function DashboardLayout({
   const [{ data: noLeidos }, { data: alumnos }] = await Promise.all([
     supabase
       .from("mensajes_whatsapp")
-      .select("id, telefono, cuerpo, created_at")
+      .select("id, telefono, cuerpo, created_at, perfil_nombre")
       .eq("gym_id", ctx.gymId)
       .eq("direccion", "entrante")
       .eq("leido", false)
@@ -62,7 +62,7 @@ export default async function DashboardLayout({
   const noLeidosIniciales: NotificacionWhatsapp[] = (noLeidos ?? []).map((m) => ({
     id: m.id,
     telefono: m.telefono,
-    nombre: nombrePorTelefono.get(m.telefono.replace(/\D/g, "").slice(-10)) ?? `+${m.telefono}`,
+    nombre: nombrePorTelefono.get(m.telefono.replace(/\D/g, "").slice(-10)) ?? m.perfil_nombre ?? `+${m.telefono}`,
     cuerpo: m.cuerpo,
     created_at: m.created_at,
   }));

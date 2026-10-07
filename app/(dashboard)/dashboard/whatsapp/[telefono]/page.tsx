@@ -22,7 +22,7 @@ export default async function WhatsappThreadPage({
   const [{ data: mensajes }, { data: alumnoActual }] = await Promise.all([
     supabase
       .from("mensajes_whatsapp")
-      .select("id, cuerpo, direccion, estado, created_at, alumnos(nombre, apellido)")
+      .select("id, cuerpo, direccion, estado, created_at, perfil_nombre, alumnos(nombre, apellido)")
       .eq("gym_id", ctx.gymId)
       .eq("telefono", telefono)
       .is("deleted_at", null)
@@ -42,7 +42,8 @@ export default async function WhatsappThreadPage({
 
   const alumno = alumnoActual
     ?? (mensajes?.find((m) => m.alumnos)?.alumnos as unknown as { nombre: string; apellido: string } | null);
-  const nombre = alumno ? `${alumno.nombre} ${alumno.apellido}` : telefono;
+  const perfilNombre = [...(mensajes ?? [])].reverse().find((m) => m.perfil_nombre)?.perfil_nombre ?? null;
+  const nombre = alumno ? `${alumno.nombre} ${alumno.apellido}` : (perfilNombre ?? `+${telefono}`);
   const esConsulta = !alumno;
 
   // Meta solo permite texto libre dentro de las 24hs desde el último mensaje del
@@ -62,12 +63,14 @@ export default async function WhatsappThreadPage({
             ) : nombre}
           </h1>
           <p className="text-xs" style={{ color: T.textDim }}>
-            {telefono}{esConsulta && " · Consulta, no es alumno"}
+            +{telefono}
+            {esConsulta && " · Consulta, no es alumno"}
+            {esConsulta && perfilNombre && " · el nombre es el de su perfil de WhatsApp"}
           </p>
         </div>
         {esConsulta && (
           <Link
-            href={`/dashboard/alumnos/nuevo?telefono=${encodeURIComponent(telefono)}`}
+            href={`/dashboard/alumnos/nuevo?telefono=${encodeURIComponent(telefono)}${perfilNombre ? `&nombre=${encodeURIComponent(perfilNombre)}` : ""}`}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider shrink-0 transition-opacity hover:opacity-80"
             style={{ fontFamily: "var(--font-fredoka)", background: T.accentBg, color: T.accent, border: `1px solid ${T.accentBorder}` }}
           >

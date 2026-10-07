@@ -244,7 +244,14 @@ export async function POST(request: Request) {
               // La plantilla arma el link como https://app.clubio.com.ar/pagar/{{1}}.
               pago_token: `lote/${loteToken}`,
               fecha_vencimiento: primera.fecha_vencimiento,
-              actividad_nombre: `${cuotasAlumno.length} cuotas`,
+              // Detalle por actividad: "Crossfit $30.000 + Musculación $10.000". Meta no acepta
+              // saltos de línea dentro de una variable, por eso va en una sola línea.
+              actividad_nombre: cuotasAlumno
+                .map((c) => {
+                  const nombre = (c.actividades as { nombre: string | null } | null)?.nombre ?? "Cuota mensual";
+                  return `${nombre} $${(c.monto_total ?? 0).toLocaleString("es-AR")}`;
+                })
+                .join(" + "),
             },
             gym: { nombre: gym.nombre, logo_url: gym.logo_url, color_acento: gymConfig.email_color_acento },
           }

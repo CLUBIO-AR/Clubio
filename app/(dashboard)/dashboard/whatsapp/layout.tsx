@@ -28,6 +28,7 @@ export default async function WhatsappLayout({ children }: { children: React.Rea
       .from("mensajes_whatsapp")
       .select("telefono, cuerpo, direccion, leido, created_at, alumnos(nombre, apellido)")
       .eq("gym_id", ctx.gymId)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false }),
     supabase
       .from("alumnos")

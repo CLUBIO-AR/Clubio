@@ -10,12 +10,26 @@ import { enviarAvisoCuotaPorTelefonoAction } from "@/app/actions/avisos";
 
 // Atajos disponibles en el chat — no dependen de la ventana de 24hs porque mandan
 // una plantilla aprobada, no texto libre.
+type Comando = keyof typeof COMANDOS;
 const COMANDOS: Record<string, { label: string; run: (telefono: string) => Promise<{ ok: true; data: { canales: string[] } } | { ok: false; error: string }> }> = {
   "/aviso_cuota": {
     label: "Aviso de cuota",
     run: enviarAvisoCuotaPorTelefonoAction,
   },
 };
+
+// Variantes aceptadas por comando: "/aviso cuota", "/aviso-cuota", "/avisocuota", "/aviso".
+const ALIAS_COMANDOS: Record<string, Comando> = {
+  "/aviso": "/aviso_cuota",
+  "/avisocuota": "/aviso_cuota",
+};
+
+/** "/Aviso  Cuota" → "/aviso_cuota". Devuelve null si no es un comando conocido. */
+function resolverComando(texto: string): Comando | null {
+  const norm = texto.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  if (norm in COMANDOS) return norm as Comando;
+  return ALIAS_COMANDOS[norm] ?? ALIAS_COMANDOS[norm.replace(/_/g, "")] ?? null;
+}
 
 type Mensaje = {
   id: string;
@@ -44,30 +58,38 @@ export function WhatsappThreadClient({
   const [isPending, startTransition] = useTransition();
   const [sugerenciaIndex, setSugerenciaIndex] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const ultimoEntrante = [...mensajes].reverse().find((m) => m.direccion === "entrante");
 
-  // Sugerencias de comandos — solo mientras se está escribiendo el primer "token"
-  // (antes del primer espacio), para no interferir con texto libre normal.
-  const sugerencias = texto.startsWith("/") && !texto.includes(" ")
-    ? Object.keys(COMANDOS).filter((c) => c.startsWith(texto.toLowerCase()))
+  // Sugerencias de comandos mientras se escribe algo que empieza con "/". Se compara
+  // normalizado ("/aviso cuota" ≈ "/aviso_cuota") y se ocultan cuando el texto ya es
+  // exactamente un comando, así Enter lo manda en vez de volver a autocompletar.
+  const textoNorm = texto.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  const comandoExacto = texto.startsWith("/") ? resolverComando(texto) : null;
+  const sugerencias = texto.startsWith("/") && !comandoExacto && texto.length < 30
+    ? (Object.keys(COMANDOS) as Comando[]).filter((c) => c.startsWith(textoNorm))
     : [];
 
   function elegirSugerencia(comando: string) {
     setTexto(comando);
+    inputRef.current?.focus();
   }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [mensajes]);
 
-  function handleEnviar() {
-    const cuerpo = texto.trim();
-    if (!cuerpo) return;
+  function handleEnviar(textoAEnviar: string = texto) {
+    const cuerpo = textoAEnviar.trim();
+    if (!cuerpo || isPending) return;
     setError(null);
 
-    const comando = COMANDOS[cuerpo.toLowerCase()];
-    if (comando) {
+    const clave = cuerpo.startsWith("/") ? resolverComando(cuerpo) : null;
+    if (clave) {
+      const comando = COMANDOS[clave];
+      // La caja se vacía apenas se manda, no cuando vuelve la respuesta de Meta.
+      setTexto("");
       startTransition(async () => {
         const res = await comando.run(telefono);
         if (!res.ok) {
@@ -84,7 +106,6 @@ export function WhatsappThreadClient({
             created_at: new Date().toISOString(),
           },
         ]);
-        setTexto("");
       });
       return;
     }
@@ -99,10 +120,13 @@ export function WhatsappThreadClient({
       return;
     }
 
+    setTexto("");
     startTransition(async () => {
       const res = await enviarMensajeWhatsappAction(telefono, cuerpo);
       if (!res.ok) {
         setError(res.error);
+        // Si falló, devolvemos el texto a la caja para no perder lo que se escribió.
+        setTexto((actual) => actual || cuerpo);
         return;
       }
       setMensajes((prev) => [
@@ -115,7 +139,6 @@ export function WhatsappThreadClient({
           created_at: new Date().toISOString(),
         },
       ]);
-      setTexto("");
     });
   }
 
@@ -181,6 +204,7 @@ export function WhatsappThreadClient({
 
           <div className="flex items-end gap-2">
             <Textarea
+              ref={inputRef}
               value={texto}
               onChange={(e) => { setTexto(e.target.value); setSugerenciaIndex(0); }}
               onKeyDown={(e) => {
@@ -195,9 +219,15 @@ export function WhatsappThreadClient({
                     setSugerenciaIndex((i) => (i - 1 + sugerencias.length) % sugerencias.length);
                     return;
                   }
-                  if (e.key === "Tab" || e.key === "Enter") {
+                  if (e.key === "Tab") {
                     e.preventDefault();
                     elegirSugerencia(sugerencias[sugerenciaIndex]);
+                    return;
+                  }
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    // Enter sobre una sugerencia la manda directo.
+                    e.preventDefault();
+                    handleEnviar(sugerencias[sugerenciaIndex] ?? texto);
                     return;
                   }
                   if (e.key === "Escape") {
@@ -214,9 +244,8 @@ export function WhatsappThreadClient({
               placeholder={ventanaAbierta ? "Escribí un mensaje..." : "/aviso_cuota"}
               rows={1}
               className="resize-none"
-              disabled={isPending}
             />
-            <Button onClick={handleEnviar} disabled={isPending || !texto.trim()} size="icon">
+            <Button onClick={() => handleEnviar()} disabled={isPending || !texto.trim()} size="icon">
               <Send className="w-4 h-4" />
             </Button>
           </div>

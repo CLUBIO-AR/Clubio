@@ -24,6 +24,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { sendWhatsAppButtons, sendWhatsAppList, sendWhatsAppText } from "@/lib/notifications/channels/whatsapp";
 import { describirCuando, proximasClases, resumenHorarios, type Horario } from "@/lib/horarios";
+import { linkPagarTodo, obtenerEstadoCuenta, textoEstadoCuenta } from "@/lib/estado-cuenta";
 
 type Admin = SupabaseClient<Database>;
 
@@ -34,10 +35,14 @@ const BOTON = {
   menu: { id: "bot_menu", title: "Menú principal" },
   lista: { id: "bot_lista", title: "Ver una actividad" },
   otra: { id: "bot_lista", title: "Ver otra actividad" },
+  cuenta: { id: "bot_cuenta", title: "Mi estado de cuenta" },
+  // El título tiene "alias": el webhook lo atiende con responderAlias (manda solo el alias).
+  alias: { id: "bot_alias", title: "Copiar alias" },
 } as const;
 
-// Menú principal (la bienvenida).
+// Menú principal (la bienvenida). Los alumnos ven "Mi estado de cuenta" en lugar de la clase de prueba.
 export const BOTONES_CONSULTA = [BOTON.info, BOTON.prueba, BOTON.humano] as const;
+export const BOTONES_ALUMNO = [BOTON.cuenta, BOTON.info, BOTON.humano] as const;
 
 // Palabras que vuelven a mostrar el menú.
 const PALABRAS_MENU = ["menu", "menu principal", "inicio", "opciones"];
@@ -69,7 +74,8 @@ type Accion =
   | { tipo: "confirmar"; actividadId: string; cuando: string }
   | { tipo: "otro_horario" }
   | { tipo: "humano" }
-  | { tipo: "menu" };
+  | { tipo: "menu" }
+  | { tipo: "cuenta"; alumnoId?: string };
 
 /** Qué pidió la persona: un botón/lista del bot, un ice breaker, un comando o "menú". */
 export function interpretar(message: MensajeBot): Accion | null {
@@ -88,12 +94,17 @@ export function interpretar(message: MensajeBot): Accion | null {
       case "bot_turno_otro": return { tipo: "otro_horario" };
       case "bot_humano": return { tipo: "humano" };
       case "bot_menu": return { tipo: "menu" };
+      case "bot_cuenta": return { tipo: "cuenta", alumnoId: a || undefined };
     }
     return null;
   }
 
   if (message.type !== "text") return null;
   const t = normalizar(message.text?.body);
+  // Estado de cuenta: comando /Mi_cuenta o frases comunes.
+  if (["mi cuenta", "estado de cuenta", "cuanto debo", "que debo", "mi deuda", "mis cuotas", "cuanto tengo que pagar"].some((f) => t.includes(f))) {
+    return { tipo: "cuenta" };
+  }
   // Comandos (/Ver_todas_las_actividades) e ice breakers configurados en WhatsApp Manager.
   if (t.includes("ver todas las actividades") || t.includes("actividades horarios y precios")) return { tipo: "todas" };
   if (t.includes("ver una actividad") || t.includes("una actividad en especial") || t.includes("una actividad en particular")) return { tipo: "lista" };
@@ -115,6 +126,9 @@ type Config = {
   whatsapp_access_token: string | null;
   whatsapp_bot_bienvenida: string | null;
   whatsapp_bot_info: string | null;
+  email_modo: string | null;
+  transferencia_alias: string | null;
+  transferencia_titular: string | null;
 };
 
 type Contexto = {
@@ -143,7 +157,7 @@ export async function responderConBot(
   try {
     const { data: config } = await admin
       .from("gym_config")
-      .select("whatsapp_phone_number_id, whatsapp_access_token, whatsapp_bot_activo, whatsapp_bot_bienvenida, whatsapp_bot_info")
+      .select("whatsapp_phone_number_id, whatsapp_access_token, whatsapp_bot_activo, whatsapp_bot_bienvenida, whatsapp_bot_info, email_modo, transferencia_alias, transferencia_titular")
       .eq("gym_id", gymId)
       .maybeSingle();
     if (!config?.whatsapp_bot_activo) return;
@@ -202,6 +216,7 @@ async function ejecutar(ctx: Contexto, accion: Accion, mensajeId: string): Promi
     case "confirmar": return confirmarTurno(ctx, accion.actividadId, accion.cuando);
     case "otro_horario": return enviar(ctx, RESPUESTA_OTRO_HORARIO);
     case "humano": return enviar(ctx, RESPUESTA_HUMANO, [BOTON.info, BOTON.menu]);
+    case "cuenta": return mandarCuenta(ctx, mensajeId, accion.alumnoId);
   }
 }
 
@@ -211,7 +226,7 @@ async function mandarBienvenida(ctx: Contexto): Promise<void> {
   const { data: gym } = await ctx.admin.from("gyms").select("nombre").eq("id", ctx.gymId).maybeSingle();
   const plantilla = ctx.config.whatsapp_bot_bienvenida?.trim()
     || `¡Hola {nombre}! 👋 Gracias por escribir a ${gym?.nombre ?? "nuestro gimnasio"}. ¿En qué te podemos ayudar?`;
-  await enviar(ctx, personalizar(plantilla, ctx.nombre), [...BOTONES_CONSULTA]);
+  await enviar(ctx, personalizar(plantilla, ctx.nombre), ctx.alumnoId ? [...BOTONES_ALUMNO] : [...BOTONES_CONSULTA]);
   console.log("[bot-consultas] menú enviado — gym:", ctx.gymId, "a:", ctx.telefono);
 }
 
@@ -304,6 +319,51 @@ async function confirmarTurno(ctx: Contexto, actividadId: string, cuando: string
   ].filter(Boolean);
   // El mensaje entrante (el horario elegido) queda sin leer: el gym ve la reserva en el panel.
   await enviar(ctx, lineas.join("\n"), [BOTON.menu]);
+}
+
+/**
+ * Estado de cuenta del alumno que escribe, identificado por su teléfono. Si el teléfono
+ * está cargado en varios alumnos (hermanos, padre/madre que paga), pregunta de cuál.
+ * Un id de alumno que viene en la respuesta de la lista solo se acepta si ese alumno tiene
+ * este mismo teléfono (nadie puede pedir la cuenta de otro cambiando el id).
+ */
+async function mandarCuenta(ctx: Contexto, mensajeId: string, alumnoIdElegido?: string): Promise<void> {
+  const { data: candidatos } = await ctx.admin
+    .from("alumnos")
+    .select("id, nombre, apellido")
+    .eq("gym_id", ctx.gymId)
+    .ilike("telefono", `%${ctx.telefono.replace(/\D/g, "").slice(-10)}`)
+    .is("deleted_at", null)
+    .order("nombre")
+    .limit(10);
+  const alumnos = candidatos ?? [];
+
+  if (alumnos.length === 0) {
+    return enviar(ctx,
+      "No encontramos este número entre los alumnos del gym 🤔 Si ya sos alumno, puede que tengamos cargado otro teléfono: escribinos y lo actualizamos.",
+      [BOTON.humano, BOTON.menu]);
+  }
+
+  const elegido = alumnoIdElegido ? alumnos.find((a) => a.id === alumnoIdElegido) : alumnos.length === 1 ? alumnos[0] : undefined;
+  if (!elegido) {
+    return enviarLista(ctx, "Este número está cargado en varios alumnos. ¿De quién querés ver el estado de cuenta?", "Elegir alumno",
+      alumnos.map((a) => ({ id: `bot_cuenta:${a.id}`, title: `${a.nombre} ${a.apellido}` })));
+  }
+
+  const estado = await obtenerEstadoCuenta(ctx.admin, ctx.gymId, elegido.id);
+  if (!estado) return enviar(ctx, RESPUESTA_HUMANO, [BOTON.menu]);
+
+  const porTransferencia = ctx.config.email_modo === "transferencia" && !!ctx.config.transferencia_alias;
+  const texto = textoEstadoCuenta(estado, porTransferencia
+    ? { modo: "transferencia", alias: ctx.config.transferencia_alias, titular: ctx.config.transferencia_titular }
+    : { modo: "link", url: await linkPagarTodo(ctx.gymId, estado) });
+
+  const botones: Boton[] = porTransferencia && estado.pendientes.length > 0
+    ? [BOTON.alias, BOTON.humano, BOTON.menu]
+    : [BOTON.humano, BOTON.menu];
+  await enviarLargo(ctx, texto, botones);
+  // Consulta respondida por el bot: no queda como pendiente para el gym.
+  await ctx.admin.from("mensajes_whatsapp").update({ leido: true }).eq("wa_message_id", mensajeId);
 }
 
 async function direccionPrincipal(ctx: Contexto): Promise<string | null> {

@@ -5,6 +5,8 @@ import { getAlumnoById } from "@/lib/alumnos";
 import { AlumnoForm } from "@/components/alumnos/alumno-form";
 import { AlumnoActividades } from "@/components/alumnos/alumno-actividades";
 import { AlumnoCuotasList } from "@/components/alumnos/alumno-cuotas-list";
+import { EstadoCuentaCard } from "@/components/alumnos/estado-cuenta-card";
+import { linkPagarTodo, obtenerEstadoCuenta, textoEstadoCuenta } from "@/lib/estado-cuenta";
 import { ChevronLeft, Calendar, Phone, Mail, FileText } from "lucide-react";
 import Link from "next/link";
 import { T } from "@/lib/theme";
@@ -18,12 +20,23 @@ export default async function AlumnoDetailPage({ params }: { params: Promise<{ i
   const { data: alumno } = await getAlumnoById(supabase, ctx.gymId, id);
   if (!alumno) notFound();
 
-  const [sucursalesRes, cuotasRes, inscripcionesRes, actividadesRes] = await Promise.all([
+  const [sucursalesRes, cuotasRes, inscripcionesRes, actividadesRes, estadoCuenta, cobroRes] = await Promise.all([
     supabase.from("sucursales").select("id, nombre").eq("gym_id", ctx.gymId).eq("activa", true).order("nombre"),
     supabase.from("cuotas").select("id, mes, anio, monto_total, estado, fecha_vencimiento, actividad_id, actividades(nombre, color)").eq("alumno_id", id).order("anio", { ascending: false }).order("mes", { ascending: false }).limit(6),
     supabase.from("alumno_actividades").select("id, actividad_id, monto_personalizado, activa, actividades(id, nombre, monto_base, color)").eq("alumno_id", id).eq("gym_id", ctx.gymId),
     supabase.from("actividades").select("id, nombre, monto_base, color").eq("gym_id", ctx.gymId).eq("activa", true).is("deleted_at", null).order("nombre"),
+    obtenerEstadoCuenta(supabase, ctx.gymId, id),
+    supabase.from("gym_config").select("email_modo, transferencia_alias, transferencia_titular").eq("gym_id", ctx.gymId).maybeSingle(),
   ]);
+
+  // Mismo texto que manda el bot de WhatsApp ("Mi estado de cuenta").
+  const cobro = cobroRes.data;
+  const porTransferencia = cobro?.email_modo === "transferencia" && !!cobro?.transferencia_alias;
+  const resumenCuenta = estadoCuenta
+    ? textoEstadoCuenta(estadoCuenta, porTransferencia
+      ? { modo: "transferencia", alias: cobro!.transferencia_alias, titular: cobro!.transferencia_titular }
+      : { modo: "link", url: await linkPagarTodo(ctx.gymId, estadoCuenta) })
+    : "";
 
   const INFO_ITEMS = [
     alumno.email    && { icon: Mail,     label: "Email",    value: alumno.email },
@@ -68,6 +81,16 @@ export default async function AlumnoDetailPage({ params }: { params: Promise<{ i
             </div>
           ))}
         </div>
+      )}
+
+      {estadoCuenta && (
+        <EstadoCuentaCard
+          totalAdeudado={estadoCuenta.totalAdeudado}
+          pendientes={estadoCuenta.pendientes.length}
+          vencidas={estadoCuenta.pendientes.filter((p) => p.estado === "vencida").length}
+          ultimoPago={estadoCuenta.ultimosPagos[0] ? { concepto: estadoCuenta.ultimosPagos[0].concepto, fecha: estadoCuenta.ultimosPagos[0].fechaPago } : null}
+          resumen={resumenCuenta}
+        />
       )}
 
       {/* Cuotas */}

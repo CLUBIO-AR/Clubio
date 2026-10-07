@@ -8,6 +8,8 @@ import { LayoutDashboard, Users, CreditCard, DollarSign, Settings, LogOut, Recei
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { T } from "@/lib/theme";
+import { NotificacionesBell } from "@/components/whatsapp/notificaciones-bell";
+import { useWhatsappNotificaciones } from "@/components/whatsapp/whatsapp-realtime";
 
 const NAV_ITEMS = [
   { href: "/dashboard",               label: "Inicio",         icon: LayoutDashboard, exact: true },
@@ -34,6 +36,8 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol, mostrarWhatsa
   const pathname = usePathname();
   const router   = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const waNotif = useWhatsappNotificaciones();
+  const waSinLeer = waNotif?.conversacionesSinLeer ?? 0;
 
   const gymInitials  = gymNombre.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
   const userInitials = usuarioNombre.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
@@ -78,8 +82,8 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol, mostrarWhatsa
             CLUBIO
           </span>
         </div>
-        {/* Spacer to center the logo */}
-        <div className="w-9" />
+        {/* Campanita de WhatsApp (o espacio para centrar el logo) */}
+        {mostrarWhatsapp ? <NotificacionesBell lado="abajo" /> : <div className="w-9" />}
       </div>
 
       {/* ── Mobile overlay ── */}
@@ -120,6 +124,11 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol, mostrarWhatsa
               CLUBIO
             </span>
           </div>
+          {mostrarWhatsapp && (
+            <div className="hidden md:block">
+              <NotificacionesBell lado="derecha" />
+            </div>
+          )}
           <button
             className="md:hidden p-1 rounded transition-colors"
             style={{ color: T.textOnDarkDim }}
@@ -184,6 +193,14 @@ export function SidebarNav({ gymNombre, usuarioNombre, usuarioRol, mostrarWhatsa
               >
                 <Icon className="w-4 h-4 shrink-0" style={{ color: active ? T.lime : T.textOnDarkDim }} />
                 {label}
+                {href === "/dashboard/whatsapp" && waSinLeer > 0 && (
+                  <span
+                    className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full flex items-center justify-center text-[11px] font-bold tracking-normal"
+                    style={{ background: T.lime, color: T.bgDeep }}
+                  >
+                    {waSinLeer > 99 ? "99+" : waSinLeer}
+                  </span>
+                )}
               </Link>
             );
           })}

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getApiGymId } from "@/lib/supabase/api-auth";
 import { z } from "zod";
+import { HorariosSchema } from "@/lib/horarios";
 
 const ActividadSchema = z.object({
   nombre: z.string().min(1).max(60),
@@ -11,6 +12,10 @@ const ActividadSchema = z.object({
   recargo_2_dias: z.number().int().min(0).nullable().optional(),
   recargo_2_porcentaje: z.number().min(0).nullable().optional(),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  // Para el bot de WhatsApp (ver lib/bot-consultas.ts y lib/horarios.ts).
+  descripcion: z.string().max(300).nullable().optional(),
+  horarios: HorariosSchema.optional(),
+  clase_prueba: z.boolean().optional(),
 });
 
 export async function GET() {

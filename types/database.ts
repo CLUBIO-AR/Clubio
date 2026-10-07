@@ -480,6 +480,9 @@ export type Database = {
           created_at: string;
           updated_at: string;
           deleted_at: string | null;
+          descripcion: string | null;
+          horarios: { dias: number[]; hora: string }[];
+          clase_prueba: boolean;
         };
         Insert: {
           id?: string;
@@ -492,10 +495,16 @@ export type Database = {
           recargo_2_porcentaje?: number | null;
           color?: string;
           activa?: boolean;
+          descripcion?: string | null;
+          horarios?: { dias: number[]; hora: string }[];
+          clase_prueba?: boolean;
         };
         Update: {
           nombre?: string;
           monto_base?: number;
+          descripcion?: string | null;
+          horarios?: { dias: number[]; hora: string }[];
+          clase_prueba?: boolean;
           recargo_1_dias?: number | null;
           recargo_1_porcentaje?: number | null;
           recargo_2_dias?: number | null;

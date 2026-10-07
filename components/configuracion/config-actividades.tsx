@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus, Pencil, Trash2, X, Check, Loader2 } from "lucide-react";
 import { T } from "@/lib/theme";
+import { DIAS_CORTO, resumenHorarios, type Horario } from "@/lib/horarios";
 
 type Actividad = {
   id: string;
@@ -14,7 +15,12 @@ type Actividad = {
   recargo_2_porcentaje: number | null;
   color: string;
   activa: boolean;
+  descripcion: string | null;
+  horarios: Horario[];
+  clase_prueba: boolean;
 };
+
+const ORDEN_SEMANA = [1, 2, 3, 4, 5, 6, 0];
 
 const COLORS = ["#00ff88", "#3b82f6", "#f59e0b", "#ef4444", "#a855f7", "#06b6d4", "#ec4899", "#84cc16"];
 
@@ -41,12 +47,19 @@ function ActividadForm({
     r2dias: initial?.recargo_2_dias?.toString() ?? "",
     r2pct: initial?.recargo_2_porcentaje?.toString() ?? "",
     color: initial?.color ?? "#00ff88",
+    descripcion: initial?.descripcion ?? "",
+    clasePrueba: initial?.clase_prueba ?? true,
   });
+  const [horarios, setHorarios] = useState<Horario[]>(initial?.horarios ?? []);
+  const toggleDia = (i: number, d: number) => setHorarios((hs) => hs.map((h, j) => j !== i ? h : {
+    ...h, dias: h.dias.includes(d) ? h.dias.filter((x) => x !== d) : [...h.dias, d].sort(),
+  }));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (horarios.some((h) => h.dias.length === 0)) { setError("Cada horario necesita al menos un día"); return; }
     setSaving(true);
     setError(null);
     try {
@@ -58,6 +71,9 @@ function ActividadForm({
         recargo_2_dias: form.r2activo && form.r2dias ? parseInt(form.r2dias) : null,
         recargo_2_porcentaje: form.r2activo && form.r2pct ? parseFloat(form.r2pct) : null,
         color: form.color,
+        descripcion: form.descripcion.trim() || null,
+        horarios,
+        clase_prueba: form.clasePrueba,
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error");
@@ -101,6 +117,44 @@ function ActividadForm({
           <input type="number" min={0} step={0.1} value={form.r2pct} onChange={e => setForm(f => ({ ...f, r2pct: e.target.value }))} placeholder="% recargo" style={inputBase} />
         </div>
       )}
+
+      {/* Para el bot de WhatsApp */}
+      <div className="space-y-1">
+        <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textOnDarkDim, fontFamily: "var(--font-fredoka)" }}>Descripción (para WhatsApp)</label>
+        <textarea value={form.descripcion} onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))} maxLength={300} rows={2}
+          placeholder="ej: Entrenamiento en circuito, todos los niveles. Traé toalla y agua." style={{ ...inputBase, resize: "vertical" }} />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textOnDarkDim, fontFamily: "var(--font-fredoka)" }}>Horarios</label>
+        {horarios.map((h, i) => (
+          <div key={i} className="flex flex-wrap items-center gap-1.5">
+            {ORDEN_SEMANA.map((d) => {
+              const on = h.dias.includes(d);
+              return (
+                <button key={d} type="button" onClick={() => toggleDia(i, d)} aria-pressed={on}
+                  className="w-9 h-7 rounded-md text-[11px] font-bold"
+                  style={{ background: on ? T.accent : T.bg, color: on ? T.accentText : T.textDim, border: `1px solid ${on ? T.accent : T.border}` }}>
+                  {DIAS_CORTO.at(d)}
+                </button>
+              );
+            })}
+            <input type="time" required value={h.hora} onChange={e => setHorarios(hs => hs.map((x, j) => j === i ? { ...x, hora: e.target.value } : x))}
+              style={{ ...inputBase, width: 96 }} />
+            <button type="button" onClick={() => setHorarios(hs => hs.filter((_, j) => j !== i))} className="p-1" style={{ color: T.textOnDarkDim }} aria-label="Quitar horario">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ))}
+        <button type="button" onClick={() => setHorarios(hs => [...hs, { dias: [], hora: "18:00" }])}
+          className="flex items-center gap-1 text-xs font-semibold" style={{ color: T.accent }}>
+          <Plus className="w-3 h-3" /> Agregar horario
+        </button>
+        <div className="flex items-center gap-2">
+          <input type="checkbox" id="cp" checked={form.clasePrueba} onChange={e => setForm(f => ({ ...f, clasePrueba: e.target.checked }))} style={{ accentColor: T.accent }} />
+          <label htmlFor="cp" className="text-xs" style={{ color: T.textOnDarkDim }}>Ofrecer clase de prueba en estos horarios (bot de WhatsApp)</label>
+        </div>
+      </div>
 
       {/* Color */}
       <div className="space-y-1">
@@ -226,6 +280,7 @@ export function ConfigActividades({ actividades: inicial, conteoPorActividad = {
                   {a.recargo_1_dias != null && ` · mora ${a.recargo_1_dias}d / ${a.recargo_1_porcentaje}%`}
                   {" · "}
                   {conteoPorActividad[a.id]?.total ?? 0} inscriptos
+                  {a.horarios?.length > 0 && <> · {resumenHorarios(a.horarios)}</>}
                   {(conteoPorActividad[a.id]?.bonificados ?? 0) > 0 && (
                     <span style={{ color: T.accent }}> ({conteoPorActividad[a.id]!.bonificados} bonificados)</span>
                   )}

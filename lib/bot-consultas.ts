@@ -217,14 +217,36 @@ export function resuelveSinPersona(plan: PlanBot): boolean {
 /** Manda la respuesta del bot. Devuelve false si falló (para que el gym lo vea y conteste). */
 export async function ejecutarPlan(plan: PlanBot): Promise<boolean> {
   try {
-    if (plan.accion.tipo === "bienvenida") await mandarBienvenida(plan.ctx);
-    else await ejecutar(plan.ctx, plan.accion);
-    return true;
-  } catch (err) {
-    console.error("[bot-consultas] error — gym:", plan.ctx.gymId, "telefono:", plan.ctx.telefono, err instanceof Error ? err.message : err);
-    return false;
-  }
-}
+    const { data: config } = await admin
+      .from("gym_config")
+      .select("whatsapp_phone_number_id, whatsapp_access_token, whatsapp_bot_activo, whatsapp_bot_bienvenida, whatsapp_bot_info, email_modo, transferencia_alias, transferencia_titular")
+      .eq("gym_id", gymId)
+      .maybeSingle();
+    if (!config?.whatsapp_bot_activo) return;
+
+    let cache: ActividadBot[] | null = null;
+    const ctx: Contexto = {
+      admin, config, gymId, telefono, alumnoId,
+      nombre: primerNombre(args.perfilNombre),
+      ahora: args.ahora ?? new Date(),
+      actividades: async () => {
+        if (cache) return cache;
+        const { data } = await admin
+          .from("actividades")
+          .select("id, nombre, monto_base, descripcion, horarios, clase_prueba")
+          .eq("gym_id", gymId)
+          .eq("activa", true)
+          .is("deleted_at", null)
+          .order("nombre");
+        cache = (data ?? []) as ActividadBot[];
+        return cache;
+      },
+    };
+
+    if (accion) {
+      await ejecutar(ctx, accion, message.id);
+      return;
+    }
 
 /** Planifica y ejecuta en un paso (usado por los tests y por quien no necesita decidir antes). */
 export async function responderConBot(admin: Admin, args: ArgsBot): Promise<void> {
@@ -246,7 +268,7 @@ async function ejecutar(ctx: Contexto, accion: Accion): Promise<void> {
     case "confirmar": return confirmarTurno(ctx, accion.actividadId, accion.cuando);
     case "otro_horario": return enviar(ctx, RESPUESTA_OTRO_HORARIO);
     case "humano": return enviar(ctx, RESPUESTA_HUMANO, [BOTON.info, BOTON.menu]);
-    case "cuenta": return mandarCuenta(ctx, accion.alumnoId);
+    case "cuenta": return mandarCuenta(ctx, mensajeId, accion.alumnoId);
   }
 }
 
@@ -355,7 +377,7 @@ async function confirmarTurno(ctx: Contexto, actividadId: string, cuando: string
  * Un id de alumno que viene en la respuesta de la lista solo se acepta si ese alumno tiene
  * este mismo teléfono (nadie puede pedir la cuenta de otro cambiando el id).
  */
-async function mandarCuenta(ctx: Contexto, alumnoIdElegido?: string): Promise<void> {
+async function mandarCuenta(ctx: Contexto, mensajeId: string, alumnoIdElegido?: string): Promise<void> {
   const { data: candidatos } = await ctx.admin
     .from("alumnos")
     .select("id, nombre, apellido")
@@ -390,6 +412,8 @@ async function mandarCuenta(ctx: Contexto, alumnoIdElegido?: string): Promise<vo
     ? [BOTON.alias, BOTON.humano, BOTON.menu]
     : [BOTON.humano, BOTON.menu];
   await enviarLargo(ctx, texto, botones);
+  // Consulta respondida por el bot: no queda como pendiente para el gym.
+  await ctx.admin.from("mensajes_whatsapp").update({ leido: true }).eq("wa_message_id", mensajeId);
 }
 
 async function direccionPrincipal(ctx: Contexto): Promise<string | null> {

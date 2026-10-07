@@ -144,79 +144,109 @@ type Contexto = {
 
 type Boton = { id: string; title: string };
 
-export async function responderConBot(
-  admin: Admin,
-  args: { gymId: string; telefono: string; alumnoId: string | null; message: MensajeBot; perfilNombre?: string | null; ahora?: Date },
-): Promise<void> {
+/** Lo que el bot va a hacer con un mensaje entrante (o null si no le corresponde responder). */
+export type PlanBot = { ctx: Contexto; accion: Accion | { tipo: "bienvenida" } };
+
+type ArgsBot = { gymId: string; telefono: string; alumnoId: string | null; message: MensajeBot; perfilNombre?: string | null; ahora?: Date };
+
+/**
+ * Decide qué hace el bot, sin mandar nada todavía. El webhook lo llama antes de guardar el
+ * mensaje entrante para saber si lo resuelve el bot solo (queda leído y no avisa al gym)
+ * o si necesita a una persona (queda sin leer y suena la notificación).
+ */
+export async function planificarBot(admin: Admin, args: ArgsBot): Promise<PlanBot | null> {
   const { gymId, telefono, alumnoId, message } = args;
   const accion = interpretar(message);
 
   // Sin un pedido explícito, el bot solo saluda a números que no son alumnos y escriben texto.
-  if (!accion && (alumnoId || message.type !== "text")) return;
+  if (!accion && (alumnoId || message.type !== "text")) return null;
 
+  const { data: config } = await admin
+    .from("gym_config")
+    .select("whatsapp_phone_number_id, whatsapp_access_token, whatsapp_bot_activo, whatsapp_bot_bienvenida, whatsapp_bot_info, email_modo, transferencia_alias, transferencia_titular")
+    .eq("gym_id", gymId)
+    .maybeSingle();
+  if (!config?.whatsapp_bot_activo) return null;
+
+  let cache: ActividadBot[] | null = null;
+  const ctx: Contexto = {
+    admin, config, gymId, telefono, alumnoId,
+    nombre: primerNombre(args.perfilNombre),
+    ahora: args.ahora ?? new Date(),
+    actividades: async () => {
+      if (cache) return cache;
+      const { data } = await admin
+        .from("actividades")
+        .select("id, nombre, monto_base, descripcion, horarios, clase_prueba")
+        .eq("gym_id", gymId)
+        .eq("activa", true)
+        .is("deleted_at", null)
+        .order("nombre");
+      cache = (data ?? []) as ActividadBot[];
+      return cache;
+    },
+  };
+
+  if (accion) return { ctx, accion };
+
+  // Bienvenida: solo si en las últimas 24hs no le escribimos nada (ni el bot ni el gym),
+  // para no interrumpir una conversación que ya está atendiendo una persona. Los mensajes
+  // de una conversación eliminada desde el inbox no cuentan: el gym la dio por cerrada.
+  const desde = new Date(ctx.ahora.getTime() - 24 * 60 * 60 * 1000).toISOString();
+  const { count } = await admin
+    .from("mensajes_whatsapp")
+    .select("id", { count: "exact", head: true })
+    .eq("gym_id", gymId)
+    .eq("telefono", telefono)
+    .eq("direccion", "saliente")
+    .is("deleted_at", null)
+    .gte("created_at", desde);
+  if ((count ?? 0) > 0) return null;
+
+  return { ctx, accion: { tipo: "bienvenida" } };
+}
+
+/**
+ * ¿El bot lo resuelve sin que intervenga nadie del gym? Necesitan a una persona: "Hablar
+ * con alguien", la reserva de una clase de prueba y "otro día u horario".
+ */
+export function resuelveSinPersona(plan: PlanBot): boolean {
+  return !["humano", "confirmar", "otro_horario"].includes(plan.accion.tipo);
+}
+
+/** Manda la respuesta del bot. Devuelve false si falló (para que el gym lo vea y conteste). */
+export async function ejecutarPlan(plan: PlanBot): Promise<boolean> {
   try {
-    const { data: config } = await admin
-      .from("gym_config")
-      .select("whatsapp_phone_number_id, whatsapp_access_token, whatsapp_bot_activo, whatsapp_bot_bienvenida, whatsapp_bot_info, email_modo, transferencia_alias, transferencia_titular")
-      .eq("gym_id", gymId)
-      .maybeSingle();
-    if (!config?.whatsapp_bot_activo) return;
-
-    let cache: ActividadBot[] | null = null;
-    const ctx: Contexto = {
-      admin, config, gymId, telefono, alumnoId,
-      nombre: primerNombre(args.perfilNombre),
-      ahora: args.ahora ?? new Date(),
-      actividades: async () => {
-        if (cache) return cache;
-        const { data } = await admin
-          .from("actividades")
-          .select("id, nombre, monto_base, descripcion, horarios, clase_prueba")
-          .eq("gym_id", gymId)
-          .eq("activa", true)
-          .is("deleted_at", null)
-          .order("nombre");
-        cache = (data ?? []) as ActividadBot[];
-        return cache;
-      },
-    };
-
-    if (accion) {
-      await ejecutar(ctx, accion, message.id);
-      return;
-    }
-
-    // Bienvenida: solo si en las últimas 24hs no le escribimos nada (ni el bot ni el gym),
-    // para no interrumpir una conversación que ya está atendiendo una persona. Los mensajes
-    // de una conversación eliminada desde el inbox no cuentan: el gym la dio por cerrada.
-    const desde = new Date(ctx.ahora.getTime() - 24 * 60 * 60 * 1000).toISOString();
-    const { count } = await admin
-      .from("mensajes_whatsapp")
-      .select("id", { count: "exact", head: true })
-      .eq("gym_id", gymId)
-      .eq("telefono", telefono)
-      .eq("direccion", "saliente")
-      .is("deleted_at", null)
-      .gte("created_at", desde);
-    if ((count ?? 0) > 0) return;
-
-    await mandarBienvenida(ctx);
+    if (plan.accion.tipo === "bienvenida") await mandarBienvenida(plan.ctx);
+    else await ejecutar(plan.ctx, plan.accion);
+    return true;
   } catch (err) {
-    console.error("[bot-consultas] error — gym:", gymId, "telefono:", telefono, err instanceof Error ? err.message : err);
+    console.error("[bot-consultas] error — gym:", plan.ctx.gymId, "telefono:", plan.ctx.telefono, err instanceof Error ? err.message : err);
+    return false;
   }
 }
 
-async function ejecutar(ctx: Contexto, accion: Accion, mensajeId: string): Promise<void> {
+/** Planifica y ejecuta en un paso (usado por los tests y por quien no necesita decidir antes). */
+export async function responderConBot(admin: Admin, args: ArgsBot): Promise<void> {
+  try {
+    const plan = await planificarBot(admin, args);
+    if (plan) await ejecutarPlan(plan);
+  } catch (err) {
+    console.error("[bot-consultas] error — gym:", args.gymId, "telefono:", args.telefono, err instanceof Error ? err.message : err);
+  }
+}
+
+async function ejecutar(ctx: Contexto, accion: Accion): Promise<void> {
   switch (accion.tipo) {
     case "menu": return mandarBienvenida(ctx);
-    case "todas": return mandarTodas(ctx, mensajeId);
+    case "todas": return mandarTodas(ctx);
     case "lista": return mandarLista(ctx);
     case "detalle": return mandarDetalle(ctx, accion.actividadId);
     case "turnos": return mandarTurnos(ctx, accion.actividadId);
     case "confirmar": return confirmarTurno(ctx, accion.actividadId, accion.cuando);
     case "otro_horario": return enviar(ctx, RESPUESTA_OTRO_HORARIO);
     case "humano": return enviar(ctx, RESPUESTA_HUMANO, [BOTON.info, BOTON.menu]);
-    case "cuenta": return mandarCuenta(ctx, mensajeId, accion.alumnoId);
+    case "cuenta": return mandarCuenta(ctx, accion.alumnoId);
   }
 }
 
@@ -240,7 +270,7 @@ function bloqueActividad(a: ActividadBot, conDescripcion: boolean): string {
   return lineas.join("\n");
 }
 
-async function mandarTodas(ctx: Contexto, mensajeId: string): Promise<void> {
+async function mandarTodas(ctx: Contexto): Promise<void> {
   const actividades = await ctx.actividades();
   const extra = ctx.config.whatsapp_bot_info?.trim();
 
@@ -256,8 +286,6 @@ async function mandarTodas(ctx: Contexto, mensajeId: string): Promise<void> {
     const siguientes = actividades.length > 1 ? [BOTON.lista, BOTON.prueba, BOTON.humano] : [BOTON.prueba, BOTON.humano, BOTON.menu];
     await enviarLargo(ctx, partes.join("\n\n"), siguientes);
   }
-  // La consulta quedó respondida: no hace falta que el gym la vea como pendiente.
-  await ctx.admin.from("mensajes_whatsapp").update({ leido: true }).eq("wa_message_id", mensajeId);
 }
 
 async function mandarLista(ctx: Contexto): Promise<void> {
@@ -327,7 +355,7 @@ async function confirmarTurno(ctx: Contexto, actividadId: string, cuando: string
  * Un id de alumno que viene en la respuesta de la lista solo se acepta si ese alumno tiene
  * este mismo teléfono (nadie puede pedir la cuenta de otro cambiando el id).
  */
-async function mandarCuenta(ctx: Contexto, mensajeId: string, alumnoIdElegido?: string): Promise<void> {
+async function mandarCuenta(ctx: Contexto, alumnoIdElegido?: string): Promise<void> {
   const { data: candidatos } = await ctx.admin
     .from("alumnos")
     .select("id, nombre, apellido")
@@ -362,8 +390,6 @@ async function mandarCuenta(ctx: Contexto, mensajeId: string, alumnoIdElegido?: 
     ? [BOTON.alias, BOTON.humano, BOTON.menu]
     : [BOTON.humano, BOTON.menu];
   await enviarLargo(ctx, texto, botones);
-  // Consulta respondida por el bot: no queda como pendiente para el gym.
-  await ctx.admin.from("mensajes_whatsapp").update({ leido: true }).eq("wa_message_id", mensajeId);
 }
 
 async function direccionPrincipal(ctx: Contexto): Promise<string | null> {

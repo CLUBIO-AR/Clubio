@@ -4,7 +4,8 @@ import { usePathname } from "next/navigation";
 import { T } from "@/lib/theme";
 
 // En el celular la lista y el chat no entran lado a lado: se muestra uno por vez, como
-// en WhatsApp (lista → tocás una conversación → chat a pantalla completa → "‹" vuelve).
+// en WhatsApp (lista → tocás una conversación → el chat se abre a pantalla completa, tapando
+// también la barra de CLUBIO → "‹" vuelve a la lista).
 // En pantallas medianas o más grandes se ven los dos juntos, como siempre.
 export function InboxResponsive({ lista, children }: { lista: React.ReactNode; children: React.ReactNode }) {
   const pathname = usePathname();
@@ -21,7 +22,14 @@ export function InboxResponsive({ lista, children }: { lista: React.ReactNode; c
 
       <div className="flex-1 flex gap-4 min-h-0">
         <div className={`${enChat ? "hidden md:flex" : "flex"} w-full md:w-80 shrink-0 min-h-0`}>{lista}</div>
-        <div className={`${enChat ? "flex" : "hidden md:flex"} flex-1 min-w-0 min-h-0 flex-col`}>{children}</div>
+        <div
+          className={enChat
+            ? "fixed inset-0 z-[60] flex flex-col md:static md:inset-auto md:z-auto md:flex-1 md:min-w-0 md:min-h-0"
+            : "hidden md:flex md:flex-1 md:min-w-0 md:min-h-0 md:flex-col"}
+          style={{ background: enChat ? T.bg : undefined }}
+        >
+          {children}
+        </div>
       </div>
     </div>
   );

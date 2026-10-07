@@ -9,7 +9,7 @@ vi.mock("@/lib/notifications/channels/whatsapp", () => ({
   sendWhatsAppList: (...a: unknown[]) => sendWhatsAppList(...(a as [])),
 }));
 
-import { responderConBot, primerNombre, personalizar, interpretar } from "@/lib/bot-consultas";
+import { responderConBot, primerNombre, personalizar, interpretar, planificarBot, resuelveSinPersona } from "@/lib/bot-consultas";
 
 type Config = { whatsapp_bot_activo: boolean; whatsapp_bot_info?: string | null; whatsapp_bot_bienvenida?: string | null };
 type Act = { id: string; nombre: string; monto_base: number; descripcion: string | null; horarios: { dias: number[]; hora: string }[]; clase_prueba: boolean };
@@ -111,7 +111,7 @@ describe("responderConBot", () => {
     expect(body).toContain("🗓 Lun, Mié y Vie · 18:00");
     expect(body).toContain("📍 Av. Siempreviva 742");
     expect(titulos(call)).toEqual(["Ver una actividad", "Clase de prueba", "Hablar con alguien"]);
-    expect(updates).toEqual([{ table: "mensajes_whatsapp", values: { leido: true } }]);
+    expect(updates).toHaveLength(0); // lo marca leído el webhook al guardarlo (ver resuelveSinPersona)
   });
 
   it("sin actividades cargadas usa el texto de Configuración", async () => {
@@ -172,5 +172,26 @@ describe("primerNombre / personalizar", () => {
   it("reemplaza {nombre} o lo saca prolijo si no hay", () => {
     expect(personalizar("¡Hola {nombre}! 👋", "Ana")).toBe("¡Hola Ana! 👋");
     expect(personalizar("¡Hola {nombre}! 👋", null)).toBe("¡Hola! 👋");
+  });
+});
+
+describe("resuelveSinPersona: a qué mensajes no hace falta avisarle al gym", () => {
+  const plan = async (message: { id: string; type: string; text?: { body: string }; interactive?: unknown }, alumnoId: string | null = null) =>
+    planificarBot(fakeAdmin({ whatsapp_bot_activo: true }).admin, { gymId: "g", telefono: TEL, alumnoId, message: message as never });
+
+  it("lo que contesta el bot solo no avisa", async () => {
+    for (const m of [texto("Hola"), boton("bot_info"), boton("bot_lista"), boton("bot_prueba"), boton("bot_menu"), texto("/Mi_cuenta")]) {
+      const p = await plan(m);
+      expect(p && resuelveSinPersona(p)).toBe(true);
+    }
+  });
+  it("«Hablar con alguien», reservar una clase de prueba u «otro horario» sí avisan", async () => {
+    for (const m of [boton("bot_humano"), fila("bot_turno:f1:2026-10-07T18:00"), fila("bot_turno_otro")]) {
+      const p = await plan(m);
+      expect(p && resuelveSinPersona(p)).toBe(false);
+    }
+  });
+  it("un alumno que escribe texto libre no tiene plan del bot: avisa", async () => {
+    expect(await plan(texto("Profe, hoy no voy"), "a1")).toBeNull();
   });
 });

@@ -13,6 +13,7 @@ import { MessageCircle, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { T } from "@/lib/theme";
 import { marcarConversacionesLeidasAction } from "@/app/actions/whatsapp";
+import { useAvisosDispositivo, type EstadoPush } from "@/lib/hooks/use-avisos-dispositivo";
 
 export type NotificacionWhatsapp = {
   id: string;
@@ -26,8 +27,11 @@ type Ctx = {
   noLeidos: NotificacionWhatsapp[];
   conversacionesSinLeer: number;
   marcarTodasLeidas: () => Promise<void>;
-  permisoNavegador: NotificationPermission | "no-soportado";
-  pedirPermisoNavegador: () => Promise<void>;
+  sonido: boolean;
+  setSonido: (on: boolean) => void;
+  push: EstadoPush;
+  activarPush: () => Promise<void>;
+  desactivarPush: () => Promise<void>;
 };
 
 const WhatsappNotifContext = createContext<Ctx | null>(null);
@@ -68,9 +72,9 @@ export function WhatsappRealtimeProvider({
   const pathname = usePathname();
   const [noLeidos, setNoLeidos] = useState(noLeidosIniciales);
   const [toasts, setToasts] = useState<NotificacionWhatsapp[]>([]);
-  const [permisoNavegador, setPermisoNavegador] = useState<Ctx["permisoNavegador"]>(() =>
-    typeof window !== "undefined" && "Notification" in window ? Notification.permission : "no-soportado",
-  );
+  const avisos = useAvisosDispositivo();
+  const { sonar } = avisos;
+  const pushActivo = avisos.push === "activo";
   const [realtimeCaido, setRealtimeCaido] = useState(false);
 
   // Refs para leer el valor actual dentro del callback de Realtime sin resuscribirse.
@@ -118,14 +122,17 @@ export function WhatsappRealtimeProvider({
     const mirandoEseChat = pathnameRef.current === hrefChat(fila.telefono) && !document.hidden;
     if (mirandoEseChat) return;
 
+    sonar();
     setToasts((prev) => [notif, ...prev].slice(0, 3));
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== notif.id)), 7000);
 
-    if (document.hidden && "Notification" in window && Notification.permission === "granted") {
+    // Con push activo la notificación la muestra el service worker (aunque la pestaña esté
+    // cerrada); acá solo hace falta si este dispositivo no tiene push.
+    if (!pushActivo && document.hidden && "Notification" in window && Notification.permission === "granted") {
       const n = new Notification(nombre, { body: fila.cuerpo, tag: `wa-${fila.telefono}`, icon: "/icon.jpeg" });
       n.onclick = () => { window.focus(); router.push(hrefChat(fila.telefono)); n.close(); };
     }
-  }, [resolverNombre, router]);
+  }, [resolverNombre, router, sonar, pushActivo]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -218,14 +225,12 @@ export function WhatsappRealtimeProvider({
     refrescarInbox();
   }, [noLeidos, refrescarInbox]);
 
-  const pedirPermisoNavegador = useCallback(async () => {
-    if (!("Notification" in window)) return;
-    setPermisoNavegador(await Notification.requestPermission());
-  }, []);
 
   const value = useMemo<Ctx>(() => ({
-    noLeidos, conversacionesSinLeer, marcarTodasLeidas, permisoNavegador, pedirPermisoNavegador,
-  }), [noLeidos, conversacionesSinLeer, marcarTodasLeidas, permisoNavegador, pedirPermisoNavegador]);
+    noLeidos, conversacionesSinLeer, marcarTodasLeidas,
+    sonido: avisos.sonido, setSonido: avisos.setSonido,
+    push: avisos.push, activarPush: avisos.activarPush, desactivarPush: avisos.desactivarPush,
+  }), [noLeidos, conversacionesSinLeer, marcarTodasLeidas, avisos.sonido, avisos.setSonido, avisos.push, avisos.activarPush, avisos.desactivarPush]);
 
   return (
     <WhatsappNotifContext.Provider value={value}>

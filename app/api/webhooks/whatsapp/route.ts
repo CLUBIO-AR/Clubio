@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsAppText } from "@/lib/notifications/channels/whatsapp";
 import { responderConBot } from "@/lib/bot-consultas";
+import { enviarPushAlGym } from "@/lib/push";
 
 // Webhook único para TODOS los gyms (Meta no permite un callback distinto por número
 // dentro de la misma app). Cada evento trae metadata.phone_number_id, que se cruza
@@ -141,6 +142,7 @@ export async function POST(request: Request) {
           } else {
             await responderConBot(admin, { gymId, telefono, alumnoId: alumno?.id ?? null, message, perfilNombre });
           }
+          await avisarPorPush(admin, { gymId, telefono, alumnoId: alumno?.id ?? null, perfilNombre, cuerpo, waMessageId: message.id });
         }
       }
     }
@@ -210,6 +212,28 @@ async function responderAlias(
   } catch (err) {
     console.error("[webhook:whatsapp] error enviando el alias — gym:", gymId, err instanceof Error ? err.message : err);
   }
+}
+
+// Push al celular/compu de los usuarios del gym. Si el bot ya resolvió la consulta (marcó
+// el mensaje como leído, ej. "Horarios y precios"), no molesta a nadie.
+async function avisarPorPush(
+  admin: ReturnType<typeof createAdminClient>,
+  args: { gymId: string; telefono: string; alumnoId: string | null; perfilNombre: string | null; cuerpo: string; waMessageId: string },
+): Promise<void> {
+  const { data: fila } = await admin.from("mensajes_whatsapp").select("leido").eq("wa_message_id", args.waMessageId).maybeSingle();
+  if (fila?.leido) return;
+
+  let titulo = args.perfilNombre ?? `+${args.telefono}`;
+  if (args.alumnoId) {
+    const { data: a } = await admin.from("alumnos").select("nombre, apellido").eq("id", args.alumnoId).maybeSingle();
+    if (a) titulo = `${a.nombre} ${a.apellido}`;
+  }
+  await enviarPushAlGym(admin, args.gymId, {
+    title: titulo,
+    body: args.cuerpo,
+    url: `/dashboard/whatsapp/${encodeURIComponent(args.telefono)}`,
+    tag: `wa-${args.telefono}`,
+  });
 }
 
 function mapStatus(waStatus: string): string {

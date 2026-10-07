@@ -814,6 +814,38 @@ export type Database = {
           }
         ];
       };
+      push_suscripciones: {
+        Row: {
+          id: string;
+          gym_id: string;
+          usuario_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          user_agent: string | null;
+          created_at: string;
+          ultimo_uso: string | null;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          usuario_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          user_agent?: string | null;
+          ultimo_uso?: string | null;
+        };
+        Update: {
+          gym_id?: string;
+          usuario_id?: string;
+          p256dh?: string;
+          auth?: string;
+          user_agent?: string | null;
+          ultimo_uso?: string | null;
+        };
+        Relationships: [];
+      };
       mensajes_whatsapp: {
         Row: {
           id: string;

@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { requireGymContext } from "@/lib/supabase/auth";
 import { WhatsappSidebarClient, type Conversacion, type Contacto } from "@/components/whatsapp/whatsapp-sidebar-client";
 import { T } from "@/lib/theme";
+import { redirect } from "next/navigation";
+import { whatsappConfigurado } from "@/lib/whatsapp-config";
 
 // Últimos 10 dígitos — alineado con el matching por teléfono usado en el webhook
 // y en las server actions de WhatsApp (los alumnos pueden tener el número con o
@@ -13,6 +15,13 @@ function telefonoKey(telefono: string): string {
 export default async function WhatsappLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireGymContext();
   const supabase = await createClient();
+
+  const { data: waConfig } = await supabase
+    .from("gym_config")
+    .select("whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token")
+    .eq("gym_id", ctx.gymId)
+    .maybeSingle();
+  if (!whatsappConfigurado(waConfig)) redirect("/dashboard/configuracion?tab=whatsapp");
 
   const [{ data: mensajes }, { data: alumnos }] = await Promise.all([
     supabase

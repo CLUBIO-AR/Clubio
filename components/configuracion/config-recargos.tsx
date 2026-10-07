@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ConfigSection, Field, NumberInput } from "./config-section";
+import { ConfigSection, Field, NumberInput, Toggle, SubBlock, Hint } from "./config-section";
 import { T } from "@/lib/theme";
 
 interface Props {
@@ -27,7 +27,7 @@ export function ConfigRecargos({
     modoDesactivar: moraDesactivarMesSiguiente ? "mes_siguiente" : "dias_fijos",
     diasDesactivar: diasMoraDesactivacion?.toString() ?? "",
   });
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
+  const set = (k: "r1dias" | "r1pct" | "r2dias" | "r2pct" | "diasDesactivar") => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
   async function save() {
@@ -50,103 +50,72 @@ export function ConfigRecargos({
   }
 
   return (
-    <ConfigSection title="Recargos por mora" onSave={save}>
-      <div>
-        <p className="text-xs mb-3" style={{ color: T.textDim }}>
-          Recargo 1 — se aplica automáticamente a las cuotas vencidas. Si una actividad tiene su propio recargo
-          configurado (en Actividades), ese valor tiene prioridad sobre este; este queda como default general del gym.
-        </p>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Días de mora para aplicar">
+    <ConfigSection title="Recargos y mora" onSave={save}>
+      <SubBlock title="Recargo por pago fuera de término">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Días después del vencimiento">
             <NumberInput value={form.r1dias} onChange={set("r1dias")} min={0} />
           </Field>
-          <Field label="Porcentaje de recargo (%)">
+          <Field label="Recargo (%)">
             <NumberInput value={form.r1pct} onChange={set("r1pct")} min={0} step={0.1} />
           </Field>
         </div>
-      </div>
+        <Hint>Si una actividad tiene su propio recargo (en Actividades), se usa ese en lugar de este.</Hint>
 
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <input
-            type="checkbox"
-            id="r2activo"
+        <div className="pt-3 border-t" style={{ borderColor: T.borderSub }}>
+          <Toggle
             checked={form.r2activo}
-            onChange={(e) => setForm((f) => ({ ...f, r2activo: e.target.checked }))}
-            style={{ accentColor: T.accent }}
+            onChange={(v) => setForm((f) => ({ ...f, r2activo: v }))}
+            label="Segundo recargo"
+            description="Un recargo adicional si la cuota sigue impaga más tiempo."
           />
-          <label htmlFor="r2activo" className="text-xs" style={{ color: T.textDim }}>
-            Activar segundo recargo
-          </label>
-        </div>
-        {form.r2activo && (
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Días de mora para aplicar">
-              <NumberInput value={form.r2dias} onChange={set("r2dias")} min={0} />
-            </Field>
-            <Field label="Porcentaje de recargo (%)">
-              <NumberInput value={form.r2pct} onChange={set("r2pct")} min={0} step={0.1} />
-            </Field>
-          </div>
-        )}
-      </div>
-
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <input
-            type="checkbox"
-            id="desactivarActivo"
-            checked={form.desactivarActivo}
-            onChange={(e) => setForm((f) => ({ ...f, desactivarActivo: e.target.checked }))}
-            style={{ accentColor: T.accent }}
-          />
-          <label htmlFor="desactivarActivo" className="text-xs" style={{ color: T.textDim }}>
-            Desactivar alumno automáticamente si acumula mora
-          </label>
-        </div>
-        {form.desactivarActivo && (
-          <div className="space-y-3">
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 text-xs" style={{ color: T.textDim }}>
-                <input
-                  type="radio"
-                  name="modoDesactivar"
-                  checked={form.modoDesactivar === "dias_fijos"}
-                  onChange={() => setForm((f) => ({ ...f, modoDesactivar: "dias_fijos" }))}
-                  style={{ accentColor: T.accent }}
-                />
-                Número fijo de días
-              </label>
-              <label className="flex items-center gap-2 text-xs" style={{ color: T.textDim }}>
-                <input
-                  type="radio"
-                  name="modoDesactivar"
-                  checked={form.modoDesactivar === "mes_siguiente"}
-                  onChange={() => setForm((f) => ({ ...f, modoDesactivar: "mes_siguiente" }))}
-                  style={{ accentColor: T.accent }}
-                />
-                Al arrancar el mes siguiente
-              </label>
-            </div>
-            {form.modoDesactivar === "dias_fijos" ? (
-              <Field label="Días de mora para desactivar">
-                <div className="flex items-center gap-2">
-                  <NumberInput value={form.diasDesactivar} onChange={set("diasDesactivar")} min={1} />
-                  <span className="text-sm whitespace-nowrap" style={{ color: T.textDim }}>días vencida la cuota</span>
-                </div>
+          {form.r2activo && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+              <Field label="Días después del vencimiento">
+                <NumberInput value={form.r2dias} onChange={set("r2dias")} min={0} />
               </Field>
-            ) : (
-              <p className="text-xs" style={{ color: T.textDim }}>
-                Se desactiva apenas empieza el mes siguiente al de la cuota impaga, sin importar cuántos días
-                tenga ese mes (útil cuando el corte es &quot;hasta fin de mes&quot; en vez de un N de días fijo).
-              </p>
+              <Field label="Recargo (%)">
+                <NumberInput value={form.r2pct} onChange={set("r2pct")} min={0} step={0.1} />
+              </Field>
+            </div>
+          )}
+        </div>
+      </SubBlock>
+
+      <SubBlock>
+        <Toggle
+          checked={form.desactivarActivo}
+          onChange={(v) => setForm((f) => ({ ...f, desactivarActivo: v }))}
+          label="Dar de baja automáticamente por mora"
+          description="El alumno se desactiva y deja de recibir avisos. Se reactiva solo al pagar, o a mano desde su ficha."
+        />
+        {form.desactivarActivo && (
+          <div className="space-y-3 pt-3 border-t" style={{ borderColor: T.borderSub }}>
+            <div className="flex flex-wrap gap-4">
+              {[
+                { val: "dias_fijos", label: "Después de N días de vencida" },
+                { val: "mes_siguiente", label: "Al empezar el mes siguiente" },
+              ].map(({ val, label }) => (
+                <label key={val} className="flex items-center gap-2 text-sm" style={{ color: T.text }}>
+                  <input
+                    type="radio"
+                    name="modoDesactivar"
+                    checked={form.modoDesactivar === val}
+                    onChange={() => setForm((f) => ({ ...f, modoDesactivar: val }))}
+                    style={{ accentColor: T.accent }}
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+            {form.modoDesactivar === "dias_fijos" && (
+              <Field label="Días de vencida">
+                <NumberInput value={form.diasDesactivar} onChange={set("diasDesactivar")} min={1} style={{ maxWidth: 120 }} />
+              </Field>
             )}
           </div>
         )}
-        <p className="text-xs mt-2" style={{ color: T.textDim }}>
-          Se reactiva solo al pagar la cuota pendiente, o manualmente desde la ficha del alumno. No se le vuelven a enviar avisos mientras esté desactivado.
-        </p>
-      </div>
+      </SubBlock>
     </ConfigSection>
   );
 }

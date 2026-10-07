@@ -152,8 +152,8 @@ export async function POST(request: Request) {
           .eq("id", cuota.id);
         enviados++;
       }
-    } else if (alumno.email) {
-      // Email consolidado — una sola notificación para múltiples cuotas
+    } else {
+      // Aviso consolidado (email y/o WhatsApp) — una sola notificación para múltiples cuotas
       const tieneVencidas = cuotasAlumno.some((c) => c.estado === "vencida");
       const tipo = tieneVencidas ? "recordatorio_vencido" : "aviso_vencimiento";
 
@@ -195,36 +195,79 @@ export async function POST(request: Request) {
 
       let emailProviderId: string | undefined;
       let emailOk = false;
-      try {
-        emailProviderId = await sendEmailAvisosLote({
-          to:                    alumno.email,
-          alumnoNombre:          alumno.nombre,
-          gymNombre:             gym.nombre,
-          logoUrl:               gym.logo_url,
-          colorAccento:          gymConfig.email_color_acento,
-          emailRemitenteNombre:  notifConfig.email_remitente_nombre,
-          emailRemitenteAddress: notifConfig.email_remitente_address,
-          tieneVencidas,
-          cuotas:                cuotasConLink,
-          pagarTodoUrl,
-          montoTotal,
+      if (alumno.email && notifConfig.email_activo) {
+        try {
+          emailProviderId = await sendEmailAvisosLote({
+            to:                    alumno.email,
+            alumnoNombre:          alumno.nombre,
+            gymNombre:             gym.nombre,
+            logoUrl:               gym.logo_url,
+            colorAccento:          gymConfig.email_color_acento,
+            emailRemitenteNombre:  notifConfig.email_remitente_nombre,
+            emailRemitenteAddress: notifConfig.email_remitente_address,
+            tieneVencidas,
+            cuotas:                cuotasConLink,
+            pagarTodoUrl,
+            montoTotal,
+          });
+          emailOk = true;
+        } catch (err) {
+          console.error(`[worker:enviar-avisos] lote gym=${gym_id} alumno=${alumnoId} error:`, err);
+        }
+
+        await admin.from("notificaciones_log").insert({
+          gym_id,
+          alumno_id:   alumnoId,
+          cuota_id:    cuotasAlumno[0].id,
+          tipo,
+          enviado_a:   alumno.email,
+          canal:       "email",
+          estado:      emailOk ? "enviado" : "error",
+          provider_id: emailProviderId ?? null,
         });
-        emailOk = true;
-      } catch (err) {
-        console.error(`[worker:enviar-avisos] lote gym=${gym_id} alumno=${alumnoId} error:`, err);
       }
 
-      await admin.from("notificaciones_log").insert({
-        gym_id,
-        alumno_id:   alumnoId,
-        cuota_id:    cuotasAlumno[0].id,
-        tipo,
-        enviado_a:   alumno.email,
-        estado:      emailOk ? "enviado" : "error",
-        provider_id: emailProviderId ?? null,
-      });
+      // WhatsApp consolidado: un solo mensaje con el total y el link de "pagar todo"
+      // (o el alias en modo transferencia). Antes este camino solo mandaba email, así que
+      // un alumno con 2+ cuotas pendientes nunca recibía el aviso por WhatsApp.
+      let whatsappOk = false;
+      if (alumno.telefono) {
+        const primera = [...cuotasAlumno].sort((a, b) => a.fecha_vencimiento.localeCompare(b.fecha_vencimiento))[0];
+        const wsResultados = await sendNotification(
+          { ...notifConfig, email_activo: false },
+          {
+            type: tipo,
+            alumno: { nombre: alumno.nombre, telefono: alumno.telefono },
+            cuota: {
+              mes: primera.mes, anio: primera.anio, monto_total: montoTotal,
+              pago_url: pagarTodoUrl,
+              // La plantilla arma el link como https://app.clubio.com.ar/pagar/{{1}}.
+              pago_token: `lote/${loteToken}`,
+              fecha_vencimiento: primera.fecha_vencimiento,
+              actividad_nombre: `${cuotasAlumno.length} cuotas`,
+            },
+            gym: { nombre: gym.nombre, logo_url: gym.logo_url, color_acento: gymConfig.email_color_acento },
+          }
+        );
+        for (const r of wsResultados) {
+          await admin.from("notificaciones_log").insert({
+            gym_id, alumno_id: alumnoId, cuota_id: primera.id,
+            tipo, enviado_a: alumno.telefono, canal: "whatsapp",
+            estado: r.ok ? "enviado" : "error",
+            provider_id: r.provider_id ?? null,
+            error_detail: r.error ?? null,
+          });
+          if (r.ok) {
+            whatsappOk = true;
+            await registrarAvisoEnInbox(admin, {
+              gymId: gym_id, alumnoId, telefono: alumno.telefono, waMessageId: r.provider_id, tipo,
+              cuota: { mes: primera.mes, anio: primera.anio, monto_total: montoTotal },
+            });
+          }
+        }
+      }
 
-      if (emailOk) {
+      if (emailOk || whatsappOk) {
         await Promise.allSettled(
           cuotasAlumno.map((cuota) =>
             admin.from("cuotas")

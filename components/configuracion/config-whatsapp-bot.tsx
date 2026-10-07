@@ -18,7 +18,7 @@ export function ConfigWhatsappBot(props: Props) {
   const [bienvenida, setBienvenida] = useState(props.bienvenida);
   const [info, setInfo] = useState(props.info);
 
-  const bienvenidaDefault = `¡Hola! 👋 Gracias por escribir a ${props.gymNombre || "nuestro gimnasio"}. ¿En qué te podemos ayudar?`;
+  const bienvenidaDefault = `¡Hola {nombre}! 👋 Gracias por escribir a ${props.gymNombre || "nuestro gimnasio"}. ¿En qué te podemos ayudar?`;
 
   async function save() {
     if (activo && !info.trim()) {
@@ -51,7 +51,10 @@ export function ConfigWhatsappBot(props: Props) {
         <Field label="Texto">
           <Textarea value={bienvenida} onChange={(e) => setBienvenida(e.target.value)} placeholder={bienvenidaDefault} rows={3} maxLength={900} />
         </Field>
-        <Hint>Si lo dejás vacío se usa el de ejemplo. Debajo van los botones:</Hint>
+        <Hint>
+          Escribí <code>{"{nombre}"}</code> donde quieras el nombre de la persona (sale de su perfil de WhatsApp; si no tiene uno
+          válido, se saca solo). Si lo dejás vacío se usa el de ejemplo. Debajo van los botones:
+        </Hint>
         <div className="flex flex-wrap gap-1.5">
           {["Horarios y precios", "Clase de prueba", "Hablar con alguien"].map((b) => (
             <span key={b} className="px-2.5 py-1 rounded-md text-xs font-semibold" style={{ background: T.inputBg, color: T.accent, border: `1px solid ${T.border}` }}>

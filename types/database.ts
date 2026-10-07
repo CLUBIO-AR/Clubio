@@ -827,6 +827,7 @@ export type Database = {
           leido: boolean;
           created_at: string;
           deleted_at: string | null;
+          perfil_nombre: string | null;
         };
         Insert: {
           id?: string;
@@ -839,6 +840,7 @@ export type Database = {
           estado?: string;
           leido?: boolean;
           deleted_at?: string | null;
+          perfil_nombre?: string | null;
         };
         Update: {
           alumno_id?: string | null;

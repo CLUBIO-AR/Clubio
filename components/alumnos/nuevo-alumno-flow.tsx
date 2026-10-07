@@ -14,9 +14,11 @@ interface Props {
   sucursales: Sucursal[];
   actividadesDisponibles: Actividad[];
   telefonoInicial?: string;
+  nombreInicial?: string;
+  apellidoInicial?: string;
 }
 
-export function NuevoAlumnoFlow({ sucursales, actividadesDisponibles, telefonoInicial }: Props) {
+export function NuevoAlumnoFlow({ sucursales, actividadesDisponibles, telefonoInicial, nombreInicial, apellidoInicial }: Props) {
   const router = useRouter();
   const [alumnoId, setAlumnoId] = useState<string | null>(null);
 
@@ -25,7 +27,9 @@ export function NuevoAlumnoFlow({ sucursales, actividadesDisponibles, telefonoIn
       <AlumnoForm
         sucursales={sucursales}
         mode="create"
-        alumno={telefonoInicial ? { telefono: telefonoInicial } : undefined}
+        alumno={telefonoInicial || nombreInicial
+          ? { telefono: telefonoInicial, nombre: nombreInicial, apellido: apellidoInicial }
+          : undefined}
         onCreated={setAlumnoId}
       />
     );

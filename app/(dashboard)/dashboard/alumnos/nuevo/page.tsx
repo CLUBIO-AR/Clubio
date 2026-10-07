@@ -8,9 +8,14 @@ export default async function NuevoAlumnoPage({
   searchParams,
 }: {
   // ?telefono=… cuando se da de alta desde una consulta de WhatsApp.
-  searchParams: Promise<{ telefono?: string }>;
+  searchParams: Promise<{ telefono?: string; nombre?: string }>;
 }) {
-  const { telefono } = await searchParams;
+  const { telefono, nombre } = await searchParams;
+  // Nombre del perfil de WhatsApp: primera palabra → nombre, el resto → apellido.
+  // Se limpia de emojis y símbolos; el gym lo revisa antes de guardar.
+  const nombreLimpio = (nombre ?? "").replace(/[^\p{L}\p{M}\s'.-]/gu, "").replace(/\s+/g, " ").trim().slice(0, 80);
+  const [nombreInicial, ...resto] = nombreLimpio ? nombreLimpio.split(" ") : [];
+  const apellidoInicial = resto.join(" ");
   const telefonoInicial = telefono && /^\+?\d{8,15}$/.test(telefono)
     ? (telefono.startsWith("+") ? telefono : `+${telefono}`)
     : undefined;
@@ -41,6 +46,8 @@ export default async function NuevoAlumnoPage({
         sucursales={sucursalesRes.data ?? []}
         actividadesDisponibles={actividadesRes.data ?? []}
         telefonoInicial={telefonoInicial}
+        nombreInicial={nombreInicial}
+        apellidoInicial={apellidoInicial || undefined}
       />
     </div>
   );

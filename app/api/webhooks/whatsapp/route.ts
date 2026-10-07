@@ -104,6 +104,8 @@ export async function POST(request: Request) {
         eventosMensaje++;
         const telefono = message.from;
         const cuerpo = textoDelMensaje(message);
+        // Nombre que la persona tiene en su perfil de WhatsApp (puede venir vacío o con emojis).
+        const perfilNombre = value.contacts?.find((c) => c.wa_id === telefono)?.profile?.name?.trim().slice(0, 100) || null;
 
         const { data: alumno } = await admin
           .from("alumnos")
@@ -125,6 +127,7 @@ export async function POST(request: Request) {
           wa_message_id: message.id,
           estado: "recibido",
           leido: false,
+          perfil_nombre: perfilNombre,
         });
 
         if (insertError) {
@@ -136,7 +139,7 @@ export async function POST(request: Request) {
           if (esPedidoDeAlias(message)) {
             await responderAlias(admin, gymId, telefono, alumno?.id ?? null);
           } else {
-            await responderConBot(admin, { gymId, telefono, alumnoId: alumno?.id ?? null, message });
+            await responderConBot(admin, { gymId, telefono, alumnoId: alumno?.id ?? null, message, perfilNombre });
           }
         }
       }
@@ -253,6 +256,7 @@ type WhatsAppWebhookBody = {
     changes?: Array<{
       value: {
         metadata?: { phone_number_id?: string };
+        contacts?: Array<{ wa_id?: string; profile?: { name?: string } }>;
         statuses?: Array<{ id: string; status: string; recipient_id?: string }>;
         messages?: Array<{
           from: string;

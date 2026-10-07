@@ -26,7 +26,7 @@ export default async function WhatsappLayout({ children }: { children: React.Rea
   const [{ data: mensajes }, { data: alumnos }] = await Promise.all([
     supabase
       .from("mensajes_whatsapp")
-      .select("telefono, cuerpo, direccion, leido, created_at, alumnos(nombre, apellido)")
+      .select("telefono, cuerpo, direccion, leido, created_at, perfil_nombre, alumnos(nombre, apellido)")
       .eq("gym_id", ctx.gymId)
       .is("deleted_at", null)
       .order("created_at", { ascending: false }),
@@ -60,7 +60,10 @@ export default async function WhatsappLayout({ children }: { children: React.Rea
         ?? (msgs.find((m) => m.alumnos)?.alumnos as unknown as { nombre: string; apellido: string } | null);
       return {
         telefono,
-        nombre: alumno ? `${alumno.nombre} ${alumno.apellido}` : telefono,
+        // Sin alumno: el nombre de su perfil de WhatsApp (el más reciente que mandó), si no el número.
+        nombre: alumno
+          ? `${alumno.nombre} ${alumno.apellido}`
+          : (msgs.find((m) => m.perfil_nombre)?.perfil_nombre ?? `+${telefono}`),
         esConsulta: !alumno,
         ultimoMensaje: msgs[0].cuerpo,
         ultimaDireccion: msgs[0].direccion,

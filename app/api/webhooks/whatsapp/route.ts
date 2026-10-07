@@ -2,7 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsAppText } from "@/lib/notifications/channels/whatsapp";
-import { responderConBot } from "@/lib/bot-consultas";
+import { ejecutarPlan, planificarBot, resuelveSinPersona } from "@/lib/bot-consultas";
 import { enviarPushAlGym } from "@/lib/push";
 
 // Webhook único para TODOS los gyms (Meta no permite un callback distinto por número
@@ -119,6 +119,13 @@ export async function POST(request: Request) {
           .limit(1)
           .maybeSingle();
 
+        // Antes de guardar: ¿lo resuelve el bot solo? Si sí, el mensaje entra ya leído y no
+        // suena nada (ni en el panel ni en el celu). Solo avisa cuando hace falta una persona:
+        // "Hablar con alguien", reserva de clase de prueba, o algo que el bot no entiende.
+        const pideAlias = esPedidoDeAlias(message);
+        const plan = pideAlias ? null : await planificarBot(admin, { gymId, telefono, alumnoId: alumno?.id ?? null, message, perfilNombre });
+        const resueltoPorBot = pideAlias || (plan !== null && resuelveSinPersona(plan));
+
         const { error: insertError } = await admin.from("mensajes_whatsapp").insert({
           gym_id: gymId,
           alumno_id: alumno?.id ?? null,
@@ -127,7 +134,7 @@ export async function POST(request: Request) {
           cuerpo,
           wa_message_id: message.id,
           estado: "recibido",
-          leido: false,
+          leido: resueltoPorBot,
           perfil_nombre: perfilNombre,
         });
 
@@ -137,12 +144,20 @@ export async function POST(request: Request) {
           console.log("[webhook:whatsapp] mensaje entrante guardado — gym:", gymId, "de:", telefono, "alumno match:", alumno?.id ?? "sin match");
           // Solo si el insert salió bien: si Meta reintenta el mismo evento, el índice único
           // de wa_message_id hace fallar el insert y no se responde el alias dos veces.
-          if (esPedidoDeAlias(message)) {
+          let necesitaPersona = !resueltoPorBot;
+          if (pideAlias) {
             await responderAlias(admin, gymId, telefono, alumno?.id ?? null);
-          } else {
-            await responderConBot(admin, { gymId, telefono, alumnoId: alumno?.id ?? null, message, perfilNombre });
+          } else if (plan) {
+            const ok = await ejecutarPlan(plan);
+            if (!ok && resueltoPorBot) {
+              // El bot no pudo contestar: que lo vea el gym.
+              await admin.from("mensajes_whatsapp").update({ leido: false }).eq("wa_message_id", message.id);
+              necesitaPersona = true;
+            }
           }
-          await avisarPorPush(admin, { gymId, telefono, alumnoId: alumno?.id ?? null, perfilNombre, cuerpo, waMessageId: message.id });
+          if (necesitaPersona) {
+            await avisarPorPush(admin, { gymId, telefono, alumnoId: alumno?.id ?? null, perfilNombre, cuerpo });
+          }
         }
       }
     }
@@ -219,15 +234,12 @@ async function responderAlias(
   }
 }
 
-// Push al celular/compu de los usuarios del gym. Si el bot ya resolvió la consulta (marcó
-// el mensaje como leído, ej. "Horarios y precios"), no molesta a nadie.
+// Push al celular/compu de los usuarios del gym. Solo se llama cuando el mensaje necesita
+// a una persona (lo que resuelve el bot no avisa).
 async function avisarPorPush(
   admin: ReturnType<typeof createAdminClient>,
-  args: { gymId: string; telefono: string; alumnoId: string | null; perfilNombre: string | null; cuerpo: string; waMessageId: string },
+  args: { gymId: string; telefono: string; alumnoId: string | null; perfilNombre: string | null; cuerpo: string },
 ): Promise<void> {
-  const { data: fila } = await admin.from("mensajes_whatsapp").select("leido").eq("wa_message_id", args.waMessageId).maybeSingle();
-  if (fila?.leido) return;
-
   let titulo = args.perfilNombre ?? `+${args.telefono}`;
   if (args.alumnoId) {
     const { data: a } = await admin.from("alumnos").select("nombre, apellido").eq("id", args.alumnoId).maybeSingle();

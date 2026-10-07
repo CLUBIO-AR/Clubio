@@ -54,14 +54,24 @@ export default async function WhatsappThreadPage({
     && new Date().getTime() - new Date(ultimoEntrante.created_at).getTime() < 24 * 60 * 60 * 1000;
 
   return (
-    <div className="flex flex-col gap-3 h-full min-h-0">
-      <div className="flex items-start justify-between gap-2 md:gap-3">
+    <div className="flex flex-col md:gap-3 h-full min-h-0">
+      {/* En el celular es la barra de arriba del chat (como WhatsApp); en la compu, un título. */}
+      <div
+        className="flex items-center md:items-start justify-between gap-2 md:gap-3 px-2 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] md:p-0 border-b md:border-0 bg-[var(--barra)] md:bg-transparent"
+        style={{ borderColor: T.border, ["--barra" as string]: T.card }}
+      >
         {/* Volver a la lista (en el celular la lista no se ve mientras estás en un chat) */}
-        <Link href="/dashboard/whatsapp" aria-label="Volver a las conversaciones" className="md:hidden -ml-1 p-1 rounded-lg shrink-0" style={{ color: T.textDim }}>
+        <Link href="/dashboard/whatsapp" aria-label="Volver a las conversaciones" className="md:hidden p-1 rounded-lg shrink-0" style={{ color: T.text }}>
           <ChevronLeft className="w-6 h-6" />
         </Link>
+        <div
+          className="md:hidden w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
+          style={{ background: T.accentBg, color: T.accent }}
+        >
+          {nombre.replace(/^\+/, "").slice(0, 2).toUpperCase()}
+        </div>
         <div className="min-w-0 flex-1">
-          <h1 className="text-lg md:text-xl font-bold truncate" style={{ fontFamily: "var(--font-fredoka)", color: T.text }}>
+          <h1 className="text-base md:text-xl font-bold truncate" style={{ fontFamily: "var(--font-fredoka)", color: T.text }}>
             {alumnoActual ? (
               <Link href={`/dashboard/alumnos/${alumnoActual.id}`} className="hover:underline">{nombre}</Link>
             ) : nombre}

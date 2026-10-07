@@ -169,7 +169,7 @@ export function WhatsappThreadClient({
   }
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col rounded-xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+    <div className="flex-1 min-h-0 flex flex-col md:rounded-xl overflow-hidden md:border" style={{ background: T.card, borderColor: T.border }}>
       <div className="flex-1 overflow-y-auto p-3 md:p-5 space-y-3">
         {mensajes.length === 0 && (
           <p className="text-sm text-center mt-10" style={{ color: T.textDim }}>Todavía no hay mensajes con este número.</p>
@@ -196,7 +196,7 @@ export function WhatsappThreadClient({
         <div ref={bottomRef} />
       </div>
 
-      <div className="p-2.5 md:p-4" style={{ borderTop: `1px solid ${T.border}` }}>
+      <div className="p-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] md:p-4" style={{ borderTop: `1px solid ${T.border}` }}>
         {error && <p className="text-xs mb-2" style={{ color: T.danger }}>{error}</p>}
         {!ventanaAbierta && (
           <p className="text-xs mb-2" style={{ color: T.textDim }}>

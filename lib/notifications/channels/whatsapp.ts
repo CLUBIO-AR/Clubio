@@ -131,7 +131,8 @@ function buildTemplate(
 
     const bodyBase = [
       alumno.nombre,
-      cuota.actividad_nombre ?? "Cuota",
+      // Sin actividad asignada: "Cuota mensual" (antes decía "Tu cuota de Cuota").
+      cuota.actividad_nombre ?? "Cuota mensual",
       `${mesNombre(cuota.mes)}/${cuota.anio}`,
       monto.toLocaleString("es-AR"),
       formatFecha(cuota.fecha_vencimiento),

@@ -16,6 +16,8 @@ const ActividadSchema = z.object({
   descripcion: z.string().max(300).nullable().optional(),
   horarios: HorariosSchema.optional(),
   clase_prueba: z.boolean().optional(),
+  // Lugares por horario para clase de prueba; null = sin límite.
+  cupo_prueba: z.number().int().min(0).max(500).nullable().optional(),
 });
 
 export async function GET() {

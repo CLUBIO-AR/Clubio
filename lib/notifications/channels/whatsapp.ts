@@ -17,6 +17,64 @@ const GRAPH_VERSION = "v21.0";
 // Probamos en este orden: si Meta responde #132001 (no existe en ese idioma), seguimos con el próximo.
 const TEMPLATE_LANGUAGES = ["es_AR", "es"] as const;
 const ERROR_TEMPLATE_NO_EXISTE = 132001;
+// Plantilla inexistente, pausada o deshabilitada: el que llama puede usar una plantilla anterior.
+const ERRORES_PLANTILLA_NO_DISPONIBLE = new Set([ERROR_TEMPLATE_NO_EXISTE, 132015, 132016]);
+
+export class WhatsAppPlantillaNoDisponible extends Error {
+  constructor(public plantilla: string, public code: number, message: string) {
+    super(message);
+    this.name = "WhatsAppPlantillaNoDisponible";
+  }
+}
+
+/**
+ * Manda una plantilla con variables de header y body, y botones de respuesta rápida con su
+ * payload (el que vuelve en el webhook cuando el alumno toca el botón). Prueba es_AR y es.
+ * Si la plantilla no existe/no está aprobada en ningún idioma, tira WhatsAppPlantillaNoDisponible.
+ */
+export async function sendWhatsAppPlantilla(
+  config: Pick<GymNotificationConfig, "whatsapp_phone_number_id" | "whatsapp_access_token">,
+  params: { to: string; plantilla: string; header?: string[]; body: string[]; quickReplies?: string[] }
+): Promise<string> {
+  const to = normalizePhone(params.to);
+  if (!to) throw new Error("Teléfono inválido o ausente");
+  if (!config.whatsapp_phone_number_id || !config.whatsapp_access_token) {
+    throw new Error("WhatsApp no configurado para este gym");
+  }
+
+  const texto = (text: string) => ({ type: "text", text });
+  const components: Record<string, unknown>[] = [];
+  if (params.header?.length) components.push({ type: "header", parameters: params.header.map(texto) });
+  components.push({ type: "body", parameters: params.body.map(texto) });
+  (params.quickReplies ?? []).forEach((payload, index) => {
+    components.push({ type: "button", sub_type: "quick_reply", index: String(index), parameters: [{ type: "payload", payload }] });
+  });
+
+  const url = `https://graph.facebook.com/${GRAPH_VERSION}/${config.whatsapp_phone_number_id}/messages`;
+  let ultimoError: { message?: string; code?: number } | undefined;
+  for (const language of TEMPLATE_LANGUAGES) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${config.whatsapp_access_token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to,
+        type: "template",
+        template: { name: params.plantilla, language: { code: language }, components },
+      }),
+    });
+    const data = await res.json() as { messages?: { id?: string }[]; error?: { message?: string; code?: number } };
+    if (res.ok) {
+      const id = data?.messages?.[0]?.id;
+      if (!id) throw new Error("WhatsApp API no devolvió message id");
+      return id;
+    }
+    ultimoError = data?.error;
+    if (data?.error?.code && ERRORES_PLANTILLA_NO_DISPONIBLE.has(data.error.code)) continue;
+    throw new Error(`WhatsApp API error: ${data?.error?.message ?? res.statusText}`);
+  }
+  throw new WhatsAppPlantillaNoDisponible(params.plantilla, ultimoError?.code ?? ERROR_TEMPLATE_NO_EXISTE, ultimoError?.message ?? "Plantilla no disponible");
+}
 
 export async function sendWhatsApp(
   config: GymNotificationConfig,
@@ -214,6 +272,63 @@ export async function sendWhatsAppList(
   const messageId = data?.messages?.[0]?.id;
   if (!messageId) throw new Error("WhatsApp API no devolvió message id");
   return messageId;
+}
+
+// Ubicación (pin en el mapa) — para la confirmación de la clase de prueba. Dentro de la
+// ventana de 24 h, como el texto libre.
+export async function sendWhatsAppUbicacion(
+  config: Pick<GymNotificationConfig, "whatsapp_phone_number_id" | "whatsapp_access_token">,
+  params: { to: string; latitud: number; longitud: number; nombre?: string | null; direccion?: string | null }
+): Promise<string> {
+  const to = normalizePhone(params.to);
+  if (!to) throw new Error("Teléfono inválido o ausente");
+  if (!config.whatsapp_phone_number_id || !config.whatsapp_access_token) {
+    throw new Error("WhatsApp no configurado para este gym");
+  }
+  const res = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/${config.whatsapp_phone_number_id}/messages`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${config.whatsapp_access_token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      to,
+      type: "location",
+      location: {
+        latitude: params.latitud,
+        longitude: params.longitud,
+        ...(params.nombre ? { name: params.nombre } : {}),
+        ...(params.direccion ? { address: params.direccion } : {}),
+      },
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(`WhatsApp API error: ${data?.error?.message ?? res.statusText}`);
+  const messageId = data?.messages?.[0]?.id;
+  if (!messageId) throw new Error("WhatsApp API no devolvió message id");
+  return messageId;
+}
+
+// Descarga un archivo que mandó el alumno (foto o PDF de un comprobante). Meta lo entrega
+// en dos pasos: GET /{media-id} devuelve una URL temporal, y esa URL se baja con el mismo
+// token. Tope de tamaño para no guardar cualquier cosa.
+export const MAX_MEDIA_BYTES = 10 * 1024 * 1024;
+
+export async function descargarMediaWhatsApp(
+  config: Pick<GymNotificationConfig, "whatsapp_access_token">,
+  mediaId: string
+): Promise<{ bytes: ArrayBuffer; mimeType: string }> {
+  if (!config.whatsapp_access_token) throw new Error("WhatsApp no configurado para este gym");
+  const auth = { Authorization: `Bearer ${config.whatsapp_access_token}` };
+
+  const metaRes = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/${encodeURIComponent(mediaId)}`, { headers: auth });
+  const meta = await metaRes.json() as { url?: string; mime_type?: string; file_size?: number; error?: { message?: string } };
+  if (!metaRes.ok || !meta.url) throw new Error(`WhatsApp media error: ${meta?.error?.message ?? metaRes.statusText}`);
+  if (meta.file_size && meta.file_size > MAX_MEDIA_BYTES) throw new Error("El archivo supera los 10MB");
+
+  const fileRes = await fetch(meta.url, { headers: auth });
+  if (!fileRes.ok) throw new Error(`WhatsApp media download error: ${fileRes.status}`);
+  const bytes = await fileRes.arrayBuffer();
+  if (bytes.byteLength > MAX_MEDIA_BYTES) throw new Error("El archivo supera los 10MB");
+  return { bytes, mimeType: meta.mime_type ?? fileRes.headers.get("content-type") ?? "application/octet-stream" };
 }
 
 function buildTemplate(

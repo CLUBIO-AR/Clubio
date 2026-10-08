@@ -111,17 +111,25 @@ const fecha = (iso: string) => {
   return `${d}/${m}`;
 };
 
+/** "Valentina S." — por WhatsApp no mostramos el apellido completo. */
+export function nombreCorto(nombre: string, apellido?: string | null): string {
+  const inicial = apellido?.trim().charAt(0);
+  return inicial ? `${nombre.trim()} ${inicial.toLocaleUpperCase("es-AR")}.` : nombre.trim();
+}
+
 /** Texto para WhatsApp (negritas con *…*). `pago` dice cómo pagar lo pendiente. */
 export function textoEstadoCuenta(
   e: EstadoCuenta,
-  pago: { modo: "link"; url: string | null } | { modo: "transferencia"; alias: string | null; titular?: string | null },
+  pago:
+    | { modo: "link"; url: string | null }
+    | { modo: "transferencia"; alias: string | null; titular?: string | null; cbu?: string | null },
 ): string {
-  const lineas = [`📋 *Estado de cuenta de ${e.alumnoNombre} ${e.alumnoApellido}*`];
+  const lineas: string[] = [];
 
   if (e.pendientes.length === 0) {
-    lineas.push("", "¡Estás al día! 🙌 No tenés nada pendiente.");
+    lineas.push(`✅ *¡Estás al día, ${e.alumnoNombre.trim()}!* No tenés nada pendiente.`);
   } else {
-    lineas.push("", "*Pendiente:*");
+    lineas.push(`📋 *Estado de cuenta de ${nombreCorto(e.alumnoNombre, e.alumnoApellido)}*`, "", "*Pendiente:*");
     const MAX = 12;
     for (const p of e.pendientes.slice(0, MAX)) {
       const marca = p.estado === "vencida" ? " ⚠️ vencida" : p.estado === "pagada_parcial" ? " (lo que falta)" : ` (vence ${fecha(p.fechaVencimiento)})`;
@@ -131,7 +139,9 @@ export function textoEstadoCuenta(
     lineas.push("", `💰 *Total a pagar: ${pesos(e.totalAdeudado)}*`);
 
     if (pago.modo === "transferencia" && pago.alias) {
-      lineas.push("", `Para pagar, transferí a:`, `💳 Alias: *${pago.alias}*${pago.titular ? `\n👤 ${pago.titular}` : ""}`);
+      lineas.push("", "Para pagar, transferí a:", `💳 Alias: *${pago.alias}*`);
+      if (pago.cbu?.trim()) lineas.push(`🏦 CBU/CVU: ${pago.cbu.trim()}`);
+      if (pago.titular?.trim()) lineas.push(`👤 Titular: ${pago.titular.trim()}`);
     } else if (pago.modo === "link" && pago.url) {
       lineas.push("", `👉 Pagá todo junto acá: ${pago.url}`);
     }

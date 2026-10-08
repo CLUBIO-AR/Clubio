@@ -105,6 +105,7 @@ Siempre via `sendNotification()` de `lib/notifications/index.ts`. Nunca importar
 ## Trabajo en curso
 
 ### En desarrollo
+- **WhatsApp (oct 2026)**: bot en `lib/bot-consultas.ts` (estado en `whatsapp_bot_estado`: comprobante esperado y handoff), comprobantes en `lib/comprobantes.ts` (bucket privado `comprobantes`, revisión en Pagos vía `/api/comprobantes/[id]`), avisos de cuota en `lib/notifications/avisos-whatsapp.ts` (calendario, dedup en `avisos_whatsapp_enviados`, 9–21 h AR, plantillas en `whatsapp/templates/` con fallback a las del gym), reservas de clase de prueba con cupo (`reservas_prueba`, RPC `reservar_clase_prueba`) y recordatorio (`lib/recordatorio-prueba.ts`, cron 9 y 20 h AR).
 - **WhatsApp**: canal stubbed en `lib/notifications/channels/whatsapp.ts`. La UI de config ya existe (`config-notificaciones.tsx`, `config-plantillas.tsx`). Pendiente implementación real (MVP 2.5, ~Semana 5).
 - **QR asistencia**: feature flag `false` en plan `basic`. No hay código de implementación visible aún (MVP 2).
 - **Clases**: feature flag `false` en plan `basic`. Pendiente (MVP 3).

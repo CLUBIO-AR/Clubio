@@ -8,7 +8,7 @@ import { AlumnoCuotasList } from "@/components/alumnos/alumno-cuotas-list";
 import { EstadoCuentaCard } from "@/components/alumnos/estado-cuenta-card";
 import { CuentaCobroCard } from "@/components/alumnos/cuenta-cobro-card";
 import { linkPagarTodo, obtenerEstadoCuenta, textoEstadoCuenta } from "@/lib/estado-cuenta";
-import { ChevronLeft, Calendar, Phone, Mail, FileText } from "lucide-react";
+import { ChevronLeft, Calendar, Phone, Mail, FileText, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { T } from "@/lib/theme";
 
@@ -27,17 +27,20 @@ export default async function AlumnoDetailPage({ params }: { params: Promise<{ i
     supabase.from("alumno_actividades").select("id, actividad_id, monto_personalizado, activa, actividades(id, nombre, monto_base, color)").eq("alumno_id", id).eq("gym_id", ctx.gymId),
     supabase.from("actividades").select("id, nombre, monto_base, color").eq("gym_id", ctx.gymId).eq("activa", true).is("deleted_at", null).order("nombre"),
     obtenerEstadoCuenta(supabase, ctx.gymId, id),
-    supabase.from("gym_config").select("email_modo, transferencia_alias, transferencia_titular").eq("gym_id", ctx.gymId).maybeSingle(),
+    supabase.from("gym_config").select("email_modo, transferencia_alias, transferencia_titular, transferencia_cbu").eq("gym_id", ctx.gymId).maybeSingle(),
     supabase.from("cuentas_cobro_alumno").select("alias, cvu").eq("gym_id", ctx.gymId).eq("alumno_id", id).is("deleted_at", null).maybeSingle(),
   ]);
 
   // Mismo texto que manda el bot de WhatsApp ("Mi estado de cuenta").
   const cobro = cobroRes.data;
-  const aliasResumen = cuentaCobroRes.data?.alias ?? cuentaCobroRes.data?.cvu ?? cobro?.transferencia_alias ?? null;
+  // Alias/CVU propio del alumno si tiene (la transferencia se identifica sola); si no, los del gym.
+  const propia = cuentaCobroRes.data;
+  const aliasResumen = propia?.alias ?? propia?.cvu ?? cobro?.transferencia_alias ?? null;
+  const cbuResumen = propia ? (propia.alias ? propia.cvu : null) : cobro?.transferencia_cbu ?? null;
   const porTransferencia = cobro?.email_modo === "transferencia" && !!aliasResumen;
   const resumenCuenta = estadoCuenta
     ? textoEstadoCuenta(estadoCuenta, porTransferencia
-      ? { modo: "transferencia", alias: aliasResumen, titular: cobro!.transferencia_titular }
+      ? { modo: "transferencia", alias: aliasResumen, titular: cobro!.transferencia_titular, cbu: cbuResumen }
       : { modo: "link", url: await linkPagarTodo(ctx.gymId, estadoCuenta) })
     : "";
 
@@ -68,6 +71,20 @@ export default async function AlumnoDetailPage({ params }: { params: Promise<{ i
           <p className="text-sm font-mono mt-1" style={{ color: T.textDim }}>DNI {alumno.dni}</p>
         </div>
       </div>
+
+      {/* Aviso de WhatsApp que Meta no pudo entregar (ver webhook de WhatsApp) */}
+      {alumno.whatsapp_error && (
+        <div className="flex items-start gap-3 p-4 rounded-xl" style={{ background: `${T.warning}20`, border: `1px solid ${T.warning}` }}>
+          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" style={{ color: T.text }} />
+          <div className="text-sm" style={{ color: T.text }}>
+            <p className="font-bold">El último aviso de WhatsApp no le llegó</p>
+            <p style={{ color: T.textMuted }}>
+              Revisá que el teléfono esté bien cargado y que tenga WhatsApp. Motivo de Meta: {alumno.whatsapp_error}
+              {alumno.whatsapp_error_at && ` (${new Date(alumno.whatsapp_error_at).toLocaleDateString("es-AR")})`}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Info cards */}
       {INFO_ITEMS.length > 0 && (

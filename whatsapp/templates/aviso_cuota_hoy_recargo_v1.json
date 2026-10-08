@@ -1,0 +1,56 @@
+{
+  "name": "aviso_cuota_hoy_recargo_v1",
+  "language": "es_AR",
+  "category": "UTILITY",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "TEXT",
+      "text": "Hoy vence tu cuota de {{1}}",
+      "example": {
+        "header_text": [
+          "BOX CLUB"
+        ]
+      }
+    },
+    {
+      "type": "BODY",
+      "text": "Hola {{1}} 👋, te escribimos de *{{2}}*.\n\nHoy vence tu cuota de *{{3}}* ({{4}}).\n💰 Total: *{{5}}*\n\n💳 Alias para transferir:\n```{{6}}```\n{{7}}\n\nDesde mañana se suma un recargo de {{8}}.",
+      "example": {
+        "body_text": [
+          [
+            "Valentina",
+            "BOX CLUB",
+            "octubre 2026",
+            "Cross",
+            "$30.000",
+            "box.club.mp",
+            "👤 Titular: Box Club SRL · 🏦 CBU/CVU: 0000003100012345678901",
+            "$3.000 (10%)"
+          ]
+        ]
+      }
+    },
+    {
+      "type": "FOOTER",
+      "text": "¿Ya transferiste? Tocá «Ya transferí»."
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "QUICK_REPLY",
+          "text": "Copiar alias"
+        },
+        {
+          "type": "QUICK_REPLY",
+          "text": "Ya transferí"
+        },
+        {
+          "type": "QUICK_REPLY",
+          "text": "Ver mi cuenta"
+        }
+      ]
+    }
+  ]
+}

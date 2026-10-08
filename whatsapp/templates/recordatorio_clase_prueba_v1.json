@@ -1,0 +1,34 @@
+{
+  "name": "recordatorio_clase_prueba_v1",
+  "language": "es_AR",
+  "category": "UTILITY",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "¡Hola {{1}}! 👋 Te recordamos tu clase de prueba de *{{2}}* {{3}} en *{{4}}* 💪\n\nSi no podés venir, avisanos con los botones de abajo.",
+      "example": {
+        "body_text": [
+          [
+            "Valentina",
+            "Cross",
+            "hoy jueves 8/10 a las 18:00",
+            "BOX CLUB"
+          ]
+        ]
+      }
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "QUICK_REPLY",
+          "text": "Cambiar horario"
+        },
+        {
+          "type": "QUICK_REPLY",
+          "text": "Cancelar clase"
+        }
+      ]
+    }
+  ]
+}

@@ -33,3 +33,25 @@ export async function aliasCobroDeAlumno(db: Cliente, gymId: string, alumnoId: s
     .maybeSingle();
   return data?.alias ?? data?.cvu ?? null;
 }
+
+/**
+ * Alias y CBU/CVU a mostrarle al alumno para transferir: los suyos si tiene cuenta propia
+ * (así la transferencia se identifica sola), si no los generales del gym.
+ */
+export async function datosTransferencia(
+  db: Cliente,
+  gymId: string,
+  alumnoId: string,
+  gym: { transferencia_alias?: string | null; transferencia_cbu?: string | null },
+): Promise<{ alias: string | null; cbu: string | null }> {
+  const { data } = await db
+    .from("cuentas_cobro_alumno")
+    .select("alias, cvu")
+    .eq("gym_id", gymId)
+    .eq("alumno_id", alumnoId)
+    .eq("activa", true)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (data) return { alias: data.alias ?? data.cvu, cbu: data.alias ? data.cvu : null };
+  return { alias: gym.transferencia_alias?.trim() || null, cbu: gym.transferencia_cbu?.trim() || null };
+}

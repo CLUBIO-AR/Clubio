@@ -15,6 +15,7 @@ interface Props {
   transferenciaAlias: string;
   transferenciaTitular: string;
   transferenciaBanco: string;
+  transferenciaCbu: string;
 }
 
 const PASOS_MP = [
@@ -44,6 +45,7 @@ export function ConfigCobro(props: Props) {
   const [alias, setAlias] = useState(props.transferenciaAlias);
   const [titular, setTitular] = useState(props.transferenciaTitular);
   const [banco, setBanco] = useState(props.transferenciaBanco);
+  const [cbu, setCbu] = useState(props.transferenciaCbu);
   const [showGuia, setShowGuia] = useState(!props.mpConfigurado);
 
   async function save() {
@@ -56,6 +58,7 @@ export function ConfigCobro(props: Props) {
       transferencia_alias: alias || null,
       transferencia_titular: titular || null,
       transferencia_banco: banco || null,
+      transferencia_cbu: cbu.trim() || null,
     };
     // El token guardado nunca viaja al navegador: solo se manda si escribieron uno nuevo.
     if (mpToken.trim()) body.mp_access_token = mpToken.trim();
@@ -150,9 +153,14 @@ export function ConfigCobro(props: Props) {
         </SubBlock>
       ) : (
         <SubBlock title="Datos para transferir">
-          <Field label="Alias">
-            <Input value={alias} onChange={(e) => setAlias(e.target.value)} placeholder="migym.alias" />
-          </Field>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Alias">
+              <Input value={alias} onChange={(e) => setAlias(e.target.value)} placeholder="migym.alias" />
+            </Field>
+            <Field label="CBU / CVU (opcional)">
+              <Input value={cbu} onChange={(e) => setCbu(e.target.value)} placeholder="22 dígitos" inputMode="numeric" />
+            </Field>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Titular (opcional)">
               <Input value={titular} onChange={(e) => setTitular(e.target.value)} placeholder="Nombre Apellido" />
@@ -161,7 +169,7 @@ export function ConfigCobro(props: Props) {
               <Input value={banco} onChange={(e) => setBanco(e.target.value)} placeholder="Brubank" />
             </Field>
           </div>
-          <Hint>Estos datos aparecen en los avisos por email y WhatsApp.</Hint>
+          <Hint>Estos datos aparecen en los avisos por email y WhatsApp. Mostrar el CBU y el titular le da confianza al alumno de a quién le transfiere.</Hint>
         </SubBlock>
       )}
     </ConfigSection>

@@ -12,6 +12,7 @@ interface Props {
   templateAviso: string;
   templateTransferencia: string;
   templateConfirmacion: string;
+  templateRecordatorioPrueba: string;
 }
 
 // Conexión con la API de WhatsApp (Meta Cloud API). Cuando está completa, aparece el
@@ -23,6 +24,7 @@ export function ConfigWhatsapp(props: Props) {
   const [tAviso, setTAviso] = useState(props.templateAviso);
   const [tTransf, setTTransf] = useState(props.templateTransferencia);
   const [tConf, setTConf] = useState(props.templateConfirmacion);
+  const [tRecordatorio, setTRecordatorio] = useState(props.templateRecordatorioPrueba);
   const [showPlantillas, setShowPlantillas] = useState(false);
 
   const conectado = props.activo && !!props.phoneNumberId && props.tokenConfigurado;
@@ -40,6 +42,7 @@ export function ConfigWhatsapp(props: Props) {
       whatsapp_template_aviso: tAviso.trim() || null,
       whatsapp_template_transferencia: tTransf.trim() || null,
       whatsapp_template_confirmacion: tConf.trim() || null,
+      whatsapp_template_recordatorio_prueba: tRecordatorio.trim() || null,
     };
     if (token.trim()) body.whatsapp_access_token = token.trim();
 
@@ -104,6 +107,10 @@ export function ConfigWhatsapp(props: Props) {
             <Field label="Confirmación de pago">
               <Input value={tConf} onChange={(e) => setTConf(e.target.value)} placeholder="confirmacion_pago" style={{ fontFamily: "monospace" }} />
             </Field>
+            <Field label="Recordatorio de clase de prueba">
+              <Input value={tRecordatorio} onChange={(e) => setTRecordatorio(e.target.value)} placeholder="recordatorio_clase_prueba_v1" style={{ fontFamily: "monospace" }} />
+            </Field>
+            <Hint>El recordatorio usa esta plantilla solo si pasaron más de 24 h desde el último mensaje de la persona. Si la dejás vacía, en ese caso no se manda.</Hint>
           </>
         )}
       </SubBlock>

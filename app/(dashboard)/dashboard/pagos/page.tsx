@@ -4,6 +4,10 @@ import { requireGymContext } from "@/lib/supabase/auth";
 import { DollarSign, CreditCard, TrendingUp } from "lucide-react";
 import { T } from "@/lib/theme";
 import { PagosClient } from "@/components/pagos/pagos-client";
+import { ComprobantesRevision, type ComprobanteRevision } from "@/components/pagos/comprobantes-revision";
+import { BUCKET_COMPROBANTES } from "@/lib/comprobantes";
+
+const MESES_LARGO = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
 export default async function PagosPage({
   searchParams,
@@ -26,7 +30,7 @@ export default async function PagosPage({
 
   // Stats: cobrado este mes (siempre mes actual, independiente de filtros)
   const mesInicio = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  const [pagosRes, pagosMesRes, actividadesRes] = await Promise.all([
+  const [pagosRes, pagosMesRes, actividadesRes, comprobantesRes] = await Promise.all([
     (() => {
       let q = supabase
         .from("pagos")
@@ -40,7 +44,13 @@ export default async function PagosPage({
     })(),
     supabase.from("pagos").select("monto").eq("gym_id", ctx.gymId).gte("created_at", mesInicio),
     supabase.from("actividades").select("id, nombre, color").eq("gym_id", ctx.gymId).is("deleted_at", null).order("nombre"),
+    supabase.from("comprobantes_pago")
+      .select("id, telefono, cuota_ids, storage_path, mime_type, created_at, alumnos(nombre, apellido)")
+      .eq("gym_id", ctx.gymId).eq("estado", "pendiente").is("deleted_at", null)
+      .order("created_at", { ascending: true }).limit(30),
   ]);
+
+  const comprobantes = await armarComprobantes(supabase, ctx.gymId, comprobantesRes.data ?? []);
 
   const pagos      = pagosRes.data      ?? [];
   const actividades = actividadesRes.data ?? [];
@@ -90,6 +100,8 @@ export default async function PagosPage({
         ))}
       </div>
 
+      <ComprobantesRevision comprobantes={comprobantes} />
+
       <PagosClient
         pagos={pagos as never}
         desde={desde}
@@ -100,4 +112,52 @@ export default async function PagosPage({
       />
     </div>
   );
+}
+
+type FilaComprobante = {
+  id: string;
+  telefono: string;
+  cuota_ids: string[];
+  storage_path: string;
+  mime_type: string | null;
+  created_at: string;
+  alumnos: { nombre: string; apellido: string } | null;
+};
+
+// Arma los datos para "Comprobantes por revisar": URL firmada (10 min, bucket privado) y
+// el detalle de las cuotas que el alumno dijo pagar.
+async function armarComprobantes(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  gymId: string,
+  filas: unknown[],
+): Promise<ComprobanteRevision[]> {
+  const lista = filas as FilaComprobante[];
+  if (lista.length === 0) return [];
+
+  const cuotaIds = Array.from(new Set(lista.flatMap((f) => f.cuota_ids)));
+  const [{ data: cuotas }, { data: firmadas }] = await Promise.all([
+    cuotaIds.length
+      ? supabase.from("cuotas").select("id, mes, anio, monto_total, estado, tipo, descripcion, actividades(nombre)").eq("gym_id", gymId).in("id", cuotaIds)
+      : Promise.resolve({ data: [] }),
+    supabase.storage.from(BUCKET_COMPROBANTES).createSignedUrls(lista.map((f) => f.storage_path), 600),
+  ]);
+
+  const porId = new Map((cuotas ?? []).map((c) => {
+    const actividad = (c.actividades as unknown as { nombre: string } | null)?.nombre;
+    const concepto = c.tipo && c.tipo !== "mensual" && c.descripcion
+      ? c.descripcion
+      : `${MESES_LARGO[c.mes] ?? c.mes} ${c.anio}${actividad ? ` · ${actividad}` : ""}`;
+    return [c.id, { concepto, monto: Number(c.monto_total ?? 0), estado: c.estado as string }];
+  }));
+  const urls = new Map((firmadas ?? []).map((f) => [f.path, f.signedUrl]));
+
+  return lista.map((f) => ({
+    id: f.id,
+    alumno: f.alumnos ? `${f.alumnos.nombre} ${f.alumnos.apellido}` : "Alumno",
+    telefono: f.telefono,
+    createdAt: f.created_at,
+    url: urls.get(f.storage_path) ?? null,
+    esPdf: (f.mime_type ?? "").includes("pdf"),
+    cuotas: f.cuota_ids.map((id) => porId.get(id)).filter((c): c is NonNullable<typeof c> => !!c),
+  }));
 }

@@ -7,7 +7,7 @@ import { AlumnoActividades } from "@/components/alumnos/alumno-actividades";
 import { AlumnoCuotasList } from "@/components/alumnos/alumno-cuotas-list";
 import { EstadoCuentaCard } from "@/components/alumnos/estado-cuenta-card";
 import { linkPagarTodo, obtenerEstadoCuenta, textoEstadoCuenta } from "@/lib/estado-cuenta";
-import { ChevronLeft, Calendar, Phone, Mail, FileText } from "lucide-react";
+import { ChevronLeft, Calendar, Phone, Mail, FileText, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { T } from "@/lib/theme";
 
@@ -65,6 +65,20 @@ export default async function AlumnoDetailPage({ params }: { params: Promise<{ i
           <p className="text-sm font-mono mt-1" style={{ color: T.textDim }}>DNI {alumno.dni}</p>
         </div>
       </div>
+
+      {/* Aviso de WhatsApp que Meta no pudo entregar (ver webhook de WhatsApp) */}
+      {alumno.whatsapp_error && (
+        <div className="flex items-start gap-3 p-4 rounded-xl" style={{ background: `${T.warning}20`, border: `1px solid ${T.warning}` }}>
+          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" style={{ color: T.text }} />
+          <div className="text-sm" style={{ color: T.text }}>
+            <p className="font-bold">El último aviso de WhatsApp no le llegó</p>
+            <p style={{ color: T.textMuted }}>
+              Revisá que el teléfono esté bien cargado y que tenga WhatsApp. Motivo de Meta: {alumno.whatsapp_error}
+              {alumno.whatsapp_error_at && ` (${new Date(alumno.whatsapp_error_at).toLocaleDateString("es-AR")})`}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Info cards */}
       {INFO_ITEMS.length > 0 && (

@@ -99,6 +99,7 @@ export async function POST(request: Request) {
         } else {
           console.log("[webhook:whatsapp] status actualizado:", statusUpdate.id, "→", statusUpdate.status);
         }
+        await actualizarAvisoCuota(admin, gymId, statusUpdate);
       }
 
       for (const message of value.messages ?? []) {
@@ -255,6 +256,37 @@ async function avisarPorPush(
   });
 }
 
+// Estado de un aviso de cuota (avisos_whatsapp_enviados). Si Meta no lo pudo entregar
+// (número inválido, sin WhatsApp…), queda marcado en la ficha del alumno para que el gym
+// revise el teléfono; si después uno se entrega, se limpia la marca.
+async function actualizarAvisoCuota(
+  admin: ReturnType<typeof createAdminClient>,
+  gymId: string,
+  status: { id: string; status: string; errors?: Array<{ code?: number; title?: string; message?: string; error_data?: { details?: string } }> },
+): Promise<void> {
+  const fallo = status.status === "failed";
+  const error = status.errors?.[0];
+  const detalle = fallo
+    ? [error?.title ?? error?.message ?? "No se pudo entregar", error?.error_data?.details, error?.code ? `(#${error.code})` : null].filter(Boolean).join(" — ")
+    : null;
+
+  const { data: avisos } = await admin
+    .from("avisos_whatsapp_enviados")
+    .update({ estado: mapStatus(status.status), error_detail: detalle })
+    .eq("gym_id", gymId)
+    .eq("wa_message_id", status.id)
+    .select("alumno_id");
+  const alumnoId = avisos?.[0]?.alumno_id;
+  if (!alumnoId) return;
+
+  if (fallo) {
+    await admin.from("alumnos").update({ whatsapp_error: detalle, whatsapp_error_at: new Date().toISOString() }).eq("id", alumnoId).eq("gym_id", gymId);
+    console.warn("[webhook:whatsapp] aviso de cuota no entregado — gym:", gymId, "alumno:", alumnoId, detalle);
+  } else if (status.status === "delivered" || status.status === "read") {
+    await admin.from("alumnos").update({ whatsapp_error: null, whatsapp_error_at: null }).eq("id", alumnoId).eq("gym_id", gymId).not("whatsapp_error", "is", null);
+  }
+}
+
 function mapStatus(waStatus: string): string {
   if (waStatus === "delivered") return "entregado";
   if (waStatus === "read") return "leido";
@@ -300,7 +332,7 @@ type WhatsAppWebhookBody = {
       value: {
         metadata?: { phone_number_id?: string };
         contacts?: Array<{ wa_id?: string; profile?: { name?: string } }>;
-        statuses?: Array<{ id: string; status: string; recipient_id?: string }>;
+        statuses?: Array<{ id: string; status: string; recipient_id?: string; errors?: Array<{ code?: number; title?: string; message?: string; error_data?: { details?: string } }> }>;
         messages?: Array<{
           from: string;
           id: string;

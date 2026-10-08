@@ -6,6 +6,7 @@ import { sendNotification } from "@/lib/notifications";
 import { registrarAvisoEnInbox } from "@/lib/notifications/inbox";
 import type { GymNotificationConfig, EmailTemplates } from "@/lib/notifications";
 import { sendEmailAvisosLote, sendEmailAvisoTransferencia, sendEmailAvisoUltimoLlamado } from "@/lib/notifications/channels/email";
+import { ahoraArgentina, CALENDARIO_DEFECTO, enviarAvisosWhatsApp, gruposDelDia, type ModoCalendario } from "@/lib/notifications/avisos-whatsapp";
 import { z } from "zod";
 
 const Schema = z.object({ gym_id: z.string().uuid() });
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
   // Config del gym
   const { data: gymConfig } = await admin
     .from("gym_config")
-    .select("email_activo, whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, whatsapp_template_aviso, whatsapp_template_confirmacion, whatsapp_template_transferencia, email_color_acento, email_templates, email_remitente_nombre, email_remitente_address, dias_aviso_fijos, dia_vencimiento_mensual, dia_ultimo_aviso, recargo_1_porcentaje, email_modo, transferencia_alias, transferencia_titular, transferencia_banco")
+    .select("email_activo, whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, whatsapp_template_aviso, whatsapp_template_confirmacion, whatsapp_template_transferencia, email_color_acento, email_templates, email_remitente_nombre, email_remitente_address, dias_aviso_fijos, dia_vencimiento_mensual, dia_ultimo_aviso, recargo_1_porcentaje, email_modo, transferencia_alias, transferencia_titular, transferencia_banco, transferencia_cbu, dias_aviso_antes, aviso_post_vencimiento_dias, max_avisos_post")
     .eq("gym_id", gym_id)
     .single();
 
@@ -40,6 +41,11 @@ export async function POST(request: Request) {
     .single();
 
   if (!gymConfig || !gym) return NextResponse.json({ error: "Gym no encontrado" }, { status: 404 });
+
+  // WhatsApp va por su cuenta (lib/notifications/avisos-whatsapp.ts): calendario, un solo
+  // mensaje por alumno, sin repetir, sin avisar a quien ya mandó comprobante y nunca de noche.
+  // Los bucles de abajo solo mandan email.
+  await avisosWhatsApp(admin, gym_id, gym, gymConfig);
 
   if (gymConfig.dias_aviso_fijos?.length) {
     return enviarAvisosFechaFija({ admin, gym_id, gym, gymConfig, startTime });
@@ -77,7 +83,7 @@ export async function POST(request: Request) {
     email_remitente_nombre:    gymConfig.email_remitente_nombre ?? null,
     email_remitente_address:   gymConfig.email_remitente_address ?? null,
     email_templates:           (gymConfig.email_templates as EmailTemplates | null) ?? null,
-    whatsapp_activo:           gymConfig.whatsapp_activo ?? false,
+    whatsapp_activo:           false, // WhatsApp: ver avisosWhatsApp
     whatsapp_phone_number_id:  gymConfig.whatsapp_phone_number_id,
     whatsapp_access_token:     gymConfig.whatsapp_access_token,
     whatsapp_template_aviso:         gymConfig.whatsapp_template_aviso,
@@ -227,54 +233,7 @@ export async function POST(request: Request) {
         });
       }
 
-      // WhatsApp consolidado: un solo mensaje con el total y el link de "pagar todo"
-      // (o el alias en modo transferencia). Antes este camino solo mandaba email, así que
-      // un alumno con 2+ cuotas pendientes nunca recibía el aviso por WhatsApp.
-      let whatsappOk = false;
-      if (alumno.telefono) {
-        const primera = [...cuotasAlumno].sort((a, b) => a.fecha_vencimiento.localeCompare(b.fecha_vencimiento))[0];
-        const wsResultados = await sendNotification(
-          { ...notifConfig, email_activo: false },
-          {
-            type: tipo,
-            alumno: { nombre: alumno.nombre, telefono: alumno.telefono },
-            cuota: {
-              mes: primera.mes, anio: primera.anio, monto_total: montoTotal,
-              pago_url: pagarTodoUrl,
-              // La plantilla arma el link como https://app.clubio.com.ar/pagar/{{1}}.
-              pago_token: `lote/${loteToken}`,
-              fecha_vencimiento: primera.fecha_vencimiento,
-              // Detalle por actividad: "Crossfit $30.000 + Musculación $10.000". Meta no acepta
-              // saltos de línea dentro de una variable, por eso va en una sola línea.
-              actividad_nombre: cuotasAlumno
-                .map((c) => {
-                  const nombre = (c.actividades as { nombre: string | null } | null)?.nombre ?? "Cuota mensual";
-                  return `${nombre} $${(c.monto_total ?? 0).toLocaleString("es-AR")}`;
-                })
-                .join(" + "),
-            },
-            gym: { nombre: gym.nombre, logo_url: gym.logo_url, color_acento: gymConfig.email_color_acento },
-          }
-        );
-        for (const r of wsResultados) {
-          await admin.from("notificaciones_log").insert({
-            gym_id, alumno_id: alumnoId, cuota_id: primera.id,
-            tipo, enviado_a: alumno.telefono, canal: "whatsapp",
-            estado: r.ok ? "enviado" : "error",
-            provider_id: r.provider_id ?? null,
-            error_detail: r.error ?? null,
-          });
-          if (r.ok) {
-            whatsappOk = true;
-            await registrarAvisoEnInbox(admin, {
-              gymId: gym_id, alumnoId, telefono: alumno.telefono, waMessageId: r.provider_id, tipo,
-              cuota: { mes: primera.mes, anio: primera.anio, monto_total: montoTotal },
-            });
-          }
-        }
-      }
-
-      if (emailOk || whatsappOk) {
+      if (emailOk) {
         await Promise.allSettled(
           cuotasAlumno.map((cuota) =>
             admin.from("cuotas")
@@ -365,7 +324,7 @@ async function enviarAvisosFechaFija(params: {
     email_remitente_nombre:    gymConfig.email_remitente_nombre,
     email_remitente_address:   gymConfig.email_remitente_address,
     email_templates:           (gymConfig.email_templates as EmailTemplates | null) ?? null,
-    whatsapp_activo:           gymConfig.whatsapp_activo ?? false,
+    whatsapp_activo:           false, // WhatsApp: ver avisosWhatsApp
     whatsapp_phone_number_id:  gymConfig.whatsapp_phone_number_id,
     whatsapp_access_token:     gymConfig.whatsapp_access_token,
     whatsapp_template_aviso:         gymConfig.whatsapp_template_aviso,
@@ -424,34 +383,6 @@ async function enviarAvisosFechaFija(params: {
         estado: ok ? "enviado" : "error",
         provider_id: providerId ?? null,
       });
-
-      // WhatsApp con la misma info (plantilla sin botón de pago — se pide transferir al alias).
-      if (alumno.telefono) {
-        const wsResultados = await sendNotification(
-          { ...notifConfig, email_activo: false },
-          {
-            type: "aviso_vencimiento",
-            alumno: { nombre: alumno.nombre, telefono: alumno.telefono },
-            cuota: {
-              mes: cuota.mes, anio: cuota.anio, monto_total: cuota.monto_total ?? 0,
-              pago_url: "", fecha_vencimiento: cuota.fecha_vencimiento,
-              actividad_nombre: actividadInfo?.nombre, monto_incrementado: montoIncrementado,
-            },
-            gym: { nombre: gym.nombre, logo_url: gym.logo_url, color_acento: gymConfig.email_color_acento },
-          }
-        );
-        for (const r of wsResultados) {
-          await admin.from("notificaciones_log").insert({
-            gym_id, alumno_id: cuota.alumno_id, cuota_id: cuota.id,
-            tipo: "aviso_vencimiento", enviado_a: alumno.telefono, canal: "whatsapp",
-            estado: r.ok ? "enviado" : "error",
-            provider_id: r.provider_id ?? null,
-          });
-          if (r.ok) {
-            await registrarAvisoEnInbox(admin, { gymId: gym_id, alumnoId: cuota.alumno_id, telefono: alumno.telefono, waMessageId: r.provider_id, tipo: "aviso_vencimiento", cuota });
-          }
-        }
-      }
 
       if (ok) {
         await admin.from("cuotas").update({ avisos_enviados: (cuota.avisos_enviados ?? 0) + 1 }).eq("id", cuota.id);
@@ -613,4 +544,72 @@ async function enviarUltimoAviso(params: {
 
   await logCron({ tipo: "enviar_avisos", gymId: gym_id, itemsCreados: enviados, duracionMs: Date.now() - startTime });
   return NextResponse.json({ ok: true, enviados });
+}
+
+// --- WhatsApp ---
+async function avisosWhatsApp(
+  admin: ReturnType<typeof createAdminClient>,
+  gym_id: string,
+  gym: { nombre: string; logo_url: string | null },
+  gymConfig: {
+    whatsapp_activo: boolean | null;
+    whatsapp_phone_number_id: string | null;
+    whatsapp_access_token: string | null;
+    whatsapp_template_aviso: string | null;
+    whatsapp_template_confirmacion: string | null;
+    whatsapp_template_transferencia: string | null;
+    email_color_acento: string | null;
+    email_modo: string | null;
+    transferencia_alias: string | null;
+    transferencia_titular: string | null;
+    transferencia_cbu: string | null;
+    recargo_1_porcentaje: number;
+    dias_aviso_fijos: number[] | null;
+    dia_vencimiento_mensual: number;
+    dia_ultimo_aviso: number | null;
+    dias_aviso_antes: number[] | null;
+    aviso_post_vencimiento_dias: number | null;
+    max_avisos_post: number | null;
+  },
+) {
+  if (!gymConfig.whatsapp_activo) return;
+  try {
+    const ahora = new Date();
+    const modo: ModoCalendario = gymConfig.dias_aviso_fijos?.length
+      ? { modo: "fijo", diasAviso: gymConfig.dias_aviso_fijos, diaVencimiento: gymConfig.dia_vencimiento_mensual, diaUltimoAviso: gymConfig.dia_ultimo_aviso }
+      : {
+          modo: "relativo",
+          calendario: {
+            diasAntes: gymConfig.dias_aviso_antes?.length ? gymConfig.dias_aviso_antes : CALENDARIO_DEFECTO.diasAntes,
+            postDias: gymConfig.aviso_post_vencimiento_dias ?? CALENDARIO_DEFECTO.postDias,
+            maxPost: gymConfig.max_avisos_post ?? CALENDARIO_DEFECTO.maxPost,
+          },
+        };
+    const grupos = await gruposDelDia(admin, gym_id, modo, ahoraArgentina(ahora).fecha);
+    const r = await enviarAvisosWhatsApp(admin, {
+      gymId: gym_id,
+      ahora,
+      grupos,
+      config: {
+        email_activo: false,
+        whatsapp_activo: true,
+        whatsapp_phone_number_id: gymConfig.whatsapp_phone_number_id,
+        whatsapp_access_token: gymConfig.whatsapp_access_token,
+        whatsapp_template_aviso: gymConfig.whatsapp_template_aviso,
+        whatsapp_template_confirmacion: gymConfig.whatsapp_template_confirmacion,
+        whatsapp_template_transferencia: gymConfig.whatsapp_template_transferencia,
+        modo_pago: (gymConfig.email_modo as "link" | "transferencia" | null) ?? "link",
+        transferencia_alias: gymConfig.transferencia_alias,
+        transferencia_titular: gymConfig.transferencia_titular,
+        transferencia_cbu: gymConfig.transferencia_cbu,
+        gymNombre: gym.nombre,
+        gymLogoUrl: gym.logo_url,
+        colorAcento: gymConfig.email_color_acento,
+        recargoPctGym: gymConfig.recargo_1_porcentaje ?? 0,
+      },
+    });
+    console.log(`[worker:enviar-avisos] whatsapp gym=${gym_id} enviados=${r.enviados}`, r.omitidos);
+  } catch (err) {
+    console.error(`[worker:enviar-avisos] whatsapp gym=${gym_id} error:`, err);
+  }
 }

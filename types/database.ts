@@ -414,6 +414,8 @@ export type Database = {
           created_at: string;
           updated_at: string;
           deleted_at: string | null;
+          whatsapp_error: string | null;
+          whatsapp_error_at: string | null;
         };
         Insert: {
           id?: string;
@@ -449,6 +451,8 @@ export type Database = {
           monto_cuota_personalizado?: number | null;
           notas?: string | null;
           deleted_at?: string | null;
+          whatsapp_error?: string | null;
+          whatsapp_error_at?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -982,6 +986,36 @@ export type Database = {
             referencedColumns: ["id"];
           }
         ];
+      };
+      avisos_whatsapp_enviados: {
+        Row: {
+          id: string;
+          gym_id: string;
+          alumno_id: string;
+          cuota_id: string;
+          etapa: string;
+          plantilla: string | null;
+          wa_message_id: string | null;
+          estado: string;
+          error_detail: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          alumno_id: string;
+          cuota_id: string;
+          etapa: string;
+          plantilla?: string | null;
+          wa_message_id?: string | null;
+          estado?: string;
+          error_detail?: string | null;
+        };
+        Update: {
+          estado?: string;
+          error_detail?: string | null;
+        };
+        Relationships: [];
       };
       cron_logs: {
         Row: {

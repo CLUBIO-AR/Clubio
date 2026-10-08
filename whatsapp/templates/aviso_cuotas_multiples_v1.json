@@ -1,0 +1,55 @@
+{
+  "name": "aviso_cuotas_multiples_v1",
+  "language": "es_AR",
+  "category": "UTILITY",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "TEXT",
+      "text": "Cuotas pendientes en {{1}}",
+      "example": {
+        "header_text": [
+          "BOX CLUB"
+        ]
+      }
+    },
+    {
+      "type": "BODY",
+      "text": "Hola {{1}} 👋, te escribimos de *{{2}}*.\n\nTenés {{3}} cuotas pendientes por un total de *{{4}}*.\n{{5}}.\n\n💳 Alias para transferir:\n```{{6}}```\n{{7}}\n\nTocá «Ver mi cuenta» para ver el detalle 🙌",
+      "example": {
+        "body_text": [
+          [
+            "Valentina",
+            "BOX CLUB",
+            "2",
+            "$63.000",
+            "La próxima vence el *sábado 10/10*",
+            "box.club.mp",
+            "👤 Titular: Box Club SRL · 🏦 CBU/CVU: 0000003100012345678901"
+          ]
+        ]
+      }
+    },
+    {
+      "type": "FOOTER",
+      "text": "¿Ya transferiste? Tocá «Ya transferí»."
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "QUICK_REPLY",
+          "text": "Copiar alias"
+        },
+        {
+          "type": "QUICK_REPLY",
+          "text": "Ya transferí"
+        },
+        {
+          "type": "QUICK_REPLY",
+          "text": "Ver mi cuenta"
+        }
+      ]
+    }
+  ]
+}

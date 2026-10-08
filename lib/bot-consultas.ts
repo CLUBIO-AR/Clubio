@@ -27,6 +27,7 @@ import { cuandoDesdeInicio, describirCuando, inicioDesdeCuando, proximasClases, 
 import { linkPagarTodo, nombreCorto, obtenerEstadoCuenta, textoEstadoCuenta } from "@/lib/estado-cuenta";
 import { activarHandoff, cortarHandoff, dejarDeEsperarComprobante, esperarComprobante, leerEstadoBot, type EstadoBot } from "@/lib/bot-estado";
 import { guardarComprobante } from "@/lib/comprobantes";
+import { datosTransferencia } from "@/lib/transferencias/alias";
 
 type Admin = SupabaseClient<Database>;
 
@@ -716,10 +717,11 @@ async function mandarEstadoCuenta(ctx: Contexto, alumnoId: string): Promise<void
   const estado = await obtenerEstadoCuenta(ctx.admin, ctx.gymId, alumnoId);
   if (!estado) return pasarAPersona(ctx, RESPUESTA_HUMANO);
 
-  const alias = ctx.config.transferencia_alias?.trim() || null;
+  // Si el alumno tiene alias/CVU propio, ese: así la transferencia se identifica sola.
+  const { alias, cbu } = await datosTransferencia(ctx.admin, ctx.gymId, alumnoId, ctx.config);
   const porTransferencia = ctx.config.email_modo === "transferencia" && !!alias;
   const texto = textoEstadoCuenta(estado, porTransferencia
-    ? { modo: "transferencia", alias, titular: ctx.config.transferencia_titular, cbu: ctx.config.transferencia_cbu }
+    ? { modo: "transferencia", alias, titular: ctx.config.transferencia_titular, cbu }
     : { modo: "link", url: await linkPagarTodo(ctx.gymId, estado) });
 
   if (estado.pendientes.length === 0) return enviarLargo(ctx, texto, [BOTON.menu]);

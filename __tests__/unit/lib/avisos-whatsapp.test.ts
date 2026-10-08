@@ -158,6 +158,8 @@ function fakeAdmin(opts: { avisadas?: Array<{ cuota_id: string; etapa: string }>
     Object.assign(b, {
       select: (_: string, o?: { head?: boolean }) => { head = !!o?.head; return b; },
       eq: () => b, in: () => b, is: () => b, gte: () => b, overlaps: () => b,
+      // Alias propio del alumno (cuentas_cobro_alumno): en estos casos no tiene, usa el del gym.
+      maybeSingle: () => Promise.resolve({ data: null, error: null }),
       insert: (row: unknown) => { inserts.push({ table, row }); return Promise.resolve({ error: null }); },
       then: (resolve: (v: unknown) => void) => {
         if (table === "cuotas") return resolve({ data: [{ id: "c1", mes: 10, anio: 2026, monto_total: 30000, monto_base: 30000, estado: opts.estado ?? "pendiente", fecha_vencimiento: "2026-10-10", actividades: { nombre: "Cross", recargo_1_porcentaje: null } }] });

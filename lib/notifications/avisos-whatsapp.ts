@@ -13,6 +13,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { sendNotification, type GymNotificationConfig } from "@/lib/notifications";
 import { sendWhatsAppPlantilla, WhatsAppPlantillaNoDisponible } from "@/lib/notifications/channels/whatsapp";
+import { datosTransferencia } from "@/lib/transferencias/alias";
 import { registrarAvisoEnInbox } from "@/lib/notifications/inbox";
 import { cuotasConComprobantePendiente } from "@/lib/comprobantes";
 
@@ -316,13 +317,14 @@ type Envio = { ok: boolean; waMessageId?: string; plantilla: string; error?: str
 async function mandar(
   admin: Admin, gymId: string, config: ConfigAvisos, grupo: GrupoAviso, cuotas: CuotaAviso[], hoy: string, ahora: Date,
 ): Promise<Envio> {
-  const alias = config.transferencia_alias?.trim();
+  // Alias/CVU propio del alumno si tiene (la transferencia se identifica sola); si no, los del gym.
+  const { alias, cbu } = await datosTransferencia(admin, gymId, grupo.alumnoId, config);
   const porTransferencia = config.modo_pago === "transferencia" && !!alias;
 
   if (porTransferencia) {
     const msg = armarAvisoTransferencia({
       gym: config.gymNombre, alumno: grupo.nombre, alias: alias!, titular: config.transferencia_titular,
-      cbu: config.transferencia_cbu, hoy, cuotas,
+      cbu, hoy, cuotas,
     });
     const clave = `${config.whatsapp_phone_number_id}|${msg.plantilla}`;
     if ((noDisponibles.get(clave) ?? 0) < ahora.getTime()) {
@@ -341,6 +343,7 @@ async function mandar(
 
   // Plantillas configuradas en el gym (las de siempre): link de pago o alias sin botones nuevos.
   const legado = await payloadLegado(gymId, config, grupo, cuotas, porTransferencia);
+  legado.alumno.alias_cobro = alias;
   const [r] = await sendNotification({ ...config, email_activo: false }, legado);
   const plantilla = (porTransferencia ? config.whatsapp_template_transferencia : config.whatsapp_template_aviso) ?? "sin_plantilla";
   return r?.ok

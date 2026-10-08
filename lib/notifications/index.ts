@@ -10,6 +10,9 @@ export type NotificationPayload = {
     nombre: string;
     email?: string | null;
     telefono?: string | null;
+    // Alias/CVU propio del alumno (cuentas_cobro_alumno). Si está, los avisos por
+    // transferencia muestran este en lugar del alias general del gym.
+    alias_cobro?: string | null;
   };
   cuota?: {
     mes: number;

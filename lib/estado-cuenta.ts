@@ -49,6 +49,14 @@ export async function obtenerEstadoCuenta(admin: Admin, gymId: string, alumnoId:
   ]);
   if (!alumno) return null;
 
+  // Cuotas con pago parcial (ej. transferencia por menos): se debe solo lo que falta.
+  const parciales = (abiertas ?? []).filter((c) => c.estado === "pagada_parcial").map((c) => c.id);
+  const pagadoPorCuota = new Map<string, number>();
+  if (parciales.length) {
+    const { data: pagos } = await admin.from("pagos").select("cuota_id, monto").in("cuota_id", parciales);
+    for (const p of pagos ?? []) pagadoPorCuota.set(p.cuota_id, (pagadoPorCuota.get(p.cuota_id) ?? 0) + Number(p.monto));
+  }
+
   const aItem = (c: NonNullable<typeof abiertas>[number]): ItemCuenta => {
     const actividad = (c.actividades as unknown as { nombre: string } | null)?.nombre;
     const periodo = `${MESES[c.mes] ?? c.mes} ${c.anio}`;
@@ -58,7 +66,7 @@ export async function obtenerEstadoCuenta(admin: Admin, gymId: string, alumnoId:
     return {
       id: c.id,
       concepto,
-      monto: Number(c.monto_total ?? 0),
+      monto: Math.max(0, Number(c.monto_total ?? 0) - (c.estado === "pagada_parcial" ? pagadoPorCuota.get(c.id) ?? 0 : 0)),
       estado: c.estado,
       fechaVencimiento: c.fecha_vencimiento,
       fechaPago: c.fecha_pago,
@@ -124,7 +132,7 @@ export function textoEstadoCuenta(
     lineas.push(`📋 *Estado de cuenta de ${nombreCorto(e.alumnoNombre, e.alumnoApellido)}*`, "", "*Pendiente:*");
     const MAX = 12;
     for (const p of e.pendientes.slice(0, MAX)) {
-      const marca = p.estado === "vencida" ? " ⚠️ vencida" : p.estado === "pagada_parcial" ? " (pago parcial)" : ` (vence ${fecha(p.fechaVencimiento)})`;
+      const marca = p.estado === "vencida" ? " ⚠️ vencida" : p.estado === "pagada_parcial" ? " (lo que falta)" : ` (vence ${fecha(p.fechaVencimiento)})`;
       lineas.push(`• ${p.concepto} — ${pesos(p.monto)}${marca}`);
     }
     if (e.pendientes.length > MAX) lineas.push(`• … y ${e.pendientes.length - MAX} más`);

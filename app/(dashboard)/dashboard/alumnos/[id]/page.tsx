@@ -6,6 +6,7 @@ import { AlumnoForm } from "@/components/alumnos/alumno-form";
 import { AlumnoActividades } from "@/components/alumnos/alumno-actividades";
 import { AlumnoCuotasList } from "@/components/alumnos/alumno-cuotas-list";
 import { EstadoCuentaCard } from "@/components/alumnos/estado-cuenta-card";
+import { CuentaCobroCard } from "@/components/alumnos/cuenta-cobro-card";
 import { linkPagarTodo, obtenerEstadoCuenta, textoEstadoCuenta } from "@/lib/estado-cuenta";
 import { ChevronLeft, Calendar, Phone, Mail, FileText, AlertTriangle } from "lucide-react";
 import Link from "next/link";
@@ -20,21 +21,26 @@ export default async function AlumnoDetailPage({ params }: { params: Promise<{ i
   const { data: alumno } = await getAlumnoById(supabase, ctx.gymId, id);
   if (!alumno) notFound();
 
-  const [sucursalesRes, cuotasRes, inscripcionesRes, actividadesRes, estadoCuenta, cobroRes] = await Promise.all([
+  const [sucursalesRes, cuotasRes, inscripcionesRes, actividadesRes, estadoCuenta, cobroRes, cuentaCobroRes] = await Promise.all([
     supabase.from("sucursales").select("id, nombre").eq("gym_id", ctx.gymId).eq("activa", true).order("nombre"),
     supabase.from("cuotas").select("id, mes, anio, monto_total, estado, fecha_vencimiento, actividad_id, actividades(nombre, color)").eq("alumno_id", id).order("anio", { ascending: false }).order("mes", { ascending: false }).limit(6),
     supabase.from("alumno_actividades").select("id, actividad_id, monto_personalizado, activa, actividades(id, nombre, monto_base, color)").eq("alumno_id", id).eq("gym_id", ctx.gymId),
     supabase.from("actividades").select("id, nombre, monto_base, color").eq("gym_id", ctx.gymId).eq("activa", true).is("deleted_at", null).order("nombre"),
     obtenerEstadoCuenta(supabase, ctx.gymId, id),
     supabase.from("gym_config").select("email_modo, transferencia_alias, transferencia_titular, transferencia_cbu").eq("gym_id", ctx.gymId).maybeSingle(),
+    supabase.from("cuentas_cobro_alumno").select("alias, cvu").eq("gym_id", ctx.gymId).eq("alumno_id", id).is("deleted_at", null).maybeSingle(),
   ]);
 
   // Mismo texto que manda el bot de WhatsApp ("Mi estado de cuenta").
   const cobro = cobroRes.data;
-  const porTransferencia = cobro?.email_modo === "transferencia" && !!cobro?.transferencia_alias;
+  // Alias/CVU propio del alumno si tiene (la transferencia se identifica sola); si no, los del gym.
+  const propia = cuentaCobroRes.data;
+  const aliasResumen = propia?.alias ?? propia?.cvu ?? cobro?.transferencia_alias ?? null;
+  const cbuResumen = propia ? (propia.alias ? propia.cvu : null) : cobro?.transferencia_cbu ?? null;
+  const porTransferencia = cobro?.email_modo === "transferencia" && !!aliasResumen;
   const resumenCuenta = estadoCuenta
     ? textoEstadoCuenta(estadoCuenta, porTransferencia
-      ? { modo: "transferencia", alias: cobro!.transferencia_alias, titular: cobro!.transferencia_titular, cbu: cobro!.transferencia_cbu }
+      ? { modo: "transferencia", alias: aliasResumen, titular: cobro!.transferencia_titular, cbu: cbuResumen }
       : { modo: "link", url: await linkPagarTodo(ctx.gymId, estadoCuenta) })
     : "";
 
@@ -106,6 +112,8 @@ export default async function AlumnoDetailPage({ params }: { params: Promise<{ i
           resumen={resumenCuenta}
         />
       )}
+
+      <CuentaCobroCard alumnoId={id} cuenta={cuentaCobroRes.data} />
 
       {/* Cuotas */}
       {cuotasRes.data && cuotasRes.data.length > 0 && (

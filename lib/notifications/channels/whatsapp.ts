@@ -216,6 +216,30 @@ export async function sendWhatsAppList(
   return messageId;
 }
 
+// Descarga un archivo que mandó el alumno (foto o PDF de un comprobante). Meta lo entrega
+// en dos pasos: GET /{media-id} devuelve una URL temporal, y esa URL se baja con el mismo
+// token. Tope de tamaño para no guardar cualquier cosa.
+export const MAX_MEDIA_BYTES = 10 * 1024 * 1024;
+
+export async function descargarMediaWhatsApp(
+  config: Pick<GymNotificationConfig, "whatsapp_access_token">,
+  mediaId: string
+): Promise<{ bytes: ArrayBuffer; mimeType: string }> {
+  if (!config.whatsapp_access_token) throw new Error("WhatsApp no configurado para este gym");
+  const auth = { Authorization: `Bearer ${config.whatsapp_access_token}` };
+
+  const metaRes = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/${encodeURIComponent(mediaId)}`, { headers: auth });
+  const meta = await metaRes.json() as { url?: string; mime_type?: string; file_size?: number; error?: { message?: string } };
+  if (!metaRes.ok || !meta.url) throw new Error(`WhatsApp media error: ${meta?.error?.message ?? metaRes.statusText}`);
+  if (meta.file_size && meta.file_size > MAX_MEDIA_BYTES) throw new Error("El archivo supera los 10MB");
+
+  const fileRes = await fetch(meta.url, { headers: auth });
+  if (!fileRes.ok) throw new Error(`WhatsApp media download error: ${fileRes.status}`);
+  const bytes = await fileRes.arrayBuffer();
+  if (bytes.byteLength > MAX_MEDIA_BYTES) throw new Error("El archivo supera los 10MB");
+  return { bytes, mimeType: meta.mime_type ?? fileRes.headers.get("content-type") ?? "application/octet-stream" };
+}
+
 function buildTemplate(
   config: GymNotificationConfig,
   payload: NotificationPayload

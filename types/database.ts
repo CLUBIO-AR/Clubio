@@ -232,6 +232,7 @@ export type Database = {
           transferencia_alias: string | null;
           transferencia_titular: string | null;
           transferencia_banco: string | null;
+          transferencia_cbu: string | null;
           whatsapp_activo: boolean;
           whatsapp_phone_number_id: string | null;
           whatsapp_access_token: string | null;
@@ -281,6 +282,7 @@ export type Database = {
           transferencia_alias?: string | null;
           transferencia_titular?: string | null;
           transferencia_banco?: string | null;
+          transferencia_cbu?: string | null;
           whatsapp_activo?: boolean;
           whatsapp_phone_number_id?: string | null;
           whatsapp_access_token?: string | null;
@@ -326,6 +328,7 @@ export type Database = {
           transferencia_alias?: string | null;
           transferencia_titular?: string | null;
           transferencia_banco?: string | null;
+          transferencia_cbu?: string | null;
           whatsapp_activo?: boolean;
           whatsapp_phone_number_id?: string | null;
           whatsapp_access_token?: string | null;
@@ -900,6 +903,79 @@ export type Database = {
           },
           {
             foreignKeyName: "mensajes_whatsapp_alumno_id_fkey";
+            columns: ["alumno_id"];
+            isOneToOne: false;
+            referencedRelation: "alumnos";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      whatsapp_bot_estado: {
+        Row: {
+          gym_id: string;
+          telefono: string;
+          estado: "awaiting_receipt" | null;
+          datos: Json;
+          expira_at: string | null;
+          handoff_hasta: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          gym_id: string;
+          telefono: string;
+          estado?: "awaiting_receipt" | null;
+          datos?: Json;
+          expira_at?: string | null;
+          handoff_hasta?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          estado?: "awaiting_receipt" | null;
+          datos?: Json;
+          expira_at?: string | null;
+          handoff_hasta?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      comprobantes_pago: {
+        Row: {
+          id: string;
+          gym_id: string;
+          alumno_id: string;
+          telefono: string;
+          cuota_ids: string[];
+          storage_path: string;
+          mime_type: string | null;
+          wa_message_id: string | null;
+          estado: "pendiente" | "confirmado" | "rechazado";
+          revisado_por: string | null;
+          revisado_at: string | null;
+          motivo_rechazo: string | null;
+          created_at: string;
+          deleted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          alumno_id: string;
+          telefono: string;
+          cuota_ids?: string[];
+          storage_path: string;
+          mime_type?: string | null;
+          wa_message_id?: string | null;
+          estado?: "pendiente" | "confirmado" | "rechazado";
+        };
+        Update: {
+          estado?: "pendiente" | "confirmado" | "rechazado";
+          revisado_por?: string | null;
+          revisado_at?: string | null;
+          motivo_rechazo?: string | null;
+          deleted_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "comprobantes_pago_alumno_id_fkey";
             columns: ["alumno_id"];
             isOneToOne: false;
             referencedRelation: "alumnos";

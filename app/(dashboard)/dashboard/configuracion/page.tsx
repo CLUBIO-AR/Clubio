@@ -108,6 +108,7 @@ export default async function ConfiguracionPage({
             transferenciaAlias={config?.transferencia_alias ?? ""}
             transferenciaTitular={config?.transferencia_titular ?? ""}
             transferenciaBanco={config?.transferencia_banco ?? ""}
+            transferenciaCbu={config?.transferencia_cbu ?? ""}
           />
           <ConfigCuotas
             montoBaseDefecto={config?.monto_base_defecto ?? null}

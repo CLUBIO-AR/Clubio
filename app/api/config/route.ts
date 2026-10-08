@@ -19,7 +19,7 @@ export async function GET() {
       "whatsapp_bot_activo, whatsapp_bot_bienvenida, whatsapp_bot_info, " +
       "generar_cuota_al_alta, cuota_alta_proporcional, dias_minimos_para_cuota_alta, " +
       "dias_mora_desactivacion, mora_desactivar_mes_siguiente, " +
-      "email_modo, transferencia_alias, transferencia_titular, transferencia_banco"
+      "email_modo, transferencia_alias, transferencia_titular, transferencia_banco, transferencia_cbu"
     ).eq("gym_id", ctx.gymId).single(),
   ]);
 
@@ -59,6 +59,8 @@ const PatchSchema = z.object({
   transferencia_alias: z.string().max(60).nullable().optional(),
   transferencia_titular: z.string().max(100).nullable().optional(),
   transferencia_banco: z.string().max(60).nullable().optional(),
+  // CBU (22 dígitos) o CVU; se guarda solo con dígitos.
+  transferencia_cbu: z.string().transform((v) => v.replace(/\D/g, "")).pipe(z.string().length(22, "El CBU/CVU tiene 22 dígitos")).nullable().optional(),
   // Config: branding de emails a alumnos
   email_color_acento: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(),
   email_templates: z
@@ -145,6 +147,7 @@ export async function PATCH(request: Request) {
     transferencia_alias: string | null;
     transferencia_titular: string | null;
     transferencia_banco: string | null;
+    transferencia_cbu: string | null;
     email_color_acento: string | null;
     email_templates: z.infer<typeof PatchSchema>["email_templates"] | null;
     mp_access_token: string | null;
@@ -171,7 +174,7 @@ export async function PATCH(request: Request) {
     "dias_mora_desactivacion", "mora_desactivar_mes_siguiente",
     "email_activo", "dias_aviso_antes", "dias_aviso_fijos", "dia_ultimo_aviso", "aviso_post_vencimiento_dias", "max_avisos_post",
     "email_remitente_nombre", "email_remitente_address",
-    "email_modo", "transferencia_alias", "transferencia_titular", "transferencia_banco",
+    "email_modo", "transferencia_alias", "transferencia_titular", "transferencia_banco", "transferencia_cbu",
     "email_color_acento", "email_templates",
     "mp_access_token", "mp_public_key", "mp_solo_dinero_cuenta",
     "whatsapp_activo", "whatsapp_phone_number_id", "whatsapp_access_token",

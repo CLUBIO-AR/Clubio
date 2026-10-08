@@ -26,6 +26,8 @@ function fakeAdmin(config: Config, { salientesRecientes = 0, actividades = [] as
       select: () => b, eq: () => b, gte: () => b, is: () => b, order: () => b, limit: () => b,
       update: (v: Record<string, unknown>) => { esUpdate = true; values = v; return b; },
       insert: (row: Record<string, unknown>) => { inserts.push({ table, row }); return Promise.resolve({ error: null }); },
+      upsert: () => Promise.resolve({ error: null }),
+      ilike: () => b,
       maybeSingle: () => Promise.resolve({
         data: table === "gym_config"
           ? { whatsapp_phone_number_id: "123", whatsapp_access_token: "tok", ...config }

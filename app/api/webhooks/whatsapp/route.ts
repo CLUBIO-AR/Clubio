@@ -180,6 +180,8 @@ function textoDelMensaje(message: MensajeEntrante): string {
     const { title, description } = message.interactive.list_reply;
     return `🔘 ${title}${description ? ` — ${description}` : ""}`;
   }
+  if (message.type === "image") return "📎 [foto]";
+  if (message.type === "document") return `📎 [archivo${message.document?.filename ? `: ${message.document.filename}` : ""}]`;
   if (message.type && message.type !== "text") return `[${message.type}]`;
   return "[mensaje sin texto]";
 }
@@ -306,6 +308,9 @@ type WhatsAppWebhookBody = {
           text?: { body: string };
           // Botón de respuesta rápida de una plantilla.
           button?: { text?: string; payload?: string };
+          // Comprobantes de transferencia ("Ya transferí"): foto o PDF.
+          image?: { id?: string; mime_type?: string };
+          document?: { id?: string; mime_type?: string; filename?: string };
           // Botón de un mensaje interactivo (por si más adelante mandamos botones fuera de plantilla).
           interactive?: {
             type?: string;

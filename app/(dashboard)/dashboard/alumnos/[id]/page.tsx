@@ -26,7 +26,7 @@ export default async function AlumnoDetailPage({ params }: { params: Promise<{ i
     supabase.from("alumno_actividades").select("id, actividad_id, monto_personalizado, activa, actividades(id, nombre, monto_base, color)").eq("alumno_id", id).eq("gym_id", ctx.gymId),
     supabase.from("actividades").select("id, nombre, monto_base, color").eq("gym_id", ctx.gymId).eq("activa", true).is("deleted_at", null).order("nombre"),
     obtenerEstadoCuenta(supabase, ctx.gymId, id),
-    supabase.from("gym_config").select("email_modo, transferencia_alias, transferencia_titular").eq("gym_id", ctx.gymId).maybeSingle(),
+    supabase.from("gym_config").select("email_modo, transferencia_alias, transferencia_titular, transferencia_cbu").eq("gym_id", ctx.gymId).maybeSingle(),
   ]);
 
   // Mismo texto que manda el bot de WhatsApp ("Mi estado de cuenta").
@@ -34,7 +34,7 @@ export default async function AlumnoDetailPage({ params }: { params: Promise<{ i
   const porTransferencia = cobro?.email_modo === "transferencia" && !!cobro?.transferencia_alias;
   const resumenCuenta = estadoCuenta
     ? textoEstadoCuenta(estadoCuenta, porTransferencia
-      ? { modo: "transferencia", alias: cobro!.transferencia_alias, titular: cobro!.transferencia_titular }
+      ? { modo: "transferencia", alias: cobro!.transferencia_alias, titular: cobro!.transferencia_titular, cbu: cobro!.transferencia_cbu }
       : { modo: "link", url: await linkPagarTodo(ctx.gymId, estadoCuenta) })
     : "";
 

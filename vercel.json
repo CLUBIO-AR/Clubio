@@ -35,6 +35,14 @@
     {
       "path": "/api/cron/importar-alumnos-sheet",
       "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/cron/recordatorio-prueba?turno=manana",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/recordatorio-prueba?turno=noche",
+      "schedule": "0 23 * * *"
     }
   ]
 }

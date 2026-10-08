@@ -47,12 +47,14 @@ const TIPO_OPTS = [
   { value: "generar_cuotas", label: "Generar cuotas" },
   { value: "enviar_avisos", label: "Enviar avisos" },
   { value: "aplicar_recargos", label: "Aplicar recargos" },
+  { value: "recordatorio_prueba", label: "Recordatorio clase de prueba" },
 ];
 
 const TIPO_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   generar_cuotas: { label: "Generar cuotas", icon: Zap, color: T.accent },
   enviar_avisos: { label: "Enviar avisos", icon: Bell, color: T.blue },
   aplicar_recargos: { label: "Aplicar recargos", icon: TrendingDown, color: T.warning },
+  recordatorio_prueba: { label: "Recordatorio clase de prueba", icon: Bell, color: T.accent },
 };
 
 const ALCANCE_OPTS = [

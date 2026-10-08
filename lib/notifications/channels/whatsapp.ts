@@ -274,6 +274,39 @@ export async function sendWhatsAppList(
   return messageId;
 }
 
+// Ubicación (pin en el mapa) — para la confirmación de la clase de prueba. Dentro de la
+// ventana de 24 h, como el texto libre.
+export async function sendWhatsAppUbicacion(
+  config: Pick<GymNotificationConfig, "whatsapp_phone_number_id" | "whatsapp_access_token">,
+  params: { to: string; latitud: number; longitud: number; nombre?: string | null; direccion?: string | null }
+): Promise<string> {
+  const to = normalizePhone(params.to);
+  if (!to) throw new Error("Teléfono inválido o ausente");
+  if (!config.whatsapp_phone_number_id || !config.whatsapp_access_token) {
+    throw new Error("WhatsApp no configurado para este gym");
+  }
+  const res = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/${config.whatsapp_phone_number_id}/messages`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${config.whatsapp_access_token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      to,
+      type: "location",
+      location: {
+        latitude: params.latitud,
+        longitude: params.longitud,
+        ...(params.nombre ? { name: params.nombre } : {}),
+        ...(params.direccion ? { address: params.direccion } : {}),
+      },
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(`WhatsApp API error: ${data?.error?.message ?? res.statusText}`);
+  const messageId = data?.messages?.[0]?.id;
+  if (!messageId) throw new Error("WhatsApp API no devolvió message id");
+  return messageId;
+}
+
 // Descarga un archivo que mandó el alumno (foto o PDF de un comprobante). Meta lo entrega
 // en dos pasos: GET /{media-id} devuelve una URL temporal, y esa URL se baja con el mismo
 // token. Tope de tamaño para no guardar cualquier cosa.

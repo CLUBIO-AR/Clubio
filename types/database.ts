@@ -233,6 +233,10 @@ export type Database = {
           transferencia_titular: string | null;
           transferencia_banco: string | null;
           transferencia_cbu: string | null;
+          whatsapp_bot_recomendaciones: string | null;
+          whatsapp_bot_latitud: number | null;
+          whatsapp_bot_longitud: number | null;
+          whatsapp_template_recordatorio_prueba: string | null;
           whatsapp_activo: boolean;
           whatsapp_phone_number_id: string | null;
           whatsapp_access_token: string | null;
@@ -283,6 +287,10 @@ export type Database = {
           transferencia_titular?: string | null;
           transferencia_banco?: string | null;
           transferencia_cbu?: string | null;
+          whatsapp_bot_recomendaciones?: string | null;
+          whatsapp_bot_latitud?: number | null;
+          whatsapp_bot_longitud?: number | null;
+          whatsapp_template_recordatorio_prueba?: string | null;
           whatsapp_activo?: boolean;
           whatsapp_phone_number_id?: string | null;
           whatsapp_access_token?: string | null;
@@ -329,6 +337,10 @@ export type Database = {
           transferencia_titular?: string | null;
           transferencia_banco?: string | null;
           transferencia_cbu?: string | null;
+          whatsapp_bot_recomendaciones?: string | null;
+          whatsapp_bot_latitud?: number | null;
+          whatsapp_bot_longitud?: number | null;
+          whatsapp_template_recordatorio_prueba?: string | null;
           whatsapp_activo?: boolean;
           whatsapp_phone_number_id?: string | null;
           whatsapp_access_token?: string | null;
@@ -490,6 +502,7 @@ export type Database = {
           descripcion: string | null;
           horarios: { dias: number[]; hora: string }[];
           clase_prueba: boolean;
+          cupo_prueba: number | null;
         };
         Insert: {
           id?: string;
@@ -505,6 +518,7 @@ export type Database = {
           descripcion?: string | null;
           horarios?: { dias: number[]; hora: string }[];
           clase_prueba?: boolean;
+          cupo_prueba?: number | null;
         };
         Update: {
           nombre?: string;
@@ -512,6 +526,7 @@ export type Database = {
           descripcion?: string | null;
           horarios?: { dias: number[]; hora: string }[];
           clase_prueba?: boolean;
+          cupo_prueba?: number | null;
           recargo_1_dias?: number | null;
           recargo_1_porcentaje?: number | null;
           recargo_2_dias?: number | null;
@@ -1017,6 +1032,43 @@ export type Database = {
         };
         Relationships: [];
       };
+      reservas_prueba: {
+        Row: {
+          id: string;
+          gym_id: string;
+          actividad_id: string;
+          telefono: string;
+          nombre: string | null;
+          inicio: string;
+          estado: "activa" | "cancelada";
+          recordatorio_at: string | null;
+          cancelada_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          actividad_id: string;
+          telefono: string;
+          nombre?: string | null;
+          inicio: string;
+          estado?: "activa" | "cancelada";
+        };
+        Update: {
+          estado?: "activa" | "cancelada";
+          recordatorio_at?: string | null;
+          cancelada_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "reservas_prueba_actividad_id_fkey";
+            columns: ["actividad_id"];
+            isOneToOne: false;
+            referencedRelation: "actividades";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       cron_logs: {
         Row: {
           id: string;
@@ -1290,6 +1342,16 @@ export type Database = {
           p_gym_id: string;
         };
         Returns: Array<{ cuotas_pagadas: number; alumno_id: string }>;
+      };
+      reservar_clase_prueba: {
+        Args: {
+          p_gym_id: string;
+          p_actividad_id: string;
+          p_telefono: string;
+          p_nombre: string | null;
+          p_inicio: string;
+        };
+        Returns: string | null;
       };
     };
     Enums: {

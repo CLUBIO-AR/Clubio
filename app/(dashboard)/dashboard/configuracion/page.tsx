@@ -156,6 +156,7 @@ export default async function ConfiguracionPage({
           templateAviso={config?.whatsapp_template_aviso ?? ""}
           templateTransferencia={config?.whatsapp_template_transferencia ?? ""}
           templateConfirmacion={config?.whatsapp_template_confirmacion ?? ""}
+          templateRecordatorioPrueba={config?.whatsapp_template_recordatorio_prueba ?? ""}
         />
       )}
 
@@ -164,6 +165,9 @@ export default async function ConfiguracionPage({
           activo={config?.whatsapp_bot_activo ?? false}
           bienvenida={config?.whatsapp_bot_bienvenida ?? ""}
           info={config?.whatsapp_bot_info ?? ""}
+          recomendaciones={config?.whatsapp_bot_recomendaciones ?? ""}
+          latitud={config?.whatsapp_bot_latitud ?? null}
+          longitud={config?.whatsapp_bot_longitud ?? null}
           gymNombre={gym?.nombre ?? ""}
         />
       )}

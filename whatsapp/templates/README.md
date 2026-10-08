@@ -27,3 +27,10 @@ node scripts/whatsapp-alta-plantillas.mjs            # --dry-run para ver qué m
 
 Hasta que Meta las apruebe, el envío usa automáticamente las plantillas que el gym tiene
 configuradas en *Configuración → WhatsApp* (las de siempre).
+
+## Recordatorio de clase de prueba
+
+`recordatorio_clase_prueba_v1` se usa solo cuando pasaron más de 24 h desde el último mensaje
+del interesado (dentro de las 24 h el recordatorio sale como mensaje con botones, sin plantilla).
+Después de aprobarla, cargá su nombre en *Configuración → WhatsApp → Plantillas de mensajes →
+Recordatorio de clase de prueba*. Si no está cargada, ese recordatorio no se manda y queda logueado.

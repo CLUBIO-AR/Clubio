@@ -22,8 +22,8 @@
 // ni tiene costo de Meta. Nunca tira: si algo falla solo se loguea.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
-import { sendWhatsAppButtons, sendWhatsAppList, sendWhatsAppText } from "@/lib/notifications/channels/whatsapp";
-import { describirCuando, proximasClases, resumenHorarios, type Horario } from "@/lib/horarios";
+import { sendWhatsAppButtons, sendWhatsAppList, sendWhatsAppText, sendWhatsAppUbicacion } from "@/lib/notifications/channels/whatsapp";
+import { cuandoDesdeInicio, describirCuando, inicioDesdeCuando, proximasClases, resumenDias, resumenHorarios, type Horario } from "@/lib/horarios";
 import { linkPagarTodo, nombreCorto, obtenerEstadoCuenta, textoEstadoCuenta } from "@/lib/estado-cuenta";
 import { activarHandoff, cortarHandoff, dejarDeEsperarComprobante, esperarComprobante, leerEstadoBot, type EstadoBot } from "@/lib/bot-estado";
 import { guardarComprobante } from "@/lib/comprobantes";
@@ -62,6 +62,18 @@ const RECORDATORIO_COMPROBANTE = "Para avisarle al equipo de tu pago necesito la
 const COMPROBANTE_RECIBIDO = "¡Gracias! Recibimos tu comprobante, el equipo lo revisa y te confirmamos por acá 🙌";
 const COMPROBANTE_ERROR = "No pude guardar ese archivo 😕 Probá mandar una foto (JPG o PNG) o un PDF del comprobante.";
 const RESPUESTA_INFO_VACIA = "Ya le avisamos al equipo, en un rato te pasan horarios y precios 🙌";
+const RESERVA_INACTIVA = "Esa reserva ya no está activa 🤔 Si querés, elegí un horario nuevo desde el menú.";
+const HORARIO_LLENO = "Uy, ese horario se llenó recién 😕 Elegí otro de estos:";
+const LLEGA_ANTES = "⏰ Llegá 10 minutos antes.";
+
+// Límites de Meta para mensajes interactivos.
+export const LIMITES = { tituloFila: 24, descripcionFila: 72, boton: 20, cuerpo: 1024 } as const;
+
+/** Corta con "…" para que ningún dato del gym rompa un mensaje interactivo. */
+export function truncar(texto: string, max: number): string {
+  const t = texto.trim();
+  return t.length <= max ? t : `${t.slice(0, max - 1).trimEnd()}…`;
+}
 
 // Estado de cuenta con DNI. PEDIDO_DNI y DNI_NO_ENCONTRADO también se usan para reconocer,
 // en el historial, que el bot está esperando un DNI y cuántos intentos fallaron.
@@ -110,6 +122,10 @@ type Accion =
   | { tipo: "detalle"; actividadId: string }
   | { tipo: "turnos"; actividadId?: string }
   | { tipo: "confirmar"; actividadId: string; cuando: string }
+  | { tipo: "cambiar"; reservaId: string }
+  | { tipo: "cancelar"; reservaId: string }
+  | { tipo: "cancelar_si"; reservaId: string }
+  | { tipo: "cancelar_no"; reservaId: string }
   | { tipo: "otro_horario" }
   | { tipo: "humano" }
   | { tipo: "menu" }
@@ -155,6 +171,10 @@ export function interpretar(message: MensajeBot): Accion | null {
       case "bot_cuenta": return { tipo: "cuenta" };
       case "bot_cuenta_de": return a ? { tipo: "cuenta_de", alumnoId: a } : { tipo: "cuenta" };
       case "bot_transferi": return { tipo: "transferi", alumnoId: a || undefined };
+      case "bot_cambiar": return a ? { tipo: "cambiar", reservaId: a } : null;
+      case "bot_cancelar": return a ? { tipo: "cancelar", reservaId: a } : null;
+      case "bot_cancelar_si": return a ? { tipo: "cancelar_si", reservaId: a } : null;
+      case "bot_cancelar_no": return a ? { tipo: "cancelar_no", reservaId: a } : null;
     }
     return null;
   }
@@ -165,6 +185,9 @@ export function interpretar(message: MensajeBot): Accion | null {
     const [clave, a] = payload.split(":");
     if (clave === "transferi") return { tipo: "transferi", cuotaId: a || undefined };
     if (clave === "cuenta") return { tipo: "cuenta" };
+    // Botones de la plantilla de recordatorio de clase de prueba.
+    if (clave === "cambiar" && a) return { tipo: "cambiar", reservaId: a };
+    if (clave === "cancelar" && a) return { tipo: "cancelar", reservaId: a };
   }
 
   if (message.type !== "text") return null;
@@ -187,6 +210,8 @@ type ActividadBot = {
   descripcion: string | null;
   horarios: Horario[];
   clase_prueba: boolean;
+  /** Lugares por horario para clase de prueba (null = sin límite). */
+  cupo_prueba: number | null;
 };
 
 type Config = {
@@ -198,6 +223,9 @@ type Config = {
   transferencia_alias: string | null;
   transferencia_titular: string | null;
   transferencia_cbu: string | null;
+  whatsapp_bot_recomendaciones: string | null;
+  whatsapp_bot_latitud: number | null;
+  whatsapp_bot_longitud: number | null;
 };
 
 type Contexto = {
@@ -258,7 +286,7 @@ export async function planificarBot(admin: Admin, args: ArgsBot): Promise<PlanBo
 
   const { data: config } = await admin
     .from("gym_config")
-    .select("whatsapp_phone_number_id, whatsapp_access_token, whatsapp_bot_activo, whatsapp_bot_bienvenida, whatsapp_bot_info, email_modo, transferencia_alias, transferencia_titular, transferencia_cbu")
+    .select("whatsapp_phone_number_id, whatsapp_access_token, whatsapp_bot_activo, whatsapp_bot_bienvenida, whatsapp_bot_info, email_modo, transferencia_alias, transferencia_titular, transferencia_cbu, whatsapp_bot_recomendaciones, whatsapp_bot_latitud, whatsapp_bot_longitud")
     .eq("gym_id", gymId)
     .maybeSingle();
   if (!config?.whatsapp_bot_activo) return null;
@@ -280,7 +308,7 @@ export async function planificarBot(admin: Admin, args: ArgsBot): Promise<PlanBo
       if (cache) return cache;
       const { data } = await admin
         .from("actividades")
-        .select("id, nombre, monto_base, descripcion, horarios, clase_prueba")
+        .select("id, nombre, monto_base, descripcion, horarios, clase_prueba, cupo_prueba")
         .eq("gym_id", gymId)
         .eq("activa", true)
         .is("deleted_at", null)
@@ -329,8 +357,8 @@ export async function planificarBot(admin: Admin, args: ArgsBot): Promise<PlanBo
 export function resuelveSinPersona(plan: PlanBot): boolean {
   const a = plan.accion;
   if (a.tipo === "dni") return a.resultado.estado === "ok" || a.resultado.estado === "no_encontrado";
-  // El comprobante lo tiene que revisar alguien del gym.
-  return !["humano", "confirmar", "otro_horario", "comprobante"].includes(a.tipo);
+  // El comprobante lo tiene que revisar alguien del gym; una cancelación, enterarse.
+  return !["humano", "confirmar", "otro_horario", "comprobante", "cancelar_si"].includes(a.tipo);
 }
 
 async function buscarDni(admin: Admin, gymId: string, telefono: string, dni: string, ahora: Date): Promise<ResultadoDni> {
@@ -396,6 +424,10 @@ async function ejecutar(ctx: Contexto, accion: Accion): Promise<void> {
     case "detalle": return mandarDetalle(ctx, accion.actividadId);
     case "turnos": return mandarTurnos(ctx, accion.actividadId);
     case "confirmar": return confirmarTurno(ctx, accion.actividadId, accion.cuando);
+    case "cambiar": return cambiarReserva(ctx, accion.reservaId);
+    case "cancelar": return preguntarCancelar(ctx, accion.reservaId);
+    case "cancelar_si": return cancelarReserva(ctx, accion.reservaId);
+    case "cancelar_no": return mantenerReserva(ctx, accion.reservaId);
     case "otro_horario": return enviar(ctx, RESPUESTA_OTRO_HORARIO);
     case "humano": return pasarAPersona(ctx, RESPUESTA_HUMANO);
     case "cuenta": return pedirCuenta(ctx);
@@ -454,7 +486,8 @@ async function mandarLista(ctx: Contexto): Promise<void> {
     actividades.slice(0, 10).map((a) => ({
       id: `bot_act:${a.id}`,
       title: a.nombre,
-      description: [`${pesos(a.monto_base)}/mes`, resumenHorarios(a.horarios)].filter(Boolean).join(" · "),
+      // Solo un resumen: los horarios completos van en el detalle.
+      description: [`${pesos(a.monto_base)}/mes`, resumenDias(a.horarios)].filter(Boolean).join(" · "),
     })));
 }
 
@@ -470,40 +503,159 @@ async function mandarDetalle(ctx: Contexto, actividadId: string): Promise<void> 
   await enviarLargo(ctx, bloqueActividad(a, true), botones.slice(0, 3));
 }
 
-async function mandarTurnos(ctx: Contexto, actividadId?: string): Promise<void> {
+async function mandarTurnos(ctx: Contexto, actividadId?: string, encabezado?: string): Promise<void> {
   const actividades = (await ctx.actividades()).filter((a) => a.clase_prueba && (!actividadId || a.id === actividadId));
-  const turnos = proximasClases(actividades, ctx.ahora, { max: 9 });
+  const candidatos = proximasClases(actividades, ctx.ahora, { max: 20 });
+  const libres = await lugaresLibres(ctx, actividades, candidatos.map((t) => ({ actividadId: t.actividadId, cuando: t.cuando })));
+  // Sin cupo no se ofrece; con 3 o menos lugares, se avisa.
+  const turnos = candidatos.filter((t) => libres(t.actividadId, t.cuando) !== 0).slice(0, 9);
 
   if (turnos.length === 0) {
-    // Sin horarios cargados: se coordina a mano, como antes.
+    // Sin horarios cargados (o todo lleno): se coordina a mano, como antes.
     return enviar(ctx, RESPUESTA_PRUEBA, [BOTON.info, BOTON.menu]);
   }
 
   const unaSola = new Set(turnos.map((t) => t.actividadId)).size === 1;
   const saludo = ctx.nombre ? `¡Buenísimo, ${ctx.nombre}! 💪` : "¡Buenísimo! 💪";
   const de = unaSola ? ` de *${turnos[0].actividadNombre}*` : "";
-  await enviarLista(ctx, `${saludo} Estas son las próximas clases${de}. ¿Cuál te queda bien?`, "Elegir horario", [
-    ...turnos.map((t) => ({
-      id: `bot_turno:${t.actividadId}:${t.cuando}`,
-      title: t.etiqueta,
-      // Siempre con la actividad: así el gym ve en el panel "Hoy 18:00 — Funcional".
-      description: t.actividadNombre,
-    })),
+  await enviarLista(ctx, encabezado ?? `${saludo} Estas son las próximas clases${de}. ¿Cuál te queda bien?`, "Elegir horario", [
+    ...turnos.map((t) => {
+      const quedan = libres(t.actividadId, t.cuando);
+      const aviso = quedan === null || quedan > 3 ? "" : quedan === 1 ? " (último lugar)" : ` (últimos ${quedan} lugares)`;
+      return {
+        id: `bot_turno:${t.actividadId}:${t.cuando}`,
+        title: t.etiqueta,
+        // Con la fecha y la actividad: así el gym ve en el panel "Mañana 18:00 — jue 8/10 · Funcional".
+        description: `${t.fechaCorta} · ${t.actividadNombre}${aviso}`,
+      };
+    }),
     { id: "bot_turno_otro", title: "Otro día u horario" },
   ]);
 }
 
+/** Lugares libres por (actividad, horario): null = sin límite. */
+async function lugaresLibres(
+  ctx: Contexto,
+  actividades: ActividadBot[],
+  turnos: Array<{ actividadId: string; cuando: string }>,
+): Promise<(actividadId: string, cuando: string) => number | null> {
+  const cupos = new Map(actividades.map((a) => [a.id, a.cupo_prueba]));
+  const conCupo = turnos.filter((t) => cupos.get(t.actividadId) != null);
+  const ocupados = new Map<string, number>();
+  if (conCupo.length) {
+    const { data } = await ctx.admin
+      .from("reservas_prueba")
+      .select("actividad_id, inicio")
+      .eq("gym_id", ctx.gymId)
+      .eq("estado", "activa")
+      .in("actividad_id", Array.from(new Set(conCupo.map((t) => t.actividadId))))
+      .in("inicio", Array.from(new Set(conCupo.map((t) => inicioDesdeCuando(t.cuando)))));
+    for (const r of data ?? []) {
+      const k = `${r.actividad_id}|${cuandoDesdeInicio(r.inicio)}`;
+      ocupados.set(k, (ocupados.get(k) ?? 0) + 1);
+    }
+  }
+  return (actividadId, cuando) => {
+    const cupo = cupos.get(actividadId);
+    if (cupo == null) return null;
+    return Math.max(0, cupo - (ocupados.get(`${actividadId}|${cuando}`) ?? 0));
+  };
+}
+
 async function confirmarTurno(ctx: Contexto, actividadId: string, cuando: string): Promise<void> {
   const a = (await ctx.actividades()).find((x) => x.id === actividadId);
-  if (!a) return mandarTurnos(ctx);
+  if (!a || !a.clase_prueba) return mandarTurnos(ctx);
+
+  // Reserva atómica: revalida el cupo en la base (pudo llenarse desde que se mostró la lista).
+  const { data: reservaId, error } = await ctx.admin.rpc("reservar_clase_prueba", {
+    p_gym_id: ctx.gymId,
+    p_actividad_id: actividadId,
+    p_telefono: ctx.telefono,
+    p_nombre: ctx.nombre,
+    p_inicio: inicioDesdeCuando(cuando),
+  });
+  if (error) throw new Error(`No se pudo reservar: ${error.message}`);
+  if (!reservaId) return mandarTurnos(ctx, actividadId, HORARIO_LLENO);
+
   const direccion = await direccionPrincipal(ctx);
+  const recomendaciones = ctx.config.whatsapp_bot_recomendaciones?.trim();
   const lineas = [
     `¡Listo${ctx.nombre ? `, ${ctx.nombre}` : ""}! 🙌 Te esperamos ${describirCuando(cuando, ctx.ahora)} para tu clase de prueba de *${a.nombre}*.`,
+    "",
     direccion ? `📍 ${direccion}` : null,
-    "Si al final no podés venir, avisanos por acá.",
-  ].filter(Boolean);
+    recomendaciones ? `🎒 ${recomendaciones}` : null,
+    LLEGA_ANTES,
+  ].filter((l): l is string => l !== null);
   // El mensaje entrante (el horario elegido) queda sin leer: el gym ve la reserva en el panel.
-  await enviar(ctx, lineas.join("\n"), [BOTON.menu]);
+  await enviar(ctx, lineas.join("\n"), [
+    { id: `bot_cambiar:${reservaId}`, title: "Cambiar horario" },
+    { id: `bot_cancelar:${reservaId}`, title: "Cancelar clase" },
+    BOTON.menu,
+  ]);
+
+  const { whatsapp_bot_latitud: lat, whatsapp_bot_longitud: lng } = ctx.config;
+  if (lat != null && lng != null) {
+    const waMessageId = await sendWhatsAppUbicacion(ctx.config, { to: ctx.telefono, latitud: lat, longitud: lng, nombre: await ctx.gymNombre(), direccion });
+    await registrar(ctx, `📍 Ubicación${direccion ? `: ${direccion}` : ""}`, waMessageId);
+  }
+}
+
+/** La reserva, solo si es de este teléfono y sigue activa (un botón viejo no opera sobre otra). */
+async function reservaPropia(ctx: Contexto, reservaId: string) {
+  if (!/^[0-9a-f-]{36}$/i.test(reservaId)) return null;
+  const { data } = await ctx.admin
+    .from("reservas_prueba")
+    .select("id, actividad_id, telefono, inicio, estado")
+    .eq("id", reservaId)
+    .eq("gym_id", ctx.gymId)
+    .maybeSingle();
+  if (!data || data.estado !== "activa" || !mismoTelefono(data.telefono, ctx.telefono)) return null;
+  return data;
+}
+
+async function liberar(ctx: Contexto, reservaId: string): Promise<void> {
+  const { error } = await ctx.admin
+    .from("reservas_prueba")
+    .update({ estado: "cancelada", cancelada_at: ctx.ahora.toISOString() })
+    .eq("id", reservaId)
+    .eq("gym_id", ctx.gymId)
+    .eq("estado", "activa");
+  if (error) throw new Error(`No se pudo liberar la reserva: ${error.message}`);
+}
+
+/** "Cambiar horario": libera el lugar y vuelve a mostrar las próximas clases de esa actividad. */
+async function cambiarReserva(ctx: Contexto, reservaId: string): Promise<void> {
+  const reserva = await reservaPropia(ctx, reservaId);
+  if (!reserva) return enviar(ctx, RESERVA_INACTIVA, [BOTON.menu]);
+  await liberar(ctx, reserva.id);
+  return mandarTurnos(ctx, reserva.actividad_id, "Dale 🙌 ¿Qué otro horario te queda bien?");
+}
+
+async function preguntarCancelar(ctx: Contexto, reservaId: string): Promise<void> {
+  const reserva = await reservaPropia(ctx, reservaId);
+  if (!reserva) return enviar(ctx, RESERVA_INACTIVA, [BOTON.menu]);
+  const cuando = describirCuando(cuandoDesdeInicio(reserva.inicio), ctx.ahora);
+  return enviar(ctx, `¿Seguro que querés cancelar tu clase de ${cuando}?`, [
+    { id: `bot_cancelar_si:${reserva.id}`, title: "Sí, cancelar" },
+    { id: `bot_cancelar_no:${reserva.id}`, title: "No" },
+  ]);
+}
+
+async function cancelarReserva(ctx: Contexto, reservaId: string): Promise<void> {
+  const reserva = await reservaPropia(ctx, reservaId);
+  if (!reserva) return enviar(ctx, RESERVA_INACTIVA, [BOTON.menu]);
+  await liberar(ctx, reserva.id);
+  return enviar(ctx, "Listo, cancelamos tu clase de prueba. Cuando quieras, elegí otro horario 🙌", [
+    { id: `bot_prueba:${reserva.actividad_id}`, title: "Elegir otro horario" },
+    BOTON.menu,
+  ]);
+}
+
+async function mantenerReserva(ctx: Contexto, reservaId: string): Promise<void> {
+  const reserva = await reservaPropia(ctx, reservaId);
+  if (!reserva) return enviar(ctx, RESERVA_INACTIVA, [BOTON.menu]);
+  const cuando = describirCuando(cuandoDesdeInicio(reserva.inicio), ctx.ahora);
+  return enviar(ctx, `¡Genial! Te esperamos ${cuando} 💪`, [BOTON.menu]);
 }
 
 /** Respuesta al DNI que mandó la persona (ver ResultadoDni). */
@@ -660,6 +812,7 @@ async function enviarLargo(ctx: Contexto, cuerpo: string, botones: Boton[]): Pro
 }
 
 async function enviar(ctx: Contexto, cuerpo: string, botones?: Boton[]): Promise<void> {
+  botones = botones?.slice(0, 3).map((b) => ({ id: b.id, title: truncar(b.title, LIMITES.boton) }));
   const waMessageId = botones?.length
     ? await sendWhatsAppButtons(ctx.config, { to: ctx.telefono, body: cuerpo, buttons: botones })
     : await sendWhatsAppText(ctx.config, { to: ctx.telefono, body: cuerpo });
@@ -672,6 +825,12 @@ async function enviarLista(
   boton: string,
   filas: Array<{ id: string; title: string; description?: string }>,
 ): Promise<void> {
+  boton = truncar(boton, LIMITES.boton);
+  filas = filas.slice(0, 10).map((f) => ({
+    id: f.id,
+    title: truncar(f.title, LIMITES.tituloFila),
+    ...(f.description ? { description: truncar(f.description, LIMITES.descripcionFila) } : {}),
+  }));
   const waMessageId = await sendWhatsAppList(ctx.config, { to: ctx.telefono, body: cuerpo, button: boton, rows: filas });
   await registrar(ctx, `${cuerpo}\n${filas.map((f) => `• ${f.title}${f.description ? ` (${f.description})` : ""}`).join("\n")}`, waMessageId);
 }

@@ -18,6 +18,7 @@ type Actividad = {
   descripcion: string | null;
   horarios: Horario[];
   clase_prueba: boolean;
+  cupo_prueba?: number | null;
 };
 
 const ORDEN_SEMANA = [1, 2, 3, 4, 5, 6, 0];
@@ -49,6 +50,7 @@ function ActividadForm({
     color: initial?.color ?? "#00ff88",
     descripcion: initial?.descripcion ?? "",
     clasePrueba: initial?.clase_prueba ?? true,
+    cupoPrueba: initial?.cupo_prueba?.toString() ?? "",
   });
   const [horarios, setHorarios] = useState<Horario[]>(initial?.horarios ?? []);
   const toggleDia = (i: number, d: number) => setHorarios((hs) => hs.map((h, j) => j !== i ? h : {
@@ -74,6 +76,7 @@ function ActividadForm({
         descripcion: form.descripcion.trim() || null,
         horarios,
         clase_prueba: form.clasePrueba,
+        cupo_prueba: form.cupoPrueba.trim() ? Math.max(0, parseInt(form.cupoPrueba) || 0) : null,
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error");
@@ -154,6 +157,14 @@ function ActividadForm({
           <input type="checkbox" id="cp" checked={form.clasePrueba} onChange={e => setForm(f => ({ ...f, clasePrueba: e.target.checked }))} style={{ accentColor: T.accent }} />
           <label htmlFor="cp" className="text-xs" style={{ color: T.textOnDarkDim }}>Ofrecer clase de prueba en estos horarios (bot de WhatsApp)</label>
         </div>
+        {form.clasePrueba && (
+          <div className="flex items-center gap-2">
+            <label htmlFor="cupo" className="text-xs" style={{ color: T.textOnDarkDim }}>Lugares por clase para prueba</label>
+            <input id="cupo" type="number" min={0} max={500} value={form.cupoPrueba} placeholder="Sin límite"
+              onChange={e => setForm(f => ({ ...f, cupoPrueba: e.target.value }))}
+              className="w-24 rounded-md px-2 py-1 text-xs outline-none" style={{ background: T.inputBg, border: `1px solid ${T.border}`, color: T.text }} />
+          </div>
+        )}
       </div>
 
       {/* Color */}

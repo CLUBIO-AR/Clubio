@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { ConfigSection, Field, Textarea, Toggle, SubBlock, Hint } from "./config-section";
+import { ConfigSection, Field, Input, Textarea, Toggle, SubBlock, Hint } from "./config-section";
 import { T } from "@/lib/theme";
 
 interface Props {
   activo: boolean;
   bienvenida: string;
   info: string;
+  recomendaciones: string;
+  latitud: number | null;
+  longitud: number | null;
   gymNombre: string;
 }
 
@@ -17,10 +20,22 @@ export function ConfigWhatsappBot(props: Props) {
   const [activo, setActivo] = useState(props.activo);
   const [bienvenida, setBienvenida] = useState(props.bienvenida);
   const [info, setInfo] = useState(props.info);
+  const [recomendaciones, setRecomendaciones] = useState(props.recomendaciones);
+  // "-27.4512, -58.9867" (como lo copia Google Maps con clic derecho sobre el mapa).
+  const [coordenadas, setCoordenadas] = useState(props.latitud != null && props.longitud != null ? `${props.latitud}, ${props.longitud}` : "");
 
   const bienvenidaDefault = `¡Hola {nombre}! 👋 Gracias por escribir a ${props.gymNombre || "nuestro gimnasio"}. ¿En qué te podemos ayudar?`;
 
   async function save() {
+    let latitud: number | null = null;
+    let longitud: number | null = null;
+    if (coordenadas.trim()) {
+      const partes = coordenadas.split(",").map((p) => Number(p.trim()));
+      if (partes.length !== 2 || partes.some((n) => !Number.isFinite(n)) || Math.abs(partes[0]) > 90 || Math.abs(partes[1]) > 180) {
+        throw new Error("Pegá las coordenadas como «latitud, longitud» (ej. -27.4512, -58.9867)");
+      }
+      [latitud, longitud] = partes;
+    }
     const res = await fetch("/api/config", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -28,6 +43,9 @@ export function ConfigWhatsappBot(props: Props) {
         whatsapp_bot_activo: activo,
         whatsapp_bot_bienvenida: bienvenida.trim() || null,
         whatsapp_bot_info: info.trim() || null,
+        whatsapp_bot_recomendaciones: recomendaciones.trim() || null,
+        whatsapp_bot_latitud: latitud,
+        whatsapp_bot_longitud: longitud,
       }),
     });
     if (!res.ok) throw new Error((await res.json()).error ?? "Error");
@@ -76,10 +94,22 @@ export function ConfigWhatsappBot(props: Props) {
           />
         </Field>
         <Hint>
-          «Clase de prueba» propone las próximas clases según los horarios de cada actividad y confirma el turno elegido; vos lo ves en el panel como mensaje sin leer.
+          «Clase de prueba» propone las próximas clases según los horarios y el cupo de cada actividad, reserva el lugar y confirma el turno; vos lo ves en el panel como mensaje sin leer.
+          La persona puede cambiar el horario o cancelar desde el mismo chat, y le llega un recordatorio unas horas antes.
           «Hablar con alguien» deja el chat sin leer para que lo atienda alguien del gym.
           El bot no vuelve a mandar la bienvenida si alguien del gym le escribió en las últimas 24 h.
         </Hint>
+      </SubBlock>
+
+      <SubBlock title="Confirmación de la clase de prueba">
+        <Hint>Se suman al mensaje de confirmación, junto con la dirección de la sede principal y «Llegá 10 minutos antes».</Hint>
+        <Field label="Qué traer o recomendaciones (opcional)">
+          <Input value={recomendaciones} onChange={(e) => setRecomendaciones(e.target.value)} maxLength={200} placeholder="Traé agua, toalla y ropa cómoda" />
+        </Field>
+        <Field label="Ubicación en el mapa (opcional)">
+          <Input value={coordenadas} onChange={(e) => setCoordenadas(e.target.value)} placeholder="-27.4512, -58.9867" inputMode="decimal" />
+        </Field>
+        <Hint>En Google Maps, hacé clic derecho sobre el gym y tocá las coordenadas para copiarlas. Si las cargás, el bot manda también el pin del mapa.</Hint>
       </SubBlock>
     </ConfigSection>
   );

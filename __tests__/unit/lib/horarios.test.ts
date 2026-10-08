@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resumenHorarios, proximasClases, describirCuando } from "@/lib/horarios";
+import { resumenHorarios, resumenDias, proximasClases, describirCuando, inicioDesdeCuando, cuandoDesdeInicio } from "@/lib/horarios";
 
 // Miércoles 7/10/2026 15:00 en Argentina = 18:00 UTC.
 const MIERCOLES_15HS = new Date("2026-10-07T18:00:00Z");
@@ -45,8 +45,32 @@ describe("proximasClases", () => {
 
 describe("describirCuando", () => {
   it("dice hoy, mañana o el día con fecha", () => {
-    expect(describirCuando("2026-10-07T18:00", MIERCOLES_15HS)).toBe("hoy a las 18:00");
-    expect(describirCuando("2026-10-08T08:00", MIERCOLES_15HS)).toBe("mañana a las 08:00");
+    expect(describirCuando("2026-10-07T18:00", MIERCOLES_15HS)).toBe("hoy miércoles 7/10 a las 18:00");
+    expect(describirCuando("2026-10-08T08:00", MIERCOLES_15HS)).toBe("mañana jueves 8/10 a las 08:00");
     expect(describirCuando("2026-10-10T10:00", MIERCOLES_15HS)).toBe("el sábado 10/10 a las 10:00");
+  });
+});
+
+describe("resumenDias", () => {
+  it("rangos de días consecutivos y días sueltos", () => {
+    expect(resumenDias([{ dias: [1, 2, 3, 4, 5, 6], hora: "07:00" }])).toBe("Lun a Sáb");
+    expect(resumenDias(funcional.horarios)).toBe("Lun, Mié y Vie");
+    expect(resumenDias([{ dias: [1, 2, 3, 5], hora: "07:00" }, { dias: [0], hora: "10:00" }])).toBe("Lun a Mié, Vie y Dom");
+    expect(resumenDias([{ dias: [2, 4], hora: "19:00" }])).toBe("Mar y Jue");
+    expect(resumenDias([])).toBe("");
+  });
+});
+
+describe("fecha de la clase en la descripción de la fila", () => {
+  it("aunque el título diga Mañana, la descripción lleva la fecha", () => {
+    const r = proximasClases([pilates], MIERCOLES_15HS);
+    expect(r[0]).toMatchObject({ etiqueta: "Mañana 19:00", fechaCorta: "jue 8/10" });
+  });
+});
+
+describe("hora de Argentina ↔ instante", () => {
+  it("ida y vuelta", () => {
+    expect(inicioDesdeCuando("2026-10-08T18:00")).toBe("2026-10-08T21:00:00.000Z");
+    expect(cuandoDesdeInicio("2026-10-08T21:00:00.000Z")).toBe("2026-10-08T18:00");
   });
 });

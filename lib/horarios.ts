@@ -22,6 +22,26 @@ function listaConY(items: string[]): string {
   return `${items.slice(0, -1).join(", ")} y ${items.at(-1)}`;
 }
 
+/**
+ * Días de la semana con clase, en rangos: "Lun a Sáb", "Lun, Mié y Vie", "Lun a Mié y Vie".
+ * Para la descripción corta de la lista del bot (WhatsApp corta en 72 caracteres).
+ */
+export function resumenDias(horarios: Horario[] | null | undefined): string {
+  const dias = new Set((horarios ?? []).flatMap((h) => h.dias));
+  const orden = ORDEN_SEMANA.filter((d) => dias.has(d));
+  const tramos: number[][] = [];
+  for (const d of orden) {
+    const ultimo = tramos.at(-1);
+    const prev = ultimo?.at(-1);
+    if (ultimo && prev !== undefined && ORDEN_SEMANA.indexOf(d) === ORDEN_SEMANA.indexOf(prev) + 1) ultimo.push(d);
+    else tramos.push([d]);
+  }
+  const partes = tramos.flatMap((t) => t.length >= 3
+    ? [`${DIAS_CORTO.at(t[0])} a ${DIAS_CORTO.at(t.at(-1)!)}`]
+    : t.map((d) => DIAS_CORTO.at(d)!));
+  return listaConY(partes);
+}
+
 /** "Lun, Mié y Vie · 18:00 y 20:00 | Sáb · 10:00" — agrupa los días que comparten horas. */
 export function resumenHorarios(horarios: Horario[] | null | undefined): string {
   if (!horarios?.length) return "";
@@ -49,6 +69,8 @@ export type ProximaClase = {
   cuando: string;
   /** "Hoy 18:00", "Mañana 08:00", "Jue 9/10 18:00". */
   etiqueta: string;
+  /** "jue 8/10" — para la descripción de la fila (con la fecha aunque diga "Mañana"). */
+  fechaCorta: string;
 };
 
 /**
@@ -80,6 +102,7 @@ export function proximasClases(
           actividadNombre: act.nombre,
           cuando: `${fecha}T${h.hora}`,
           etiqueta: `${prefijo} ${h.hora}`,
+          fechaCorta: `${DIAS_CORTO.at(dow)!.toLowerCase()} ${inicio.getUTCDate()}/${inicio.getUTCMonth() + 1}`,
           orden: inicio.getTime(),
         });
       }
@@ -96,14 +119,30 @@ export function proximasClases(
     .map(({ orden: _orden, ...c }) => c);
 }
 
-/** "jueves 8/10 a las 18:00" a partir de "2026-10-08T18:00", relativo a `ahora` (hoy / mañana). */
+const DIAS_LARGO = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+
+/**
+ * Fecha explícita de una clase, relativa a `ahora` solo como ayuda:
+ * "hoy miércoles 7/10 a las 18:00", "mañana jueves 8/10 a las 08:00", "el sábado 10/10 a las 10:00".
+ * Siempre con la fecha, así se entiende aunque el mensaje se lea otro día.
+ */
 export function describirCuando(cuando: string, ahora: Date): string {
   const [fecha, hora] = cuando.split("T");
   const localAhora = new Date(ahora.getTime() + OFFSET_AR_MS).toISOString().slice(0, 10);
   const manana = new Date(Date.parse(`${localAhora}T00:00:00Z`) + 86400000).toISOString().slice(0, 10);
-  if (fecha === localAhora) return `hoy a las ${hora}`;
-  if (fecha === manana) return `mañana a las ${hora}`;
   const d = new Date(`${fecha}T00:00:00Z`);
-  const dias = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
-  return `el ${dias.at(d.getUTCDay())} ${d.getUTCDate()}/${d.getUTCMonth() + 1} a las ${hora}`;
+  const dia = `${DIAS_LARGO.at(d.getUTCDay())} ${d.getUTCDate()}/${d.getUTCMonth() + 1} a las ${hora}`;
+  if (fecha === localAhora) return `hoy ${dia}`;
+  if (fecha === manana) return `mañana ${dia}`;
+  return `el ${dia}`;
+}
+
+/** "2026-10-08T18:00" (hora de Argentina) → instante ISO, para guardar la reserva. */
+export function inicioDesdeCuando(cuando: string): string {
+  return new Date(`${cuando}:00-03:00`).toISOString();
+}
+
+/** Instante ISO → "2026-10-08T18:00" en hora de Argentina. */
+export function cuandoDesdeInicio(iso: string): string {
+  return new Date(Date.parse(iso) + OFFSET_AR_MS).toISOString().slice(0, 16);
 }

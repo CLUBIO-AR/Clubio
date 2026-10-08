@@ -232,6 +232,11 @@ export type Database = {
           transferencia_alias: string | null;
           transferencia_titular: string | null;
           transferencia_banco: string | null;
+          transferencia_cbu: string | null;
+          whatsapp_bot_recomendaciones: string | null;
+          whatsapp_bot_latitud: number | null;
+          whatsapp_bot_longitud: number | null;
+          whatsapp_template_recordatorio_prueba: string | null;
           whatsapp_activo: boolean;
           whatsapp_phone_number_id: string | null;
           whatsapp_access_token: string | null;
@@ -281,6 +286,11 @@ export type Database = {
           transferencia_alias?: string | null;
           transferencia_titular?: string | null;
           transferencia_banco?: string | null;
+          transferencia_cbu?: string | null;
+          whatsapp_bot_recomendaciones?: string | null;
+          whatsapp_bot_latitud?: number | null;
+          whatsapp_bot_longitud?: number | null;
+          whatsapp_template_recordatorio_prueba?: string | null;
           whatsapp_activo?: boolean;
           whatsapp_phone_number_id?: string | null;
           whatsapp_access_token?: string | null;
@@ -326,6 +336,11 @@ export type Database = {
           transferencia_alias?: string | null;
           transferencia_titular?: string | null;
           transferencia_banco?: string | null;
+          transferencia_cbu?: string | null;
+          whatsapp_bot_recomendaciones?: string | null;
+          whatsapp_bot_latitud?: number | null;
+          whatsapp_bot_longitud?: number | null;
+          whatsapp_template_recordatorio_prueba?: string | null;
           whatsapp_activo?: boolean;
           whatsapp_phone_number_id?: string | null;
           whatsapp_access_token?: string | null;
@@ -411,6 +426,8 @@ export type Database = {
           created_at: string;
           updated_at: string;
           deleted_at: string | null;
+          whatsapp_error: string | null;
+          whatsapp_error_at: string | null;
         };
         Insert: {
           id?: string;
@@ -446,6 +463,8 @@ export type Database = {
           monto_cuota_personalizado?: number | null;
           notas?: string | null;
           deleted_at?: string | null;
+          whatsapp_error?: string | null;
+          whatsapp_error_at?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -483,6 +502,7 @@ export type Database = {
           descripcion: string | null;
           horarios: { dias: number[]; hora: string }[];
           clase_prueba: boolean;
+          cupo_prueba: number | null;
         };
         Insert: {
           id?: string;
@@ -498,6 +518,7 @@ export type Database = {
           descripcion?: string | null;
           horarios?: { dias: number[]; hora: string }[];
           clase_prueba?: boolean;
+          cupo_prueba?: number | null;
         };
         Update: {
           nombre?: string;
@@ -505,6 +526,7 @@ export type Database = {
           descripcion?: string | null;
           horarios?: { dias: number[]; hora: string }[];
           clase_prueba?: boolean;
+          cupo_prueba?: number | null;
           recargo_1_dias?: number | null;
           recargo_1_porcentaje?: number | null;
           recargo_2_dias?: number | null;
@@ -907,6 +929,146 @@ export type Database = {
           }
         ];
       };
+      whatsapp_bot_estado: {
+        Row: {
+          gym_id: string;
+          telefono: string;
+          estado: "awaiting_receipt" | null;
+          datos: Json;
+          expira_at: string | null;
+          handoff_hasta: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          gym_id: string;
+          telefono: string;
+          estado?: "awaiting_receipt" | null;
+          datos?: Json;
+          expira_at?: string | null;
+          handoff_hasta?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          estado?: "awaiting_receipt" | null;
+          datos?: Json;
+          expira_at?: string | null;
+          handoff_hasta?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      comprobantes_pago: {
+        Row: {
+          id: string;
+          gym_id: string;
+          alumno_id: string;
+          telefono: string;
+          cuota_ids: string[];
+          storage_path: string;
+          mime_type: string | null;
+          wa_message_id: string | null;
+          estado: "pendiente" | "confirmado" | "rechazado";
+          revisado_por: string | null;
+          revisado_at: string | null;
+          motivo_rechazo: string | null;
+          created_at: string;
+          deleted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          alumno_id: string;
+          telefono: string;
+          cuota_ids?: string[];
+          storage_path: string;
+          mime_type?: string | null;
+          wa_message_id?: string | null;
+          estado?: "pendiente" | "confirmado" | "rechazado";
+        };
+        Update: {
+          estado?: "pendiente" | "confirmado" | "rechazado";
+          revisado_por?: string | null;
+          revisado_at?: string | null;
+          motivo_rechazo?: string | null;
+          deleted_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "comprobantes_pago_alumno_id_fkey";
+            columns: ["alumno_id"];
+            isOneToOne: false;
+            referencedRelation: "alumnos";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      avisos_whatsapp_enviados: {
+        Row: {
+          id: string;
+          gym_id: string;
+          alumno_id: string;
+          cuota_id: string;
+          etapa: string;
+          plantilla: string | null;
+          wa_message_id: string | null;
+          estado: string;
+          error_detail: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          alumno_id: string;
+          cuota_id: string;
+          etapa: string;
+          plantilla?: string | null;
+          wa_message_id?: string | null;
+          estado?: string;
+          error_detail?: string | null;
+        };
+        Update: {
+          estado?: string;
+          error_detail?: string | null;
+        };
+        Relationships: [];
+      };
+      reservas_prueba: {
+        Row: {
+          id: string;
+          gym_id: string;
+          actividad_id: string;
+          telefono: string;
+          nombre: string | null;
+          inicio: string;
+          estado: "activa" | "cancelada";
+          recordatorio_at: string | null;
+          cancelada_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          actividad_id: string;
+          telefono: string;
+          nombre?: string | null;
+          inicio: string;
+          estado?: "activa" | "cancelada";
+        };
+        Update: {
+          estado?: "activa" | "cancelada";
+          recordatorio_at?: string | null;
+          cancelada_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "reservas_prueba_actividad_id_fkey";
+            columns: ["actividad_id"];
+            isOneToOne: false;
+            referencedRelation: "actividades";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       cron_logs: {
         Row: {
           id: string;
@@ -1180,6 +1342,16 @@ export type Database = {
           p_gym_id: string;
         };
         Returns: Array<{ cuotas_pagadas: number; alumno_id: string }>;
+      };
+      reservar_clase_prueba: {
+        Args: {
+          p_gym_id: string;
+          p_actividad_id: string;
+          p_telefono: string;
+          p_nombre: string | null;
+          p_inicio: string;
+        };
+        Returns: string | null;
       };
     };
     Enums: {

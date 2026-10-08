@@ -22,9 +22,11 @@
 // ni tiene costo de Meta. Nunca tira: si algo falla solo se loguea.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
-import { sendWhatsAppButtons, sendWhatsAppList, sendWhatsAppText } from "@/lib/notifications/channels/whatsapp";
-import { describirCuando, proximasClases, resumenHorarios, type Horario } from "@/lib/horarios";
-import { linkPagarTodo, obtenerEstadoCuenta, textoEstadoCuenta } from "@/lib/estado-cuenta";
+import { sendWhatsAppButtons, sendWhatsAppList, sendWhatsAppText, sendWhatsAppUbicacion } from "@/lib/notifications/channels/whatsapp";
+import { cuandoDesdeInicio, describirCuando, inicioDesdeCuando, proximasClases, resumenDias, resumenHorarios, type Horario } from "@/lib/horarios";
+import { linkPagarTodo, nombreCorto, obtenerEstadoCuenta, textoEstadoCuenta } from "@/lib/estado-cuenta";
+import { activarHandoff, cortarHandoff, dejarDeEsperarComprobante, esperarComprobante, leerEstadoBot, type EstadoBot } from "@/lib/bot-estado";
+import { guardarComprobante } from "@/lib/comprobantes";
 
 type Admin = SupabaseClient<Database>;
 
@@ -38,6 +40,7 @@ const BOTON = {
   cuenta: { id: "bot_cuenta", title: "Mi estado de cuenta" },
   // El título tiene "alias": el webhook lo atiende con responderAlias (manda solo el alias).
   alias: { id: "bot_alias", title: "Copiar alias" },
+  transferi: { id: "bot_transferi", title: "Ya transferí" },
 } as const;
 
 // Menú principal (la bienvenida). Los alumnos ven "Mi estado de cuenta" en lugar de la clase de prueba.
@@ -54,17 +57,36 @@ const RESPUESTA_PRUEBA =
   "¡Buenísimo! 💪 Contanos qué actividad te interesa y qué días y horarios te quedan cómodos, y te confirmamos la clase de prueba.";
 const RESPUESTA_OTRO_HORARIO = "Dale 🙌 Contanos qué día y horario te queda cómodo y te confirmamos.";
 const RESPUESTA_HUMANO = "Listo, ya le avisamos al equipo. En un rato te escribe alguien 🙌";
+const PEDIDO_COMPROBANTE = "Mandame la foto o el PDF del comprobante 📎";
+const RECORDATORIO_COMPROBANTE = "Para avisarle al equipo de tu pago necesito la *foto o el PDF* del comprobante 📎";
+const COMPROBANTE_RECIBIDO = "¡Gracias! Recibimos tu comprobante, el equipo lo revisa y te confirmamos por acá 🙌";
+const COMPROBANTE_ERROR = "No pude guardar ese archivo 😕 Probá mandar una foto (JPG o PNG) o un PDF del comprobante.";
 const RESPUESTA_INFO_VACIA = "Ya le avisamos al equipo, en un rato te pasan horarios y precios 🙌";
+const RESERVA_INACTIVA = "Esa reserva ya no está activa 🤔 Si querés, elegí un horario nuevo desde el menú.";
+const HORARIO_LLENO = "Uy, ese horario se llenó recién 😕 Elegí otro de estos:";
+const LLEGA_ANTES = "⏰ Llegá 10 minutos antes.";
+
+// Límites de Meta para mensajes interactivos.
+export const LIMITES = { tituloFila: 24, descripcionFila: 72, boton: 20, cuerpo: 1024 } as const;
+
+/** Corta con "…" para que ningún dato del gym rompa un mensaje interactivo. */
+export function truncar(texto: string, max: number): string {
+  const t = texto.trim();
+  return t.length <= max ? t : `${t.slice(0, max - 1).trimEnd()}…`;
+}
 
 // Estado de cuenta con DNI. PEDIDO_DNI y DNI_NO_ENCONTRADO también se usan para reconocer,
 // en el historial, que el bot está esperando un DNI y cuántos intentos fallaron.
 const PEDIDO_DNI = "📇 Para ver tu estado de cuenta, escribime tu *DNI* (solo números).";
 const MARCA_PEDIDO_DNI = "escribime tu *DNI*";
-const DNI_NO_ENCONTRADO = "No encontramos ese DNI entre los alumnos del gym 🤔 Revisalo y mandalo de nuevo (solo números).";
+// Empieza con MARCA_DNI_NO_ENCONTRADO: así se cuentan los intentos fallidos en el historial.
+const dniNoEncontrado = (gym: string) => `No encontramos ese DNI en ${gym} 🤔 Revisalo y volvé a intentar (solo números).`;
 const MARCA_DNI_NO_ENCONTRADO = "No encontramos ese DNI";
-const DNI_OTRO_TELEFONO = "Ese DNI tiene otro teléfono registrado, así que por seguridad no podemos mostrar la cuenta desde este número. Ya le avisamos al gym para que lo revise 🙌";
-const DNI_BLOQUEADO = "Hubo varios intentos con un DNI que no coincide. Por seguridad, en un rato te escribe alguien del gym 🙌";
+const DNI_OTRO_TELEFONO = "Encontramos tu ficha, pero este número no coincide con el que tenemos cargado. Te pasamos con el equipo para verificarlo 🙌";
+const DNI_BLOQUEADO = "Hubo varios intentos con un DNI que no coincide. Por seguridad, ya le avisamos al equipo y te escriben en un rato 🙌";
+// Máximo de DNI equivocados por teléfono dentro de VENTANA_INTENTOS_MIN.
 const MAX_INTENTOS_DNI = 3;
+const VENTANA_INTENTOS_MIN = 60;
 const ESPERA_DNI_MIN = 30;
 
 /** "12.345.678" o "12345678" → "12345678"; null si no parece un DNI. */
@@ -83,6 +105,11 @@ export type MensajeBot = {
   id: string;
   type?: string;
   text?: { body?: string };
+  // Botón de respuesta rápida de una plantilla (aviso de cuota): llega con el payload que
+  // pusimos al mandarla (ej. "transferi:<cuotaId>").
+  button?: { text?: string; payload?: string };
+  image?: { id?: string; mime_type?: string };
+  document?: { id?: string; mime_type?: string; filename?: string };
   interactive?: {
     button_reply?: { id?: string; title?: string };
     list_reply?: { id?: string; title?: string; description?: string };
@@ -95,10 +122,18 @@ type Accion =
   | { tipo: "detalle"; actividadId: string }
   | { tipo: "turnos"; actividadId?: string }
   | { tipo: "confirmar"; actividadId: string; cuando: string }
+  | { tipo: "cambiar"; reservaId: string }
+  | { tipo: "cancelar"; reservaId: string }
+  | { tipo: "cancelar_si"; reservaId: string }
+  | { tipo: "cancelar_no"; reservaId: string }
   | { tipo: "otro_horario" }
   | { tipo: "humano" }
   | { tipo: "menu" }
   | { tipo: "cuenta" }
+  | { tipo: "cuenta_de"; alumnoId: string }
+  | { tipo: "transferi"; alumnoId?: string; cuotaId?: string }
+  | { tipo: "comprobante"; alumnoId: string; cuotaIds: string[]; mediaId: string }
+  | { tipo: "recordar_comprobante" }
   | { tipo: "dni"; resultado: ResultadoDni };
 
 /**
@@ -134,8 +169,25 @@ export function interpretar(message: MensajeBot): Accion | null {
       case "bot_humano": return { tipo: "humano" };
       case "bot_menu": return { tipo: "menu" };
       case "bot_cuenta": return { tipo: "cuenta" };
+      case "bot_cuenta_de": return a ? { tipo: "cuenta_de", alumnoId: a } : { tipo: "cuenta" };
+      case "bot_transferi": return { tipo: "transferi", alumnoId: a || undefined };
+      case "bot_cambiar": return a ? { tipo: "cambiar", reservaId: a } : null;
+      case "bot_cancelar": return a ? { tipo: "cancelar", reservaId: a } : null;
+      case "bot_cancelar_si": return a ? { tipo: "cancelar_si", reservaId: a } : null;
+      case "bot_cancelar_no": return a ? { tipo: "cancelar_no", reservaId: a } : null;
     }
     return null;
+  }
+
+  // Botones de las plantillas de aviso ("Ya transferí", "Ver mi cuenta").
+  const payload = message.button?.payload;
+  if (payload) {
+    const [clave, a] = payload.split(":");
+    if (clave === "transferi") return { tipo: "transferi", cuotaId: a || undefined };
+    if (clave === "cuenta") return { tipo: "cuenta" };
+    // Botones de la plantilla de recordatorio de clase de prueba.
+    if (clave === "cambiar" && a) return { tipo: "cambiar", reservaId: a };
+    if (clave === "cancelar" && a) return { tipo: "cancelar", reservaId: a };
   }
 
   if (message.type !== "text") return null;
@@ -158,6 +210,8 @@ type ActividadBot = {
   descripcion: string | null;
   horarios: Horario[];
   clase_prueba: boolean;
+  /** Lugares por horario para clase de prueba (null = sin límite). */
+  cupo_prueba: number | null;
 };
 
 type Config = {
@@ -168,6 +222,10 @@ type Config = {
   email_modo: string | null;
   transferencia_alias: string | null;
   transferencia_titular: string | null;
+  transferencia_cbu: string | null;
+  whatsapp_bot_recomendaciones: string | null;
+  whatsapp_bot_latitud: number | null;
+  whatsapp_bot_longitud: number | null;
 };
 
 type Contexto = {
@@ -178,13 +236,16 @@ type Contexto = {
   alumnoId: string | null;
   nombre: string | null;
   ahora: Date;
+  /** wa_message_id del mensaje entrante (para no guardar dos veces un comprobante). */
+  mensajeId: string;
   actividades: () => Promise<ActividadBot[]>;
+  gymNombre: () => Promise<string>;
 };
 
 type Boton = { id: string; title: string };
 
 /** Lo que el bot va a hacer con un mensaje entrante (o null si no le corresponde responder). */
-export type PlanBot = { ctx: Contexto; accion: Accion | { tipo: "bienvenida" } };
+export type PlanBot = { ctx: Contexto; accion: Accion | { tipo: "bienvenida" }; estado?: EstadoBot };
 
 type ArgsBot = { gymId: string; telefono: string; alumnoId: string | null; message: MensajeBot; perfilNombre?: string | null; ahora?: Date };
 
@@ -195,30 +256,59 @@ type ArgsBot = { gymId: string; telefono: string; alumnoId: string | null; messa
  */
 export async function planificarBot(admin: Admin, args: ArgsBot): Promise<PlanBot | null> {
   const { gymId, telefono, alumnoId, message } = args;
+  const ahora = args.ahora ?? new Date();
   let accion: Accion | null = interpretar(message);
   const dni = !accion && message.type === "text" ? extraerDni(message.text?.body) : null;
+  const media = message.image?.id ?? message.document?.id ?? null;
+
+  // Ni texto, ni botón, ni archivo (stickers, audios, ubicaciones…): lo ve el gym.
+  if (!accion && !media && message.type !== "text") return null;
+
+  const estado = await leerEstadoBot(admin, gymId, telefono, ahora);
+
+  // Esperando comprobante ("Ya transferí"): una foto/PDF es el comprobante; un texto que no
+  // es otro pedido, un recordatorio de que mande el archivo.
+  if (estado.esperandoComprobante && !accion) {
+    if (media) {
+      accion = { tipo: "comprobante", ...estado.esperandoComprobante, mediaId: media };
+    } else if (message.type === "text" && !dni) {
+      accion = { tipo: "recordar_comprobante" };
+    }
+  }
+  if (!accion && !dni && media) return null; // foto suelta: la ve el gym
 
   // Sin un pedido explícito, el bot solo saluda a números que no son alumnos y escriben texto
   // (o responde un DNI si se lo acaba de pedir).
-  if (!accion && !dni && (alumnoId || message.type !== "text")) return null;
+  if (!accion && !dni && alumnoId) return null;
+
+  // Handoff: una persona está atendiendo. El bot solo vuelve si piden la cuenta o el menú.
+  if (estado.handoffActivo && !(accion && (accion.tipo === "cuenta" || accion.tipo === "menu"))) return null;
 
   const { data: config } = await admin
     .from("gym_config")
-    .select("whatsapp_phone_number_id, whatsapp_access_token, whatsapp_bot_activo, whatsapp_bot_bienvenida, whatsapp_bot_info, email_modo, transferencia_alias, transferencia_titular")
+    .select("whatsapp_phone_number_id, whatsapp_access_token, whatsapp_bot_activo, whatsapp_bot_bienvenida, whatsapp_bot_info, email_modo, transferencia_alias, transferencia_titular, transferencia_cbu, whatsapp_bot_recomendaciones, whatsapp_bot_latitud, whatsapp_bot_longitud")
     .eq("gym_id", gymId)
     .maybeSingle();
   if (!config?.whatsapp_bot_activo) return null;
 
   let cache: ActividadBot[] | null = null;
+  let nombreGym: string | null = null;
   const ctx: Contexto = {
     admin, config, gymId, telefono, alumnoId,
     nombre: primerNombre(args.perfilNombre),
-    ahora: args.ahora ?? new Date(),
+    ahora,
+    mensajeId: message.id,
+    gymNombre: async () => {
+      if (nombreGym) return nombreGym;
+      const { data } = await admin.from("gyms").select("nombre").eq("id", gymId).maybeSingle();
+      nombreGym = data?.nombre ?? "el gym";
+      return nombreGym;
+    },
     actividades: async () => {
       if (cache) return cache;
       const { data } = await admin
         .from("actividades")
-        .select("id, nombre, monto_base, descripcion, horarios, clase_prueba")
+        .select("id, nombre, monto_base, descripcion, horarios, clase_prueba, cupo_prueba")
         .eq("gym_id", gymId)
         .eq("activa", true)
         .is("deleted_at", null)
@@ -241,7 +331,7 @@ export async function planificarBot(admin: Admin, args: ArgsBot): Promise<PlanBo
     else if (alumnoId) return null;
   }
 
-  if (accion) return { ctx, accion };
+  if (accion) return { ctx, accion, estado };
 
   // Bienvenida: solo si en las últimas 24hs no le escribimos nada (ni el bot ni el gym),
   // para no interrumpir una conversación que ya está atendiendo una persona. Los mensajes
@@ -257,7 +347,7 @@ export async function planificarBot(admin: Admin, args: ArgsBot): Promise<PlanBo
     .gte("created_at", desde);
   if ((count ?? 0) > 0) return null;
 
-  return { ctx, accion: { tipo: "bienvenida" } };
+  return { ctx, accion: { tipo: "bienvenida" }, estado };
 }
 
 /**
@@ -267,19 +357,23 @@ export async function planificarBot(admin: Admin, args: ArgsBot): Promise<PlanBo
 export function resuelveSinPersona(plan: PlanBot): boolean {
   const a = plan.accion;
   if (a.tipo === "dni") return a.resultado.estado === "ok" || a.resultado.estado === "no_encontrado";
-  return !["humano", "confirmar", "otro_horario"].includes(a.tipo);
+  // El comprobante lo tiene que revisar alguien del gym; una cancelación, enterarse.
+  return !["humano", "confirmar", "otro_horario", "comprobante", "cancelar_si"].includes(a.tipo);
 }
 
 async function buscarDni(admin: Admin, gymId: string, telefono: string, dni: string, ahora: Date): Promise<ResultadoDni> {
   // Tope de intentos: evita que alguien pruebe DNIs hasta dar con uno.
-  const desde = new Date(ahora.getTime() - 24 * 60 * 60 * 1000).toISOString();
+  const desde = new Date(ahora.getTime() - VENTANA_INTENTOS_MIN * 60 * 1000).toISOString();
   const { count: fallidos } = await admin
     .from("mensajes_whatsapp")
     .select("id", { count: "exact", head: true })
     .eq("gym_id", gymId).eq("telefono", telefono).eq("direccion", "saliente")
     .ilike("cuerpo", `${MARCA_DNI_NO_ENCONTRADO}%`)
     .gte("created_at", desde);
-  if ((fallidos ?? 0) >= MAX_INTENTOS_DNI) return { estado: "bloqueado" };
+  if ((fallidos ?? 0) >= MAX_INTENTOS_DNI) {
+    console.warn("[bot-consultas] DNI bloqueado por intentos — gym:", gymId, "telefono:", telefono, "intentos:", fallidos);
+    return { estado: "bloqueado" };
+  }
 
   const { data: alumno } = await admin
     .from("alumnos")
@@ -321,6 +415,8 @@ export async function responderConBot(admin: Admin, args: ArgsBot): Promise<void
 }
 
 async function ejecutar(ctx: Contexto, accion: Accion): Promise<void> {
+  // Pedir la cuenta o el menú corta el handoff (y lo que el bot estuviera esperando).
+  if (accion.tipo === "menu" || accion.tipo === "cuenta") await cortarHandoff(ctx.admin, ctx.gymId, ctx.telefono);
   switch (accion.tipo) {
     case "menu": return mandarBienvenida(ctx);
     case "todas": return mandarTodas(ctx);
@@ -328,9 +424,17 @@ async function ejecutar(ctx: Contexto, accion: Accion): Promise<void> {
     case "detalle": return mandarDetalle(ctx, accion.actividadId);
     case "turnos": return mandarTurnos(ctx, accion.actividadId);
     case "confirmar": return confirmarTurno(ctx, accion.actividadId, accion.cuando);
+    case "cambiar": return cambiarReserva(ctx, accion.reservaId);
+    case "cancelar": return preguntarCancelar(ctx, accion.reservaId);
+    case "cancelar_si": return cancelarReserva(ctx, accion.reservaId);
+    case "cancelar_no": return mantenerReserva(ctx, accion.reservaId);
     case "otro_horario": return enviar(ctx, RESPUESTA_OTRO_HORARIO);
-    case "humano": return enviar(ctx, RESPUESTA_HUMANO, [BOTON.info, BOTON.menu]);
-    case "cuenta": return enviar(ctx, PEDIDO_DNI);
+    case "humano": return pasarAPersona(ctx, RESPUESTA_HUMANO);
+    case "cuenta": return pedirCuenta(ctx);
+    case "cuenta_de": return cuentaDe(ctx, accion.alumnoId);
+    case "transferi": return yaTransferi(ctx, accion);
+    case "comprobante": return recibirComprobante(ctx, accion);
+    case "recordar_comprobante": return enviar(ctx, RECORDATORIO_COMPROBANTE, [BOTON.menu]);
     case "dni": return responderDni(ctx, accion.resultado);
   }
 }
@@ -382,7 +486,8 @@ async function mandarLista(ctx: Contexto): Promise<void> {
     actividades.slice(0, 10).map((a) => ({
       id: `bot_act:${a.id}`,
       title: a.nombre,
-      description: [`${pesos(a.monto_base)}/mes`, resumenHorarios(a.horarios)].filter(Boolean).join(" · "),
+      // Solo un resumen: los horarios completos van en el detalle.
+      description: [`${pesos(a.monto_base)}/mes`, resumenDias(a.horarios)].filter(Boolean).join(" · "),
     })));
 }
 
@@ -398,67 +503,290 @@ async function mandarDetalle(ctx: Contexto, actividadId: string): Promise<void> 
   await enviarLargo(ctx, bloqueActividad(a, true), botones.slice(0, 3));
 }
 
-async function mandarTurnos(ctx: Contexto, actividadId?: string): Promise<void> {
+async function mandarTurnos(ctx: Contexto, actividadId?: string, encabezado?: string): Promise<void> {
   const actividades = (await ctx.actividades()).filter((a) => a.clase_prueba && (!actividadId || a.id === actividadId));
-  const turnos = proximasClases(actividades, ctx.ahora, { max: 9 });
+  const candidatos = proximasClases(actividades, ctx.ahora, { max: 20 });
+  const libres = await lugaresLibres(ctx, actividades, candidatos.map((t) => ({ actividadId: t.actividadId, cuando: t.cuando })));
+  // Sin cupo no se ofrece; con 3 o menos lugares, se avisa.
+  const turnos = candidatos.filter((t) => libres(t.actividadId, t.cuando) !== 0).slice(0, 9);
 
   if (turnos.length === 0) {
-    // Sin horarios cargados: se coordina a mano, como antes.
+    // Sin horarios cargados (o todo lleno): se coordina a mano, como antes.
     return enviar(ctx, RESPUESTA_PRUEBA, [BOTON.info, BOTON.menu]);
   }
 
   const unaSola = new Set(turnos.map((t) => t.actividadId)).size === 1;
   const saludo = ctx.nombre ? `¡Buenísimo, ${ctx.nombre}! 💪` : "¡Buenísimo! 💪";
   const de = unaSola ? ` de *${turnos[0].actividadNombre}*` : "";
-  await enviarLista(ctx, `${saludo} Estas son las próximas clases${de}. ¿Cuál te queda bien?`, "Elegir horario", [
-    ...turnos.map((t) => ({
-      id: `bot_turno:${t.actividadId}:${t.cuando}`,
-      title: t.etiqueta,
-      // Siempre con la actividad: así el gym ve en el panel "Hoy 18:00 — Funcional".
-      description: t.actividadNombre,
-    })),
+  await enviarLista(ctx, encabezado ?? `${saludo} Estas son las próximas clases${de}. ¿Cuál te queda bien?`, "Elegir horario", [
+    ...turnos.map((t) => {
+      const quedan = libres(t.actividadId, t.cuando);
+      const aviso = quedan === null || quedan > 3 ? "" : quedan === 1 ? " (último lugar)" : ` (últimos ${quedan} lugares)`;
+      return {
+        id: `bot_turno:${t.actividadId}:${t.cuando}`,
+        title: t.etiqueta,
+        // Con la fecha y la actividad: así el gym ve en el panel "Mañana 18:00 — jue 8/10 · Funcional".
+        description: `${t.fechaCorta} · ${t.actividadNombre}${aviso}`,
+      };
+    }),
     { id: "bot_turno_otro", title: "Otro día u horario" },
   ]);
 }
 
+/** Lugares libres por (actividad, horario): null = sin límite. */
+async function lugaresLibres(
+  ctx: Contexto,
+  actividades: ActividadBot[],
+  turnos: Array<{ actividadId: string; cuando: string }>,
+): Promise<(actividadId: string, cuando: string) => number | null> {
+  const cupos = new Map(actividades.map((a) => [a.id, a.cupo_prueba]));
+  const conCupo = turnos.filter((t) => cupos.get(t.actividadId) != null);
+  const ocupados = new Map<string, number>();
+  if (conCupo.length) {
+    const { data } = await ctx.admin
+      .from("reservas_prueba")
+      .select("actividad_id, inicio")
+      .eq("gym_id", ctx.gymId)
+      .eq("estado", "activa")
+      .in("actividad_id", Array.from(new Set(conCupo.map((t) => t.actividadId))))
+      .in("inicio", Array.from(new Set(conCupo.map((t) => inicioDesdeCuando(t.cuando)))));
+    for (const r of data ?? []) {
+      const k = `${r.actividad_id}|${cuandoDesdeInicio(r.inicio)}`;
+      ocupados.set(k, (ocupados.get(k) ?? 0) + 1);
+    }
+  }
+  return (actividadId, cuando) => {
+    const cupo = cupos.get(actividadId);
+    if (cupo == null) return null;
+    return Math.max(0, cupo - (ocupados.get(`${actividadId}|${cuando}`) ?? 0));
+  };
+}
+
 async function confirmarTurno(ctx: Contexto, actividadId: string, cuando: string): Promise<void> {
   const a = (await ctx.actividades()).find((x) => x.id === actividadId);
-  if (!a) return mandarTurnos(ctx);
+  if (!a || !a.clase_prueba) return mandarTurnos(ctx);
+
+  // Reserva atómica: revalida el cupo en la base (pudo llenarse desde que se mostró la lista).
+  const { data: reservaId, error } = await ctx.admin.rpc("reservar_clase_prueba", {
+    p_gym_id: ctx.gymId,
+    p_actividad_id: actividadId,
+    p_telefono: ctx.telefono,
+    p_nombre: ctx.nombre,
+    p_inicio: inicioDesdeCuando(cuando),
+  });
+  if (error) throw new Error(`No se pudo reservar: ${error.message}`);
+  if (!reservaId) return mandarTurnos(ctx, actividadId, HORARIO_LLENO);
+
   const direccion = await direccionPrincipal(ctx);
+  const recomendaciones = ctx.config.whatsapp_bot_recomendaciones?.trim();
   const lineas = [
     `¡Listo${ctx.nombre ? `, ${ctx.nombre}` : ""}! 🙌 Te esperamos ${describirCuando(cuando, ctx.ahora)} para tu clase de prueba de *${a.nombre}*.`,
+    "",
     direccion ? `📍 ${direccion}` : null,
-    "Si al final no podés venir, avisanos por acá.",
-  ].filter(Boolean);
+    recomendaciones ? `🎒 ${recomendaciones}` : null,
+    LLEGA_ANTES,
+  ].filter((l): l is string => l !== null);
   // El mensaje entrante (el horario elegido) queda sin leer: el gym ve la reserva en el panel.
-  await enviar(ctx, lineas.join("\n"), [BOTON.menu]);
+  await enviar(ctx, lineas.join("\n"), [
+    { id: `bot_cambiar:${reservaId}`, title: "Cambiar horario" },
+    { id: `bot_cancelar:${reservaId}`, title: "Cancelar clase" },
+    BOTON.menu,
+  ]);
+
+  const { whatsapp_bot_latitud: lat, whatsapp_bot_longitud: lng } = ctx.config;
+  if (lat != null && lng != null) {
+    const waMessageId = await sendWhatsAppUbicacion(ctx.config, { to: ctx.telefono, latitud: lat, longitud: lng, nombre: await ctx.gymNombre(), direccion });
+    await registrar(ctx, `📍 Ubicación${direccion ? `: ${direccion}` : ""}`, waMessageId);
+  }
+}
+
+/** La reserva, solo si es de este teléfono y sigue activa (un botón viejo no opera sobre otra). */
+async function reservaPropia(ctx: Contexto, reservaId: string) {
+  if (!/^[0-9a-f-]{36}$/i.test(reservaId)) return null;
+  const { data } = await ctx.admin
+    .from("reservas_prueba")
+    .select("id, actividad_id, telefono, inicio, estado")
+    .eq("id", reservaId)
+    .eq("gym_id", ctx.gymId)
+    .maybeSingle();
+  if (!data || data.estado !== "activa" || !mismoTelefono(data.telefono, ctx.telefono)) return null;
+  return data;
+}
+
+async function liberar(ctx: Contexto, reservaId: string): Promise<void> {
+  const { error } = await ctx.admin
+    .from("reservas_prueba")
+    .update({ estado: "cancelada", cancelada_at: ctx.ahora.toISOString() })
+    .eq("id", reservaId)
+    .eq("gym_id", ctx.gymId)
+    .eq("estado", "activa");
+  if (error) throw new Error(`No se pudo liberar la reserva: ${error.message}`);
+}
+
+/** "Cambiar horario": libera el lugar y vuelve a mostrar las próximas clases de esa actividad. */
+async function cambiarReserva(ctx: Contexto, reservaId: string): Promise<void> {
+  const reserva = await reservaPropia(ctx, reservaId);
+  if (!reserva) return enviar(ctx, RESERVA_INACTIVA, [BOTON.menu]);
+  await liberar(ctx, reserva.id);
+  return mandarTurnos(ctx, reserva.actividad_id, "Dale 🙌 ¿Qué otro horario te queda bien?");
+}
+
+async function preguntarCancelar(ctx: Contexto, reservaId: string): Promise<void> {
+  const reserva = await reservaPropia(ctx, reservaId);
+  if (!reserva) return enviar(ctx, RESERVA_INACTIVA, [BOTON.menu]);
+  const cuando = describirCuando(cuandoDesdeInicio(reserva.inicio), ctx.ahora);
+  return enviar(ctx, `¿Seguro que querés cancelar tu clase de ${cuando}?`, [
+    { id: `bot_cancelar_si:${reserva.id}`, title: "Sí, cancelar" },
+    { id: `bot_cancelar_no:${reserva.id}`, title: "No" },
+  ]);
+}
+
+async function cancelarReserva(ctx: Contexto, reservaId: string): Promise<void> {
+  const reserva = await reservaPropia(ctx, reservaId);
+  if (!reserva) return enviar(ctx, RESERVA_INACTIVA, [BOTON.menu]);
+  await liberar(ctx, reserva.id);
+  return enviar(ctx, "Listo, cancelamos tu clase de prueba. Cuando quieras, elegí otro horario 🙌", [
+    { id: `bot_prueba:${reserva.actividad_id}`, title: "Elegir otro horario" },
+    BOTON.menu,
+  ]);
+}
+
+async function mantenerReserva(ctx: Contexto, reservaId: string): Promise<void> {
+  const reserva = await reservaPropia(ctx, reservaId);
+  if (!reserva) return enviar(ctx, RESERVA_INACTIVA, [BOTON.menu]);
+  const cuando = describirCuando(cuandoDesdeInicio(reserva.inicio), ctx.ahora);
+  return enviar(ctx, `¡Genial! Te esperamos ${cuando} 💪`, [BOTON.menu]);
 }
 
 /** Respuesta al DNI que mandó la persona (ver ResultadoDni). */
 async function responderDni(ctx: Contexto, r: ResultadoDni): Promise<void> {
   switch (r.estado) {
-    case "no_encontrado": return enviar(ctx, DNI_NO_ENCONTRADO, [BOTON.humano, BOTON.menu]);
-    case "bloqueado": return enviar(ctx, DNI_BLOQUEADO);
-    case "otro_telefono": return enviar(ctx, DNI_OTRO_TELEFONO, [BOTON.menu]);
+    case "no_encontrado": return enviar(ctx, dniNoEncontrado(await ctx.gymNombre()), [BOTON.humano, BOTON.menu]);
+    case "bloqueado": return pasarAPersona(ctx, DNI_BLOQUEADO);
+    // No se muestra nada: podría ser alguien que conoce el DNI de otra persona.
+    case "otro_telefono": return pasarAPersona(ctx, DNI_OTRO_TELEFONO);
     case "ok":
     case "sin_telefono":
       return mandarEstadoCuenta(ctx, r.alumnoId);
   }
 }
 
+/** "Hablar con alguien": el bot deja de responder 12 h y el chat queda sin leer para el gym. */
+async function pasarAPersona(ctx: Contexto, texto: string): Promise<void> {
+  await activarHandoff(ctx.admin, ctx.gymId, ctx.telefono, ctx.ahora);
+  // Para un alumno, "Horarios y precios" no tiene sentido acá: solo el menú (que corta el handoff).
+  await enviar(ctx, texto, ctx.alumnoId ? [BOTON.menu] : [BOTON.info, BOTON.menu]);
+}
+
+/** Alumnos del gym con este teléfono (comparando los últimos 10 dígitos). */
+async function alumnosDelTelefono(ctx: Contexto): Promise<Array<{ id: string; nombre: string; apellido: string }>> {
+  const { data } = await ctx.admin
+    .from("alumnos")
+    .select("id, nombre, apellido, telefono")
+    .eq("gym_id", ctx.gymId)
+    .ilike("telefono", `%${ultimos10(ctx.telefono)}`)
+    .is("deleted_at", null)
+    .order("nombre");
+  return (data ?? []).filter((a) => mismoTelefono(a.telefono, ctx.telefono));
+}
+
+/**
+ * Estado de cuenta: primero por teléfono (sin pedir nada si hay un solo alumno con este
+ * número; lista para elegir si hay varios, ej. una madre con dos hijos). Si el número no
+ * está cargado, pide el DNI.
+ */
+async function pedirCuenta(ctx: Contexto): Promise<void> {
+  const alumnos = await alumnosDelTelefono(ctx);
+  if (alumnos.length === 1) return mandarEstadoCuenta(ctx, alumnos[0].id);
+  if (alumnos.length > 1) {
+    return enviarLista(ctx, "¿De quién querés ver el estado de cuenta? 👇", "Elegir alumno",
+      alumnos.slice(0, 10).map((a) => ({ id: `bot_cuenta_de:${a.id}`, title: nombreCorto(a.nombre, a.apellido) })));
+  }
+  return enviar(ctx, PEDIDO_DNI);
+}
+
+/** Elegido de la lista: se vuelve a validar que ese alumno sea de este teléfono. */
+async function cuentaDe(ctx: Contexto, alumnoId: string): Promise<void> {
+  const alumnos = await alumnosDelTelefono(ctx);
+  if (!alumnos.some((a) => a.id === alumnoId)) return enviar(ctx, PEDIDO_DNI);
+  return mandarEstadoCuenta(ctx, alumnoId);
+}
+
 async function mandarEstadoCuenta(ctx: Contexto, alumnoId: string): Promise<void> {
   const estado = await obtenerEstadoCuenta(ctx.admin, ctx.gymId, alumnoId);
-  if (!estado) return enviar(ctx, RESPUESTA_HUMANO, [BOTON.menu]);
+  if (!estado) return pasarAPersona(ctx, RESPUESTA_HUMANO);
 
-  const porTransferencia = ctx.config.email_modo === "transferencia" && !!ctx.config.transferencia_alias;
+  const alias = ctx.config.transferencia_alias?.trim() || null;
+  const porTransferencia = ctx.config.email_modo === "transferencia" && !!alias;
   const texto = textoEstadoCuenta(estado, porTransferencia
-    ? { modo: "transferencia", alias: ctx.config.transferencia_alias, titular: ctx.config.transferencia_titular }
+    ? { modo: "transferencia", alias, titular: ctx.config.transferencia_titular, cbu: ctx.config.transferencia_cbu }
     : { modo: "link", url: await linkPagarTodo(ctx.gymId, estado) });
 
-  const botones: Boton[] = porTransferencia && estado.pendientes.length > 0
-    ? [BOTON.alias, BOTON.humano, BOTON.menu]
+  if (estado.pendientes.length === 0) return enviarLargo(ctx, texto, [BOTON.menu]);
+
+  const botones: Boton[] = porTransferencia
+    ? [{ id: `${BOTON.transferi.id}:${alumnoId}`, title: BOTON.transferi.title }, BOTON.humano, BOTON.menu]
     : [BOTON.humano, BOTON.menu];
   await enviarLargo(ctx, texto, botones);
+  // El alias solo, en su propio mensaje: con un toque largo se copia entero.
+  if (porTransferencia && alias) await enviar(ctx, alias);
+}
+
+/**
+ * "Ya transferí": desde el estado de cuenta (trae el alumno) o desde la plantilla del aviso
+ * (trae la cuota). En los dos casos se valida que sea de este teléfono.
+ */
+async function yaTransferi(ctx: Contexto, accion: { alumnoId?: string; cuotaId?: string }): Promise<void> {
+  const alumnos = await alumnosDelTelefono(ctx);
+  let alumnoId: string | null = null;
+  let cuotaIds: string[] = [];
+
+  if (accion.cuotaId) {
+    const { data: cuota } = await ctx.admin
+      .from("cuotas")
+      .select("id, alumno_id")
+      .eq("id", accion.cuotaId)
+      .eq("gym_id", ctx.gymId)
+      .maybeSingle();
+    if (cuota && alumnos.some((a) => a.id === cuota.alumno_id)) {
+      alumnoId = cuota.alumno_id;
+      cuotaIds = [cuota.id];
+    }
+  } else if (accion.alumnoId && alumnos.some((a) => a.id === accion.alumnoId)) {
+    alumnoId = accion.alumnoId;
+  } else if (alumnos.length === 1) {
+    alumnoId = alumnos[0].id;
+  }
+
+  if (!alumnoId) return pedirCuenta(ctx);
+  if (cuotaIds.length === 0) {
+    const estado = await obtenerEstadoCuenta(ctx.admin, ctx.gymId, alumnoId);
+    cuotaIds = estado?.pendientes.map((p) => p.id) ?? [];
+  }
+
+  await esperarComprobante(ctx.admin, ctx.gymId, ctx.telefono, { alumnoId, cuotaIds }, ctx.ahora);
+  await enviar(ctx, PEDIDO_COMPROBANTE, [BOTON.menu]);
+}
+
+async function recibirComprobante(ctx: Contexto, a: { alumnoId: string; cuotaIds: string[]; mediaId: string }): Promise<void> {
+  try {
+    await guardarComprobante(ctx.admin, {
+      gymId: ctx.gymId,
+      alumnoId: a.alumnoId,
+      telefono: ctx.telefono,
+      cuotaIds: a.cuotaIds,
+      mediaId: a.mediaId,
+      waMessageId: ctx.mensajeId,
+      accessToken: ctx.config.whatsapp_access_token,
+    });
+  } catch (err) {
+    console.error("[bot-consultas] no se pudo guardar el comprobante — gym:", ctx.gymId, err instanceof Error ? err.message : err);
+    // Sigue esperando: que lo mande de nuevo. El mensaje queda sin leer para el gym igual.
+    await enviar(ctx, COMPROBANTE_ERROR, [BOTON.menu]);
+    return;
+  }
+  await dejarDeEsperarComprobante(ctx.admin, ctx.gymId, ctx.telefono);
+  await enviar(ctx, COMPROBANTE_RECIBIDO, [BOTON.menu]);
 }
 
 async function direccionPrincipal(ctx: Contexto): Promise<string | null> {
@@ -484,6 +812,7 @@ async function enviarLargo(ctx: Contexto, cuerpo: string, botones: Boton[]): Pro
 }
 
 async function enviar(ctx: Contexto, cuerpo: string, botones?: Boton[]): Promise<void> {
+  botones = botones?.slice(0, 3).map((b) => ({ id: b.id, title: truncar(b.title, LIMITES.boton) }));
   const waMessageId = botones?.length
     ? await sendWhatsAppButtons(ctx.config, { to: ctx.telefono, body: cuerpo, buttons: botones })
     : await sendWhatsAppText(ctx.config, { to: ctx.telefono, body: cuerpo });
@@ -496,6 +825,12 @@ async function enviarLista(
   boton: string,
   filas: Array<{ id: string; title: string; description?: string }>,
 ): Promise<void> {
+  boton = truncar(boton, LIMITES.boton);
+  filas = filas.slice(0, 10).map((f) => ({
+    id: f.id,
+    title: truncar(f.title, LIMITES.tituloFila),
+    ...(f.description ? { description: truncar(f.description, LIMITES.descripcionFila) } : {}),
+  }));
   const waMessageId = await sendWhatsAppList(ctx.config, { to: ctx.telefono, body: cuerpo, button: boton, rows: filas });
   await registrar(ctx, `${cuerpo}\n${filas.map((f) => `• ${f.title}${f.description ? ` (${f.description})` : ""}`).join("\n")}`, waMessageId);
 }
@@ -523,6 +858,14 @@ function normalizar(texto: string | undefined): string {
     .replace(/[^a-z ]/g, "")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+const ultimos10 = (tel: string | null | undefined) => (tel ?? "").replace(/\D/g, "").slice(-10);
+
+/** Mismo número si coinciden los últimos 10 dígitos (código de área + número, sin 54/9/0/15). */
+export function mismoTelefono(a: string | null | undefined, b: string | null | undefined): boolean {
+  const x = ultimos10(a);
+  return x.length === 10 && x === ultimos10(b);
 }
 
 /** Primer nombre del perfil de WhatsApp, solo letras ("Juan ⚡ Pérez" → "Juan"). */

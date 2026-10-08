@@ -1,0 +1,56 @@
+{
+  "name": "aviso_cuota_previo_v2",
+  "language": "es_AR",
+  "category": "UTILITY",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "TEXT",
+      "text": "Cuota de {{1}} por vencer",
+      "example": {
+        "header_text": [
+          "BOX CLUB"
+        ]
+      }
+    },
+    {
+      "type": "BODY",
+      "text": "Hola {{1}} 👋, te escribimos de *{{2}}*.\n\nTu cuota de *{{3}}* ({{4}}) vence el *{{5}}*.\n💰 Total: *{{6}}*\n\n💳 Alias para transferir:\n```{{7}}```\n{{8}}\n\nPagá antes del vencimiento así no te olvidás 🙌",
+      "example": {
+        "body_text": [
+          [
+            "Valentina",
+            "BOX CLUB",
+            "octubre 2026",
+            "Cross",
+            "sábado 10/10",
+            "$30.000",
+            "box.club.mp",
+            "👤 Titular: Box Club SRL · 🏦 CBU/CVU: 0000003100012345678901"
+          ]
+        ]
+      }
+    },
+    {
+      "type": "FOOTER",
+      "text": "¿Ya transferiste? Tocá «Ya transferí»."
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "QUICK_REPLY",
+          "text": "Copiar alias"
+        },
+        {
+          "type": "QUICK_REPLY",
+          "text": "Ya transferí"
+        },
+        {
+          "type": "QUICK_REPLY",
+          "text": "Ver mi cuenta"
+        }
+      ]
+    }
+  ]
+}

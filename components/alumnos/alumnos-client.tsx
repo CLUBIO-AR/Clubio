@@ -116,7 +116,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
             {totalPages > 1 && ` · página ${page} de ${totalPages}`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             onClick={() => {
               const params = new URLSearchParams();
@@ -124,7 +124,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
               if (search.trim()) params.set("search", search.trim());
               window.location.href = `/api/alumnos/export?${params.toString()}`;
             }}
-            className="inline-flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-widest transition-opacity hover:opacity-80"
+            className="inline-flex flex-1 sm:flex-none items-center justify-center gap-2 h-10 sm:h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-widest transition-opacity hover:opacity-80"
             style={{ fontFamily: "var(--font-fredoka)", background: "transparent", color: T.textMuted, border: `1px solid ${T.border}` }}
           >
             <Download className="w-3.5 h-3.5" />
@@ -132,7 +132,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
           </button>
           <Link
             href="/dashboard/alumnos/nuevo"
-            className={buttonVariants({ className: "gap-2 font-bold uppercase tracking-widest text-sm hover:opacity-90" })}
+            className={buttonVariants({ className: "flex-1 sm:flex-none h-10 sm:h-9 gap-2 font-bold uppercase tracking-widest text-sm hover:opacity-90" })}
             style={{ fontFamily: "var(--font-fredoka)", background: T.accent, color: T.accentText, border: "none", boxShadow: T.accentGlow }}
           >
             <Plus className="w-4 h-4" /> Nuevo alumno
@@ -142,7 +142,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
 
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative flex-1 min-w-0 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: T.textDim }} />
           <Input
             placeholder="Buscar por nombre o DNI..."
@@ -156,17 +156,17 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
         <button
           onClick={() => applyFilters(search, activo, actividad)}
           disabled={isPending}
-          className="h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-all hover:opacity-80"
+          className="h-10 sm:h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-all hover:opacity-80"
           style={{ fontFamily: "var(--font-fredoka)", background: T.card, border: `1px solid ${T.border}`, color: T.accent }}
         >
           {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Buscar"}
         </button>
-        <div className="flex items-center gap-0.5 rounded-lg p-1" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+        <div className="flex items-center gap-0.5 rounded-lg p-1 w-full sm:w-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
           {TABS.map((tab) => (
             <button
               key={tab.value}
               onClick={() => { setActivo(tab.value); applyFilters(search, tab.value, actividad); }}
-              className="px-3 py-1.5 text-xs rounded-md font-bold uppercase tracking-widest transition-all"
+              className="flex-1 sm:flex-none px-3 py-2 sm:py-1.5 text-xs rounded-md font-bold uppercase tracking-widest transition-all"
               style={{
                 fontFamily: "var(--font-fredoka)",
                 background: activo === tab.value ? T.accent : "transparent",
@@ -180,7 +180,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
         <select
           value={actividad}
           onChange={(e) => { setActividad(e.target.value); applyFilters(search, activo, e.target.value); }}
-          className="h-9 px-3 rounded-lg text-sm"
+          className="h-10 sm:h-9 px-3 rounded-lg text-sm w-full sm:w-auto"
           style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" }}
         >
           <option value="">Todas las actividades</option>
@@ -188,116 +188,113 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
         </select>
       </div>
 
-      {/* Table */}
+      {/* Lista */}
       {alumnos.length === 0 ? <EmptyState search={search} /> : (
-        <div className="rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
-          <Table>
-            <TableHeader>
-              <TableRow style={{ background: T.bg, borderColor: T.border }}>
-                {["Alumno", "DNI", "Contacto", "Alta", "Estado", "Cuota actual", ""].map((h) => (
-                  <TableHead key={h} className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)", borderColor: T.border }}>
-                    {h}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginados.map((alumno) => {
-                const cuotas = (alumno.cuotas ?? []) as CuotaResumen[];
-                const estado = cuotas.length > 0 ? cuotaEstadoPeor(cuotas) : null;
-                const cuotaStyle = estado ? CUOTA_CONFIG[estado] : null;
+        <>
+          {/* Celular: una card por alumno */}
+          <ul className="md:hidden flex flex-col gap-2">
+            {paginados.map((alumno) => {
+              const abrirCuota = () => setModalAlumno({ id: alumno.id!, nombre: `${alumno.apellido}, ${alumno.nombre}` });
+              return (
+                <li
+                  key={alumno.id}
+                  {...filaProps(`/dashboard/alumnos/${alumno.id}`)}
+                  className="rounded-xl p-3 flex flex-col gap-3 cursor-pointer active:opacity-80 focus-visible:outline focus-visible:outline-2"
+                  style={{ background: T.card, border: `1px solid ${T.border}` }}
+                >
+                  <div className="flex items-start gap-3">
+                    <Iniciales alumno={alumno} />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm truncate" style={{ color: T.text }}>{alumno.apellido}, {alumno.nombre}</p>
+                      <p className="text-xs truncate mt-0.5" style={{ color: T.textDim }}>
+                        {[alumno.dni && `DNI ${alumno.dni}`, alumno.telefono ?? alumno.email].filter(Boolean).join(" · ") || "Sin datos de contacto"}
+                      </p>
+                    </div>
+                    <AccionesAlumno
+                      alumno={alumno}
+                      onVer={() => router.push(`/dashboard/alumnos/${alumno.id}`)}
+                      onNuevaCuota={abrirCuota}
+                      onToggleActivo={() => handleToggleActivo(alumno.id!, alumno.activo ?? true)}
+                      onEliminar={() => setDeleteId(alumno.id!)}
+                    />
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <EstadoAlumno activo={!!alumno.activo} />
+                    <CuotaActual cuotas={(alumno.cuotas ?? []) as CuotaResumen[]} onGenerar={abrirCuota} />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
 
-                return (
-                  <TableRow
-                    key={alumno.id}
-                    {...filaProps(`/dashboard/alumnos/${alumno.id}`)}
-                    className="transition-colors cursor-pointer hover:bg-[var(--fila-hover)] focus-visible:outline focus-visible:outline-2"
-                    style={{ borderColor: T.borderSub, ["--fila-hover" as string]: T.cardHover }}
-                  >
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold"
-                          style={{ background: T.accentBg, border: `1px solid ${T.accentBorder}`, color: T.accent, fontFamily: "var(--font-fredoka)" }}>
-                          {(alumno.nombre?.[0] ?? "")}{(alumno.apellido?.[0] ?? "")}
+          {/* Desde tablet: tabla */}
+          <div className="hidden md:block rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+            <Table>
+              <TableHeader>
+                <TableRow style={{ background: T.bg, borderColor: T.border }}>
+                  {["Alumno", "DNI", "Contacto", "Alta", "Estado", "Cuota actual", ""].map((h) => (
+                    <TableHead key={h} className="text-xs uppercase tracking-widest font-bold" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)", borderColor: T.border }}>
+                      {h}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginados.map((alumno) => {
+                  const abrirCuota = () => setModalAlumno({ id: alumno.id!, nombre: `${alumno.apellido}, ${alumno.nombre}` });
+                  return (
+                    <TableRow
+                      key={alumno.id}
+                      {...filaProps(`/dashboard/alumnos/${alumno.id}`)}
+                      className="transition-colors cursor-pointer hover:bg-[var(--fila-hover)] focus-visible:outline focus-visible:outline-2"
+                      style={{ borderColor: T.borderSub, ["--fila-hover" as string]: T.cardHover }}
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Iniciales alumno={alumno} />
+                          <p className="font-semibold text-sm" style={{ color: T.text }}>{alumno.apellido}, {alumno.nombre}</p>
                         </div>
-                        <p className="font-semibold text-sm" style={{ color: T.text }}>{alumno.apellido}, {alumno.nombre}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-mono text-sm" style={{ color: T.textMuted }}>{alumno.dni}</TableCell>
-                    <TableCell className="text-sm" style={{ color: T.textDim }}>
-                      {alumno.email ?? alumno.telefono ?? <span style={{ color: T.textDim, opacity: 0.4 }}>—</span>}
-                    </TableCell>
-                    <TableCell className="text-sm" style={{ color: T.textDim }}>
-                      {alumno.fecha_alta ? new Date(alumno.fecha_alta).toLocaleDateString("es-AR") : "—"}
-                    </TableCell>
-                    <TableCell>
-                      <span className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider"
-                        style={{
-                          fontFamily: "var(--font-fredoka)",
-                          background: alumno.activo ? T.accentBg : `${T.textDim}15`,
-                          color:      alumno.activo ? T.accent   : T.textDim,
-                          border:     `1px solid ${alumno.activo ? T.accentBorder : T.borderSub}`,
-                        }}>
-                        {alumno.activo ? "Activo" : "Inactivo"}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5">
-                        {cuotaStyle ? (
-                          <span className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider"
-                            style={{ fontFamily: "var(--font-fredoka)", background: cuotaStyle.bg, color: cuotaStyle.color, border: `1px solid ${cuotaStyle.border}` }}>
-                            {cuotaStyle.label}
-                          </span>
-                        ) : (
+                      </TableCell>
+                      <TableCell className="font-mono text-sm" style={{ color: T.textMuted }}>{alumno.dni}</TableCell>
+                      <TableCell className="text-sm" style={{ color: T.textDim }}>
+                        {alumno.email ?? alumno.telefono ?? <span style={{ color: T.textDim, opacity: 0.4 }}>—</span>}
+                      </TableCell>
+                      <TableCell className="text-sm" style={{ color: T.textDim }}>
+                        {alumno.fecha_alta ? new Date(alumno.fecha_alta).toLocaleDateString("es-AR") : "—"}
+                      </TableCell>
+                      <TableCell>
+                        <EstadoAlumno activo={!!alumno.activo} />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5">
+                          <CuotaActual cuotas={(alumno.cuotas ?? []) as CuotaResumen[]} onGenerar={abrirCuota} />
+                          {/* Botón + para cuota especial siempre visible */}
                           <button
-                            onClick={(e) => { e.stopPropagation(); setModalAlumno({ id: alumno.id!, nombre: `${alumno.apellido}, ${alumno.nombre}` }); }}
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider transition-colors hover:opacity-80"
-                            style={{ fontFamily: "var(--font-fredoka)", background: `${T.textDim}12`, color: T.textDim, border: `1px solid ${T.borderSub}` }}
+                            title="Nueva cuota especial"
+                            onClick={(e) => { e.stopPropagation(); abrirCuota(); }}
+                            className="w-6 h-6 rounded flex items-center justify-center opacity-40 hover:opacity-100 transition-opacity"
+                            style={{ color: T.accent }}
                           >
-                            <Plus className="w-3 h-3" /> Generar
+                            <Plus className="w-3.5 h-3.5" />
                           </button>
-                        )}
-                        {/* Botón + para cuota especial siempre visible */}
-                        <button
-                          title="Nueva cuota especial"
-                          onClick={(e) => { e.stopPropagation(); setModalAlumno({ id: alumno.id!, nombre: `${alumno.apellido}, ${alumno.nombre}` }); }}
-                          className="w-6 h-6 rounded flex items-center justify-center opacity-40 hover:opacity-100 transition-opacity"
-                          style={{ color: T.accent }}
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger>
-                          <Button variant="ghost" size="icon" className="w-8 h-8" style={{ color: T.textDim }}>
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48" style={{ background: T.card, border: `1px solid ${T.border}` }}>
-                          <DropdownMenuItem onClick={() => router.push(`/dashboard/alumnos/${alumno.id}`)}>
-                            <Eye className="w-3.5 h-3.5" /> Ver detalle
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setModalAlumno({ id: alumno.id!, nombre: `${alumno.apellido}, ${alumno.nombre}` })}>
-                            <Receipt className="w-3.5 h-3.5" /> Nueva cuota especial
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleToggleActivo(alumno.id!, alumno.activo ?? true)}>
-                            {alumno.activo ? <><UserX className="w-3.5 h-3.5" /> Dar de baja</> : <><UserCheck className="w-3.5 h-3.5" /> Reactivar</>}
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator style={{ background: T.border }} />
-                          <DropdownMenuItem variant="destructive" onClick={() => setDeleteId(alumno.id!)}>
-                            Eliminar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <AccionesAlumno
+                          alumno={alumno}
+                          onVer={() => router.push(`/dashboard/alumnos/${alumno.id}`)}
+                          onNuevaCuota={abrirCuota}
+                          onToggleActivo={() => handleToggleActivo(alumno.id!, alumno.activo ?? true)}
+                          onEliminar={() => setDeleteId(alumno.id!)}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
 
       {/* Paginación */}
@@ -310,7 +307,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="w-8 h-8 rounded-lg flex items-center justify-center disabled:opacity-30 hover:opacity-70 transition-opacity"
+              className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center disabled:opacity-30 hover:opacity-70 transition-opacity"
               style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text }}
             >
               <ChevronLeft className="w-4 h-4" />
@@ -319,7 +316,7 @@ export function AlumnosClient({ alumnos, searchDefault, activoDefault, actividad
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="w-8 h-8 rounded-lg flex items-center justify-center disabled:opacity-30 hover:opacity-70 transition-opacity"
+              className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center disabled:opacity-30 hover:opacity-70 transition-opacity"
               style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text }}
             >
               <ChevronRight className="w-4 h-4" />
@@ -373,5 +370,83 @@ function EmptyState({ search }: { search: string }) {
         </p>
       </div>
     </div>
+  );
+}
+
+function Iniciales({ alumno }: { alumno: AlumnoRow }) {
+  return (
+    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold"
+      style={{ background: T.accentBg, border: `1px solid ${T.accentBorder}`, color: T.accent, fontFamily: "var(--font-fredoka)" }}>
+      {(alumno.nombre?.[0] ?? "")}{(alumno.apellido?.[0] ?? "")}
+    </div>
+  );
+}
+
+function EstadoAlumno({ activo }: { activo: boolean }) {
+  return (
+    <span className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider"
+      style={{
+        fontFamily: "var(--font-fredoka)",
+        background: activo ? T.accentBg : `${T.textDim}15`,
+        color:      activo ? T.accent   : T.textDim,
+        border:     `1px solid ${activo ? T.accentBorder : T.borderSub}`,
+      }}>
+      {activo ? "Activo" : "Inactivo"}
+    </span>
+  );
+}
+
+function CuotaActual({ cuotas, onGenerar }: { cuotas: CuotaResumen[]; onGenerar: () => void }) {
+  const estado = cuotas.length > 0 ? cuotaEstadoPeor(cuotas) : null;
+  const cuotaStyle = estado ? CUOTA_CONFIG[estado] : null;
+  if (cuotaStyle) {
+    return (
+      <span className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider"
+        style={{ fontFamily: "var(--font-fredoka)", background: cuotaStyle.bg, color: cuotaStyle.color, border: `1px solid ${cuotaStyle.border}` }}>
+        {cuotaStyle.label}
+      </span>
+    );
+  }
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); onGenerar(); }}
+      className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider transition-colors hover:opacity-80"
+      style={{ fontFamily: "var(--font-fredoka)", background: `${T.textDim}12`, color: T.textDim, border: `1px solid ${T.borderSub}` }}
+    >
+      <Plus className="w-3 h-3" /> Generar
+    </button>
+  );
+}
+
+function AccionesAlumno({ alumno, onVer, onNuevaCuota, onToggleActivo, onEliminar }: {
+  alumno: AlumnoRow;
+  onVer: () => void;
+  onNuevaCuota: () => void;
+  onToggleActivo: () => void;
+  onEliminar: () => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger>
+        <Button variant="ghost" size="icon" className="w-10 h-10 md:w-8 md:h-8" style={{ color: T.textDim }} aria-label="Acciones">
+          <MoreHorizontal className="w-4 h-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+        <DropdownMenuItem onClick={onVer}>
+          <Eye className="w-3.5 h-3.5" /> Ver detalle
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onNuevaCuota}>
+          <Receipt className="w-3.5 h-3.5" /> Nueva cuota especial
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onToggleActivo}>
+          {alumno.activo ? <><UserX className="w-3.5 h-3.5" /> Dar de baja</> : <><UserCheck className="w-3.5 h-3.5" /> Reactivar</>}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator style={{ background: T.border }} />
+        <DropdownMenuItem variant="destructive" onClick={onEliminar}>
+          Eliminar
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

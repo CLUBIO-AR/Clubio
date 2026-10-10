@@ -119,7 +119,7 @@ export function NuevaCuotaModal({ open, onClose, alumnoId, alumnoNombre, mesDefa
           </div>
 
           {/* Período */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label style={labelStyle}>Mes</label>
               <select value={form.mes} onChange={(e) => set("mes", parseInt(e.target.value))} style={inp}>
@@ -136,7 +136,7 @@ export function NuevaCuotaModal({ open, onClose, alumnoId, alumnoNombre, mesDefa
           </div>
 
           {/* Monto + Vencimiento */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label style={labelStyle}>Monto ($) *</label>
               <input type="number" min={0.01} step={0.01} required value={form.monto}

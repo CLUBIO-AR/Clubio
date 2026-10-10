@@ -88,7 +88,7 @@ export default async function AlumnoDetailPage({ params }: { params: Promise<{ i
 
       {/* Info cards */}
       {INFO_ITEMS.length > 0 && (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {INFO_ITEMS.map(({ icon: Icon, label, value }) => (
             <div key={label} className="flex items-center gap-3 p-4 rounded-xl" style={{ background: T.card, border: `1px solid ${T.border}` }}>
               <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: T.accentBg, border: `1px solid ${T.accentBorder}` }}>

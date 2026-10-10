@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Mail, MessageCircle } from "lucide-react";
+import { Mail, MessageCircle, Send } from "lucide-react";
 import { ConfigSection, Field, Input, NumberInput, Toggle, SubBlock, Hint } from "./config-section";
 import { T } from "@/lib/theme";
 
 interface Props {
   emailActivo: boolean;
+  avisosWhatsappActivo: boolean;
   emailRemitenteNombre: string;
   emailRemitenteAddress: string;
   diasAvisoAntes: number[];
@@ -22,7 +23,15 @@ interface Props {
 const parseDias = (s: string, min: number, max: number) =>
   s.split(",").map((d) => parseInt(d.trim())).filter((d) => !isNaN(d) && d >= min && d <= max);
 
-// Avisos a alumnos: un único calendario (vale para email y WhatsApp) + los canales.
+type Canal = "email" | "whatsapp" | "ambos";
+
+function canalInicial(p: Props): Canal {
+  if (!p.whatsappConectado) return "email";
+  if (p.emailActivo && p.avisosWhatsappActivo) return "ambos";
+  return p.avisosWhatsappActivo ? "whatsapp" : "email";
+}
+
+// Avisos a alumnos: un único calendario (vale para email y WhatsApp) + por dónde salen.
 // Antes el calendario vivía dentro de "Notificaciones por email" y desaparecía al apagar el email.
 export function ConfigAvisos(props: Props) {
   const [form, setForm] = useState({
@@ -33,7 +42,7 @@ export function ConfigAvisos(props: Props) {
     maxPost: props.maxAvisosPost.toString(),
     ultimoAvisoActivo: props.diaUltimoAviso != null,
     diaUltimoAviso: props.diaUltimoAviso?.toString() ?? "",
-    emailActivo: props.emailActivo,
+    canal: canalInicial(props),
     remNombre: props.emailRemitenteNombre,
     remEmail: props.emailRemitenteAddress,
   });
@@ -57,13 +66,21 @@ export function ConfigAvisos(props: Props) {
         max_avisos_post: parseInt(form.maxPost) || 0,
         dia_ultimo_aviso: ultimoAvisoDisponible && form.ultimoAvisoActivo && form.diaUltimoAviso
           ? parseInt(form.diaUltimoAviso) : null,
-        email_activo: form.emailActivo,
+        // Sin WhatsApp conectado, los avisos solo pueden salir por email.
+        email_activo: !props.whatsappConectado || form.canal !== "whatsapp",
+        ...(props.whatsappConectado ? { avisos_whatsapp_activo: form.canal !== "email" } : {}),
         email_remitente_nombre: form.remNombre || null,
         email_remitente_address: form.remEmail || null,
       }),
     });
     if (!res.ok) throw new Error((await res.json()).error ?? "Error");
   }
+
+  const CANALES: { val: Canal; label: string; desc: string; icon: typeof Mail }[] = [
+    { val: "email", label: "Email", desc: "A los alumnos con email cargado." },
+    { val: "whatsapp", label: "WhatsApp", desc: "A los alumnos con teléfono cargado." },
+    { val: "ambos", label: "Ambos", desc: "Por email y por WhatsApp." },
+  ].map((c) => ({ ...c, val: c.val as Canal, icon: c.val === "email" ? Mail : c.val === "whatsapp" ? MessageCircle : Send }));
 
   const calendarios = [
     { val: "relativo", label: "Días antes del vencimiento", desc: "Ej: 7, 3 y 1 día antes, y después cada tantos días si sigue impaga." },
@@ -133,48 +150,54 @@ export function ConfigAvisos(props: Props) {
       </SubBlock>
 
       <SubBlock title="Por dónde">
-        <div className="flex items-start gap-3">
-          <Mail className="w-4 h-4 mt-0.5 shrink-0" style={{ color: T.textDim }} />
-          <div className="flex-1 space-y-3">
-            <Toggle
-              checked={form.emailActivo}
-              onChange={(v) => setForm((f) => ({ ...f, emailActivo: v }))}
-              label="Email"
-              description="A los alumnos que tengan email cargado."
-            />
-            {form.emailActivo && (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Field label="Nombre del remitente">
-                    <Input value={form.remNombre} onChange={set("remNombre")} placeholder="Mi Gym" />
-                  </Field>
-                  <Field label="Email remitente (opcional)">
-                    <Input type="email" value={form.remEmail} onChange={set("remEmail")} placeholder="avisos@clubio.com.ar" />
-                  </Field>
-                </div>
-                <Hint>
-                  Dejá el email vacío para enviar desde CLUBIO. Usar uno propio requiere que tu dominio esté verificado
-                  con nosotros; si no, los mails no salen.
-                </Hint>
-              </>
-            )}
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {CANALES.map(({ val, label, desc, icon: Icon }) => {
+            const disponible = val === "email" || props.whatsappConectado;
+            const activo = form.canal === val;
+            return (
+              <button
+                key={val}
+                type="button"
+                disabled={!disponible}
+                onClick={() => setForm((f) => ({ ...f, canal: val }))}
+                className="text-left p-3 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{
+                  background: activo ? T.accentBg : T.card,
+                  border: `1px solid ${activo ? T.accentBorder : T.border}`,
+                }}
+              >
+                <p className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: activo ? T.accent : T.text }}>
+                  <Icon className="w-4 h-4" /> {label}
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: T.textDim }}>{desc}</p>
+              </button>
+            );
+          })}
         </div>
-
-        <div className="flex items-start gap-3 pt-3 border-t" style={{ borderColor: T.borderSub }}>
-          <MessageCircle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: T.textDim }} />
-          <div className="flex-1">
-            <p className="text-sm font-semibold" style={{ color: T.text }}>WhatsApp</p>
-            <p className="text-xs mt-0.5" style={{ color: T.textDim }}>
-              {props.whatsappConectado
-                ? "Conectado: los avisos también salen por WhatsApp a los alumnos con teléfono."
-                : "No conectado. "}
-              <Link href="/dashboard/configuracion?tab=whatsapp" className="font-semibold hover:opacity-70" style={{ color: T.accent }}>
-                {props.whatsappConectado ? "Ver configuración" : "Configurar WhatsApp"}
-              </Link>
-            </p>
+        <Hint>
+          {props.whatsappConectado
+            ? "Vale para los avisos automáticos. Desde cada cuota igual podés mandar el aviso a mano por el canal que quieras."
+            : <>WhatsApp no está conectado, así que los avisos salen por email.{" "}
+                <Link href="/dashboard/configuracion?tab=whatsapp" className="font-semibold hover:opacity-70" style={{ color: T.accent }}>
+                  Configurar WhatsApp
+                </Link></>}
+        </Hint>
+        {form.canal !== "whatsapp" && (
+          <div className="pt-3 border-t space-y-3" style={{ borderColor: T.borderSub }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Nombre del remitente">
+                <Input value={form.remNombre} onChange={set("remNombre")} placeholder="Mi Gym" />
+              </Field>
+              <Field label="Email remitente (opcional)">
+                <Input type="email" value={form.remEmail} onChange={set("remEmail")} placeholder="avisos@clubio.com.ar" />
+              </Field>
+            </div>
+            <Hint>
+              Dejá el email vacío para enviar desde CLUBIO. Usar uno propio requiere que tu dominio esté verificado
+              con nosotros; si no, los mails no salen.
+            </Hint>
           </div>
-        </div>
+        )}
       </SubBlock>
     </ConfigSection>
   );

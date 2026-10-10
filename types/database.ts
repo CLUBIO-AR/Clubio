@@ -243,6 +243,7 @@ export type Database = {
           whatsapp_template_aviso: string | null;
           whatsapp_template_confirmacion: string | null;
           whatsapp_bot_activo: boolean;
+          avisos_whatsapp_activo: boolean;
           whatsapp_bot_bienvenida: string | null;
           whatsapp_bot_info: string | null;
           whatsapp_template_transferencia: string | null;
@@ -297,6 +298,7 @@ export type Database = {
           whatsapp_template_aviso?: string | null;
           whatsapp_template_confirmacion?: string | null;
           whatsapp_bot_activo?: boolean;
+          avisos_whatsapp_activo?: boolean;
           whatsapp_bot_bienvenida?: string | null;
           whatsapp_bot_info?: string | null;
           whatsapp_template_transferencia?: string | null;
@@ -347,6 +349,7 @@ export type Database = {
           whatsapp_template_aviso?: string | null;
           whatsapp_template_confirmacion?: string | null;
           whatsapp_bot_activo?: boolean;
+          avisos_whatsapp_activo?: boolean;
           whatsapp_bot_bienvenida?: string | null;
           whatsapp_bot_info?: string | null;
           whatsapp_template_transferencia?: string | null;

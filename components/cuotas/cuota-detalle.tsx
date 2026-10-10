@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { reenviarAvisoAction, type CanalAviso } from "@/app/actions/avisos";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, User, Calendar, DollarSign, AlertTriangle, CheckCircle, XCircle, Clock, Link2, Copy, Check, RefreshCw } from "lucide-react";
+import { Loader2, User, Calendar, DollarSign, AlertTriangle, CheckCircle, XCircle, Clock, Link2, Copy, Check, RefreshCw, Mail, MessageCircle, ChevronRight } from "lucide-react";
 import { T } from "@/lib/theme";
 
 const MESES = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
@@ -19,7 +21,7 @@ const ESTADO_CONFIG: Record<string, { label: string; bg: string; color: string; 
 };
 
 type Cuota = {
-  id: string; mes: number; anio: number;
+  id: string; alumno_id?: string | null; mes: number; anio: number;
   monto_base: number; monto_recargo: number; monto_total: number;
   estado: string; fecha_vencimiento: string; fecha_pago?: string | null;
   metodo_pago?: string | null; pagado_por?: string | null;
@@ -36,9 +38,10 @@ interface CuotaDetalleProps {
   cuota: Cuota;
   pagos: Pago[];
   accionDefault?: string;
+  whatsappConectado?: boolean;
 }
 
-export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps) {
+export function CuotaDetalle({ cuota, pagos, accionDefault, whatsappConectado = false }: CuotaDetalleProps) {
   const router = useRouter();
   const est = ESTADO_CONFIG[cuota.estado] ?? ESTADO_CONFIG.pendiente;
   const EstIcon = est.icon;
@@ -59,7 +62,26 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
   const [verificarLoading, setVerificarLoading] = useState(false);
   const [verificarInput, setVerificarInput] = useState("");
 
+  const [enviando, setEnviando] = useState<CanalAviso | null>(null);
+  const [avisoMsg, setAvisoMsg] = useState<string | null>(null);
+
   const canPay = cuota.estado === "pendiente" || cuota.estado === "vencida";
+  const canAvisar = cuota.estado !== "pagada" && cuota.estado !== "condonada";
+
+  async function handleEnviarAviso(canal: CanalAviso) {
+    setError(null);
+    setAvisoMsg(null);
+    setEnviando(canal);
+    try {
+      const r = await reenviarAvisoAction(cuota.id, { canal });
+      if (!r.ok) setError(r.error);
+      else setAvisoMsg(canal === "email" ? "Aviso enviado por email" : "Aviso enviado por WhatsApp");
+    } catch {
+      setError("Error de red al enviar el aviso");
+    } finally {
+      setEnviando(null);
+    }
+  }
   const canCondonar = cuota.estado !== "pagada" && cuota.estado !== "condonada";
 
   async function handlePagar() {
@@ -157,16 +179,17 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
       <div className="grid grid-cols-2 gap-3">
         {/* Alumno */}
         {cuota.alumnos && (
-          <div className="col-span-2 flex items-center gap-3 p-4 rounded-xl" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+          <AlumnoCard alumnoId={cuota.alumno_id ?? null}>
             <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: T.accentBg, border: `1px solid ${T.accentBorder}` }}>
               <User className="w-4 h-4" style={{ color: T.accent }} />
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <p className="text-xs uppercase tracking-wider mb-0.5" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>Alumno</p>
-              <p className="font-bold" style={{ color: T.text }}>{cuota.alumnos.apellido}, {cuota.alumnos.nombre}</p>
+              <p className="font-bold truncate" style={{ color: T.text }}>{cuota.alumnos.apellido}, {cuota.alumnos.nombre}</p>
               <p className="text-xs font-mono" style={{ color: T.textMuted }}>DNI {cuota.alumnos.dni}</p>
             </div>
-          </div>
+            {cuota.alumno_id && <ChevronRight className="w-4 h-4 shrink-0" style={{ color: T.textDim }} />}
+          </AlumnoCard>
         )}
 
         {/* Monto */}
@@ -232,6 +255,37 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
               style={{ fontFamily: "var(--font-fredoka)", background: `${T.danger}12`, color: T.danger, border: `1px solid ${T.danger}25` }}>
               <XCircle className="w-4 h-4" /> Condonar cuota
             </button>
+          )}
+        </div>
+      )}
+
+      {/* Aviso manual: un botón por canal, así no se manda duplicado */}
+      {accion === "none" && canAvisar && (
+        <div className="space-y-2">
+          <p className="text-xs uppercase tracking-wider" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>Mandar aviso de la cuota</p>
+          <div className="flex gap-3 flex-wrap">
+            <button onClick={() => handleEnviarAviso("email")} disabled={enviando !== null || !cuota.alumnos?.email}
+              title={cuota.alumnos?.email ? undefined : "El alumno no tiene email cargado"}
+              className="flex items-center gap-2 h-10 px-5 rounded-lg font-bold uppercase tracking-widest text-sm transition-all hover:opacity-90 disabled:opacity-40"
+              style={{ fontFamily: "var(--font-fredoka)", background: T.card, color: T.text, border: `1px solid ${T.border}` }}>
+              {enviando === "email" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />} Por email
+            </button>
+            {whatsappConectado && (
+              <button onClick={() => handleEnviarAviso("whatsapp")} disabled={enviando !== null || !cuota.alumnos?.telefono}
+                title={cuota.alumnos?.telefono ? undefined : "El alumno no tiene teléfono cargado"}
+                className="flex items-center gap-2 h-10 px-5 rounded-lg font-bold uppercase tracking-widest text-sm transition-all hover:opacity-90 disabled:opacity-40"
+                style={{ fontFamily: "var(--font-fredoka)", background: T.card, color: T.text, border: `1px solid ${T.border}` }}>
+                {enviando === "whatsapp" ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />} Por WhatsApp
+              </button>
+            )}
+          </div>
+          {error && (
+            <p className="text-sm px-3 py-2 rounded-lg" style={{ background: `${T.danger}12`, color: T.danger, border: `1px solid ${T.danger}25` }}>{error}</p>
+          )}
+          {avisoMsg && (
+            <p className="flex items-center gap-1.5 text-sm" style={{ color: T.accent }}>
+              <Check className="w-4 h-4" /> {avisoMsg}
+            </p>
           )}
         </div>
       )}
@@ -368,5 +422,17 @@ export function CuotaDetalle({ cuota, pagos, accionDefault }: CuotaDetalleProps)
         </div>
       )}
     </div>
+  );
+}
+
+// La tarjeta del alumno lleva a su ficha cuando conocemos su id.
+function AlumnoCard({ alumnoId, children }: { alumnoId: string | null; children: React.ReactNode }) {
+  const className = "col-span-2 flex items-center gap-3 p-4 rounded-xl";
+  const style = { background: T.card, border: `1px solid ${T.border}` };
+  if (!alumnoId) return <div className={className} style={style}>{children}</div>;
+  return (
+    <Link href={`/dashboard/alumnos/${alumnoId}`} className={`${className} transition-opacity hover:opacity-80`} style={style}>
+      {children}
+    </Link>
   );
 }

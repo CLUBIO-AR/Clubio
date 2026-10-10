@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   // Config del gym
   const { data: gymConfig } = await admin
     .from("gym_config")
-    .select("email_activo, whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, whatsapp_template_aviso, whatsapp_template_confirmacion, whatsapp_template_transferencia, email_color_acento, email_templates, email_remitente_nombre, email_remitente_address, dias_aviso_fijos, dia_vencimiento_mensual, dia_ultimo_aviso, recargo_1_porcentaje, email_modo, transferencia_alias, transferencia_titular, transferencia_banco, transferencia_cbu, dias_aviso_antes, aviso_post_vencimiento_dias, max_avisos_post")
+    .select("email_activo, whatsapp_activo, avisos_whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, whatsapp_template_aviso, whatsapp_template_confirmacion, whatsapp_template_transferencia, email_color_acento, email_templates, email_remitente_nombre, email_remitente_address, dias_aviso_fijos, dia_vencimiento_mensual, dia_ultimo_aviso, recargo_1_porcentaje, email_modo, transferencia_alias, transferencia_titular, transferencia_banco, transferencia_cbu, dias_aviso_antes, aviso_post_vencimiento_dias, max_avisos_post")
     .eq("gym_id", gym_id)
     .single();
 
@@ -557,6 +557,7 @@ async function avisosWhatsApp(
   gym: { nombre: string; logo_url: string | null },
   gymConfig: {
     whatsapp_activo: boolean | null;
+    avisos_whatsapp_activo: boolean | null;
     whatsapp_phone_number_id: string | null;
     whatsapp_access_token: string | null;
     whatsapp_template_aviso: string | null;
@@ -576,7 +577,9 @@ async function avisosWhatsApp(
     max_avisos_post: number | null;
   },
 ) {
-  if (!gymConfig.whatsapp_activo) return;
+  // whatsapp_activo = WhatsApp conectado (inbox/bot). avisos_whatsapp_activo = el gym eligió
+  // mandar los avisos de cuota también (o solo) por WhatsApp.
+  if (!gymConfig.whatsapp_activo || gymConfig.avisos_whatsapp_activo === false) return;
   try {
     const ahora = new Date();
     const modo: ModoCalendario = gymConfig.dias_aviso_fijos?.length

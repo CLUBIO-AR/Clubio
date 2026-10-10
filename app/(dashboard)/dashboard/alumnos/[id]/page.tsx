@@ -11,6 +11,7 @@ import { linkPagarTodo, obtenerEstadoCuenta, textoEstadoCuenta } from "@/lib/est
 import { ChevronLeft, Calendar, Phone, Mail, FileText, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { T } from "@/lib/theme";
+import { whatsappConfigurado } from "@/lib/whatsapp-config";
 
 export default async function AlumnoDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -27,7 +28,7 @@ export default async function AlumnoDetailPage({ params }: { params: Promise<{ i
     supabase.from("alumno_actividades").select("id, actividad_id, monto_personalizado, activa, actividades(id, nombre, monto_base, color)").eq("alumno_id", id).eq("gym_id", ctx.gymId),
     supabase.from("actividades").select("id, nombre, monto_base, color").eq("gym_id", ctx.gymId).eq("activa", true).is("deleted_at", null).order("nombre"),
     obtenerEstadoCuenta(supabase, ctx.gymId, id),
-    supabase.from("gym_config").select("email_modo, transferencia_alias, transferencia_titular, transferencia_cbu").eq("gym_id", ctx.gymId).maybeSingle(),
+    supabase.from("gym_config").select("email_modo, transferencia_alias, transferencia_titular, transferencia_cbu, whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token").eq("gym_id", ctx.gymId).maybeSingle(),
     supabase.from("cuentas_cobro_alumno").select("alias, cvu").eq("gym_id", ctx.gymId).eq("alumno_id", id).is("deleted_at", null).maybeSingle(),
   ]);
 
@@ -117,7 +118,7 @@ export default async function AlumnoDetailPage({ params }: { params: Promise<{ i
 
       {/* Cuotas */}
       {cuotasRes.data && cuotasRes.data.length > 0 && (
-        <AlumnoCuotasList cuotas={cuotasRes.data} alumnoId={id} telefono={alumno.telefono} />
+        <AlumnoCuotasList cuotas={cuotasRes.data} alumnoId={id} telefono={alumno.telefono} email={alumno.email} whatsappConectado={whatsappConfigurado(cobroRes.data)} />
       )}
 
       {/* Actividades */}

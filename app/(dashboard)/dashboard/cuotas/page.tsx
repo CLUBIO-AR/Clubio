@@ -3,6 +3,7 @@ import { getGymContext } from "@/lib/supabase/auth";
 import { getCuotas } from "@/lib/cuotas";
 import type { CuotaEstado } from "@/lib/cuotas";
 import { CuotasClient } from "@/components/cuotas/cuotas-client";
+import { whatsappConfigurado } from "@/lib/whatsapp-config";
 
 export default async function CuotasPage({
   searchParams,
@@ -21,9 +22,10 @@ export default async function CuotasPage({
   const search     = sp.search ?? "";
   const actividadId = sp.actividad ?? "";
 
-  const [cuotasRes, actividadesRes] = await Promise.all([
+  const [cuotasRes, actividadesRes, waConfigRes] = await Promise.all([
     getCuotas(supabase, ctx.gymId, { mes, anio, estado, search, alumnoId: sp.alumno, actividadId: actividadId || undefined }),
     supabase.from("actividades").select("id, nombre, color").eq("gym_id", ctx.gymId).order("nombre"),
+    supabase.from("gym_config").select("whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token").eq("gym_id", ctx.gymId).maybeSingle(),
   ]);
 
   const actividades = actividadesRes.data ?? [];
@@ -54,6 +56,7 @@ export default async function CuotasPage({
       actividadDefault={actividadId}
       actividades={actividades}
       stats={{ total, pagadas, vencidas, pendientes, totalCobrado }}
+      whatsappConectado={whatsappConfigurado(waConfigRes.data)}
     />
   );
 }

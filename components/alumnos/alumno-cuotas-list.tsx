@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Bell, Loader2, MessageCircle } from "lucide-react";
+import { Loader2, Mail, MessageCircle } from "lucide-react";
 import { T } from "@/lib/theme";
-import { reenviarAvisoAction } from "@/app/actions/avisos";
+import { reenviarAvisoAction, type CanalAviso } from "@/app/actions/avisos";
 import { useFilaLink } from "@/lib/hooks/use-fila-link";
 
 const ESTADO_STYLES: Record<string, { bg: string; color: string }> = {
@@ -28,20 +28,24 @@ export function AlumnoCuotasList({
   cuotas,
   alumnoId,
   telefono,
+  email,
+  whatsappConectado = false,
 }: {
   cuotas: Cuota[];
   alumnoId: string;
   telefono?: string | null;
+  email?: string | null;
+  whatsappConectado?: boolean;
 }) {
   const filaProps = useFilaLink();
   const [enviando, setEnviando] = useState<string | null>(null);
 
-  async function reenviarAviso(cuotaId: string) {
-    setEnviando(cuotaId);
+  async function reenviarAviso(cuotaId: string, canal: CanalAviso) {
+    setEnviando(`${cuotaId}:${canal}`);
     try {
-      const result = await reenviarAvisoAction(cuotaId);
+      const result = await reenviarAvisoAction(cuotaId, { canal });
       if (!result.ok) alert(result.error);
-      else alert(`Aviso enviado por: ${result.data.canales.join(", ")}`);
+      else alert(canal === "email" ? "Aviso enviado por email" : "Aviso enviado por WhatsApp");
     } catch {
       alert("Error de red al reenviar el aviso");
     } finally {
@@ -82,16 +86,25 @@ export function AlumnoCuotasList({
                 <span className="px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider" style={{ fontFamily: "var(--font-fredoka)", background: s.bg, color: s.color, border: `1px solid ${s.color}30` }}>
                   {c.estado.replace("_", " ")}
                 </span>
-                {puedeAvisar && (
-                  <button
-                    onClick={() => reenviarAviso(c.id)}
-                    disabled={enviando === c.id}
-                    title="Reenviar aviso (mail/WhatsApp)"
-                    className="w-7 h-7 rounded-md flex items-center justify-center transition-opacity hover:opacity-70 disabled:opacity-40"
-                    style={{ background: T.accentBg, border: `1px solid ${T.accentBorder}`, color: T.accent }}
+                {puedeAvisar && email && (
+                  <BotonAviso
+                    titulo="Enviar aviso por email"
+                    cargando={enviando === `${c.id}:email`}
+                    deshabilitado={enviando !== null}
+                    onClick={() => reenviarAviso(c.id, "email")}
                   >
-                    {enviando === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
-                  </button>
+                    <Mail className="w-3.5 h-3.5" />
+                  </BotonAviso>
+                )}
+                {puedeAvisar && whatsappConectado && telefono && (
+                  <BotonAviso
+                    titulo="Enviar aviso por WhatsApp"
+                    cargando={enviando === `${c.id}:whatsapp`}
+                    deshabilitado={enviando !== null}
+                    onClick={() => reenviarAviso(c.id, "whatsapp")}
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                  </BotonAviso>
                 )}
               </div>
             </div>
@@ -104,5 +117,26 @@ export function AlumnoCuotasList({
         </Link>
       </div>
     </div>
+  );
+}
+
+function BotonAviso({ titulo, cargando, deshabilitado, onClick, children }: {
+  titulo: string;
+  cargando: boolean;
+  deshabilitado: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={deshabilitado}
+      title={titulo}
+      aria-label={titulo}
+      className="w-9 h-9 md:w-7 md:h-7 rounded-md flex items-center justify-center transition-opacity hover:opacity-70 disabled:opacity-40"
+      style={{ background: T.accentBg, border: `1px solid ${T.accentBorder}`, color: T.accent }}
+    >
+      {cargando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : children}
+    </button>
   );
 }

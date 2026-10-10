@@ -18,12 +18,13 @@ export async function enviarAvisoCuotaInmediato(params: {
   const [gymRes, configRes] = await Promise.all([
     admin.from("gyms").select("nombre, logo_url").eq("id", params.gymId).single(),
     admin.from("gym_config")
-      .select("email_activo, email_templates, email_color_acento")
+      .select("email_activo, avisos_email_activo, email_templates, email_color_acento")
       .eq("gym_id", params.gymId)
       .single(),
   ]);
 
-  if (!gymRes.data || !configRes.data?.email_activo) return;
+  // Es un aviso de cuota: respeta el canal elegido para avisos (puede ser solo WhatsApp).
+  if (!gymRes.data || !configRes.data?.email_activo || configRes.data.avisos_email_activo === false) return;
 
   const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
   const appUrl = process.env.NEXT_PUBLIC_APP_URL!;

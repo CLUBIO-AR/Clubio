@@ -11,9 +11,9 @@ import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { NuevaCuotaModal } from "@/components/cuotas/nueva-cuota-modal";
-import { Search, MoreHorizontal, Eye, CheckCircle, XCircle, ChevronLeft, ChevronRight, Loader2, Receipt, Plus, Bell } from "lucide-react";
+import { Search, MoreHorizontal, Eye, CheckCircle, XCircle, ChevronLeft, ChevronRight, Loader2, Receipt, Plus, Mail, MessageCircle } from "lucide-react";
 import { T } from "@/lib/theme";
-import { reenviarAvisoAction } from "@/app/actions/avisos";
+import { reenviarAvisoAction, type CanalAviso } from "@/app/actions/avisos";
 
 const MESES_LARGO = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
@@ -35,6 +35,7 @@ const TABS = [
 interface Stats { total: number; pagadas: number; vencidas: number; pendientes: number; totalCobrado: number; }
 
 interface CuotasClientProps {
+  whatsappConectado?: boolean;
   actividades: { id: string; nombre: string; color: string }[];
   actividadDefault: string;
   cuotas: Array<{
@@ -53,7 +54,7 @@ interface CuotasClientProps {
   stats: Stats;
 }
 
-export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, actividadDefault, actividades, stats }: CuotasClientProps) {
+export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, actividadDefault, actividades, stats, whatsappConectado = false }: CuotasClientProps) {
   const router = useRouter();
   const filaProps = useFilaLink();
   const [search, setSearch]       = useState(searchDefault);
@@ -66,18 +67,19 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
   const [modalAlumno, setModalAlumno] = useState<{ id: string; nombre: string } | null>(null);
   const [enviandoAviso, setEnviandoAviso] = useState<string | null>(null);
 
-  async function reenviarAviso(cuotaId: string) {
+  async function reenviarAviso(cuotaId: string, canal: CanalAviso) {
     setEnviandoAviso(cuotaId);
     try {
-      const result = await reenviarAvisoAction(cuotaId);
+      const result = await reenviarAvisoAction(cuotaId, { canal });
       if (!result.ok) alert(result.error);
-      else alert(`Aviso enviado por: ${result.data.canales.join(", ")}`);
+      else alert(canal === "email" ? "Aviso enviado por email" : "Aviso enviado por WhatsApp");
     } catch {
-      alert("Error de red al reenviar el aviso");
+      alert("Error de red al enviar el aviso");
     } finally {
       setEnviandoAviso(null);
     }
   }
+
 
   const totalPages = Math.max(1, Math.ceil(cuotas.length / PAGE_SIZE));
   const paginadas  = cuotas.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -140,10 +142,17 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
             </DropdownMenuItem>
           )}
           {c.estado !== "pagada" && c.estado !== "condonada" && (
-            <DropdownMenuItem disabled={enviandoAviso === c.id} onClick={() => reenviarAviso(c.id)}>
+            <DropdownMenuItem disabled={enviandoAviso === c.id} onClick={() => reenviarAviso(c.id, "email")}>
               {enviandoAviso === c.id
                 ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                : <Bell className="w-3.5 h-3.5" />} Reenviar aviso (mail/WhatsApp)
+                : <Mail className="w-3.5 h-3.5" />} Enviar aviso por email
+            </DropdownMenuItem>
+          )}
+          {whatsappConectado && c.estado !== "pagada" && c.estado !== "condonada" && (
+            <DropdownMenuItem disabled={enviandoAviso === c.id} onClick={() => reenviarAviso(c.id, "whatsapp")}>
+              {enviandoAviso === c.id
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : <MessageCircle className="w-3.5 h-3.5" />} Enviar aviso por WhatsApp
             </DropdownMenuItem>
           )}
           {c.estado !== "pagada" && c.estado !== "condonada" && (

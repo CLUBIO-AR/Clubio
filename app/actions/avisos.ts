@@ -12,12 +12,15 @@ type ActionResult<T = undefined> =
   | { ok: true; data: T }
   | { ok: false; error: string };
 
-// Reenvío manual del aviso de vencimiento de una cuota puntual (email + WhatsApp según
-// lo que tenga activo el gym) — útil para pruebas o cuando un alumno pide que se lo
-// reenvíen. No depende de las ventanas de fecha del cron (enviar-avisos-gym).
+export type CanalAviso = "email" | "whatsapp";
+
+// Reenvío manual del aviso de vencimiento de una cuota puntual — útil cuando un alumno
+// pide que se lo reenvíen. No depende de las ventanas de fecha del cron (enviar-avisos-gym).
+// Con `canal` manda SOLO por ese canal (botones "Enviar por email/WhatsApp", así no se
+// duplica el aviso); sin `canal` respeta los canales configurados para avisos del gym.
 export async function reenviarAvisoAction(
   cuotaId: string,
-  opciones?: { soloWhatsapp?: boolean }
+  opciones?: { canal?: CanalAviso }
 ): Promise<ActionResult<{ canales: string[] }>> {
   const ctx = await getGymContext();
   if (!ctx) return { ok: false, error: "Unauthorized" };
@@ -32,7 +35,7 @@ export async function reenviarAvisoAction(
       .single(),
     admin.from("gyms").select("nombre, logo_url").eq("id", ctx.gymId).single(),
     admin.from("gym_config")
-      .select("email_activo, email_remitente_nombre, email_remitente_address, email_templates, email_color_acento, whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, whatsapp_template_aviso, whatsapp_template_confirmacion, whatsapp_template_transferencia, email_modo, transferencia_alias")
+      .select("email_activo, email_remitente_nombre, email_remitente_address, email_templates, email_color_acento, avisos_email_activo, whatsapp_activo, avisos_whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, whatsapp_template_aviso, whatsapp_template_confirmacion, whatsapp_template_transferencia, email_modo, transferencia_alias")
       .eq("gym_id", ctx.gymId)
       .single(),
   ]);
@@ -43,6 +46,19 @@ export async function reenviarAvisoAction(
   const alumno = cuota.alumnos as unknown as { nombre: string; email: string | null; telefono: string | null };
   const actividad = cuota.actividades as unknown as { nombre: string | null } | null;
   if (!alumno?.email && !alumno?.telefono) return { ok: false, error: "El alumno no tiene email ni teléfono cargado" };
+
+  const canal = opciones?.canal;
+  if (canal === "email" && !alumno.email) return { ok: false, error: "El alumno no tiene email cargado" };
+  if (canal === "whatsapp" && !alumno.telefono) return { ok: false, error: "El alumno no tiene teléfono cargado" };
+  if (canal === "whatsapp" && !gymConfig.whatsapp_activo) return { ok: false, error: "WhatsApp no está conectado. Configuralo en Configuración → WhatsApp." };
+
+  // Pedido explícito de un canal: va solo por ese, aunque los avisos automáticos usen otro.
+  const emailActivo = canal === "email" ? true
+    : canal === "whatsapp" ? false
+    : (gymConfig.email_activo ?? true) && (gymConfig.avisos_email_activo ?? true);
+  const whatsappActivo = canal === "whatsapp" ? true
+    : canal === "email" ? false
+    : (gymConfig.whatsapp_activo ?? false) && (gymConfig.avisos_whatsapp_activo ?? true);
 
   const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
   const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
@@ -58,11 +74,11 @@ export async function reenviarAvisoAction(
     .sign(secret);
 
   const notifConfig: GymNotificationConfig = {
-    email_activo:              opciones?.soloWhatsapp ? false : (gymConfig.email_activo ?? true),
+    email_activo:              emailActivo,
     email_remitente_nombre:    gymConfig.email_remitente_nombre,
     email_remitente_address:   gymConfig.email_remitente_address,
     email_templates:           (gymConfig.email_templates as EmailTemplates | null) ?? null,
-    whatsapp_activo:           gymConfig.whatsapp_activo ?? false,
+    whatsapp_activo:           whatsappActivo,
     whatsapp_phone_number_id:  gymConfig.whatsapp_phone_number_id,
     whatsapp_access_token:     gymConfig.whatsapp_access_token,
     whatsapp_template_aviso:         gymConfig.whatsapp_template_aviso,
@@ -158,5 +174,5 @@ export async function enviarAvisoCuotaPorTelefonoAction(telefono: string): Promi
   if (!cuota) return { ok: false, error: alumnos.length > 1 ? "Ninguno de los alumnos con este teléfono tiene cuotas pendientes" : "Este alumno no tiene cuotas pendientes" };
 
   // Disparado desde el chat de WhatsApp — no tiene sentido mandar también el email acá.
-  return reenviarAvisoAction(cuota.id, { soloWhatsapp: true });
+  return reenviarAvisoAction(cuota.id, { canal: "whatsapp" });
 }

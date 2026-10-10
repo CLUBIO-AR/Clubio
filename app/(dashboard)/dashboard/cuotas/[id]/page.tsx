@@ -5,6 +5,7 @@ import { CuotaDetalle } from "@/components/cuotas/cuota-detalle";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { T } from "@/lib/theme";
+import { whatsappConfigurado } from "@/lib/whatsapp-config";
 
 export default async function CuotaDetailPage({
   params,
@@ -22,12 +23,19 @@ export default async function CuotaDetailPage({
   const { data: cuota } = await getCuotaById(supabase, ctx.gymId, id);
   if (!cuota) notFound();
 
-  // Historial de pagos de esta cuota
-  const { data: pagos } = await supabase
-    .from("pagos")
-    .select("id, monto, metodo, created_at, registrado_por, mp_payment_id")
-    .eq("cuota_id", id)
-    .order("created_at", { ascending: false });
+  // Historial de pagos de esta cuota + si el gym tiene WhatsApp para el botón de aviso
+  const [{ data: pagos }, { data: waConfig }] = await Promise.all([
+    supabase
+      .from("pagos")
+      .select("id, monto, metodo, created_at, registrado_por, mp_payment_id")
+      .eq("cuota_id", id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("gym_config")
+      .select("whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token")
+      .eq("gym_id", ctx.gymId)
+      .maybeSingle(),
+  ]);
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -44,6 +52,7 @@ export default async function CuotaDetailPage({
         cuota={cuota as Parameters<typeof CuotaDetalle>[0]["cuota"]}
         pagos={pagos ?? []}
         accionDefault={accion}
+        whatsappConectado={whatsappConfigurado(waConfig)}
       />
     </div>
   );

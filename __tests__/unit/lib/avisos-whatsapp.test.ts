@@ -18,7 +18,7 @@ vi.mock("@/lib/notifications/channels/whatsapp", async () => {
 vi.mock("@/lib/notifications", () => ({ sendNotification: (...a: unknown[]) => sendNotification(...a) }));
 
 import {
-  armarAvisoTransferencia, claveEtapa, dentroDeHorario, diasHasta, enviarAvisosWhatsApp, etapaDeHoy,
+  armarAvisoTransferencia, claveEtapa, dentroDeHorario, diasHasta, enviarAvisosWhatsApp, enviarAvisoWhatsAppManual, etapaDeHoy, etapaSegunVencimiento,
   etapaSegunModo, fechaAviso, limpiarParametro, mesAnio, PLANTILLAS, type CuotaAviso, type ConfigAvisos,
 } from "@/lib/notifications/avisos-whatsapp";
 import { WhatsAppPlantillaNoDisponible } from "@/lib/notifications/channels/whatsapp";
@@ -213,5 +213,36 @@ describe("enviarAvisosWhatsApp", () => {
     expect(r.enviados).toBe(1);
     expect(sendNotification.mock.calls[0][1]).toMatchObject({ type: "aviso_vencimiento", cuota: { monto_total: 30000, actividad_nombre: "Cross" } });
     expect((inserts.find((i) => i.table === "avisos_whatsapp_enviados")?.row as Array<{ plantilla: string }>)[0].plantilla).toBe("aviso_cuota_transferencia");
+  });
+});
+
+describe("enviarAvisoWhatsAppManual", () => {
+  beforeEach(() => { sendWhatsAppPlantilla.mockReset(); sendNotification.mockReset(); });
+
+  const cuota = { id: "c1", mes: 10, anio: 2026, monto_total: 30000, monto_base: 30000, fecha_vencimiento: "2026-10-10", actividad: "Cross", recargoPct: null };
+  const alumno = { id: "a1", nombre: "Ana", telefono: "3624000000" };
+
+  it("arma el mensaje igual que el cron (plantilla nueva con encabezado y botones)", async () => {
+    sendWhatsAppPlantilla.mockResolvedValue("wamid.m");
+    const { admin, inserts } = fakeAdmin();
+    const r = await enviarAvisoWhatsAppManual(admin, { gymId: "g", config: CONFIG, alumno, cuota, ahora: MEDIODIA });
+    expect(r).toMatchObject({ ok: true, waMessageId: "wamid.m", plantilla: PLANTILLAS.previo });
+    expect(sendWhatsAppPlantilla.mock.calls[0][1]).toMatchObject({ plantilla: PLANTILLAS.previo, header: ["BOX CLUB"], quickReplies: ["alias", "transferi:c1", "cuenta"] });
+    expect(sendNotification).not.toHaveBeenCalled();
+    // Manual: no registra la etapa del calendario.
+    expect(inserts.find((i) => i.table === "avisos_whatsapp_enviados")).toBeUndefined();
+  });
+
+  it("manda aunque sea de noche y elige la plantilla según el vencimiento", async () => {
+    sendWhatsAppPlantilla.mockResolvedValue("wamid.n");
+    const { admin } = fakeAdmin();
+    const r = await enviarAvisoWhatsAppManual(admin, { gymId: "g", config: CONFIG, alumno, cuota: { ...cuota, fecha_vencimiento: "2026-10-01" }, ahora: new Date("2026-10-08T02:00:00Z") });
+    expect(r).toMatchObject({ ok: true, plantilla: PLANTILLAS.vencida });
+  });
+
+  it("etapaSegunVencimiento", () => {
+    expect(etapaSegunVencimiento("2026-10-10", HOY)).toEqual({ tipo: "previo", dias: 3 });
+    expect(etapaSegunVencimiento("2026-10-07", HOY)).toEqual({ tipo: "hoy", dias: 0 });
+    expect(etapaSegunVencimiento("2026-10-01", HOY).tipo).toBe("vencida");
   });
 });

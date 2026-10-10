@@ -314,6 +314,50 @@ export async function enviarAvisosWhatsApp(
 
 type Envio = { ok: boolean; waMessageId?: string; plantilla: string; error?: string };
 
+/** Etapa de una cuota según su vencimiento (para avisos manuales, sin mirar el calendario). */
+export function etapaSegunVencimiento(fechaVencimiento: string, hoy: string): Etapa {
+  const dias = diasHasta(fechaVencimiento, hoy);
+  return { tipo: dias > 0 ? "previo" : dias === 0 ? "hoy" : "vencida", dias };
+}
+
+/**
+ * Aviso de UNA cuota por WhatsApp, mandado a mano desde el dashboard. Arma el mensaje igual
+ * que el cron (mismas plantillas y parámetros), para que no falle con "Number of parameters
+ * does not match". No mira el horario ni registra la etapa: es un pedido explícito del gym.
+ */
+export async function enviarAvisoWhatsAppManual(
+  admin: Admin,
+  args: {
+    gymId: string;
+    config: ConfigAvisos;
+    alumno: { id: string; nombre: string; telefono: string };
+    cuota: { id: string; mes: number; anio: number; monto_total: number | null; monto_base: number | null; fecha_vencimiento: string; actividad: string | null; recargoPct: number | null };
+    ahora?: Date;
+  },
+): Promise<Envio> {
+  const ahora = args.ahora ?? new Date();
+  const { fecha: hoy } = ahoraArgentina(ahora);
+  const c = args.cuota;
+  const cuota: CuotaAviso = {
+    id: c.id, mes: c.mes, anio: c.anio,
+    montoTotal: Number(c.monto_total ?? 0),
+    montoBase: Number(c.monto_base ?? c.monto_total ?? 0),
+    fechaVencimiento: c.fecha_vencimiento,
+    actividad: c.actividad,
+    recargoPct: Number(c.recargoPct ?? args.config.recargoPctGym ?? 0),
+    etapa: etapaSegunVencimiento(c.fecha_vencimiento, hoy),
+  };
+  const grupo: GrupoAviso = {
+    alumnoId: args.alumno.id, nombre: args.alumno.nombre, telefono: args.alumno.telefono,
+    cuotas: [{ id: c.id, etapa: cuota.etapa }],
+  };
+  try {
+    return await mandar(admin, args.gymId, args.config, grupo, [cuota], hoy, ahora);
+  } catch (err) {
+    return { ok: false, plantilla: "desconocida", error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 async function mandar(
   admin: Admin, gymId: string, config: ConfigAvisos, grupo: GrupoAviso, cuotas: CuotaAviso[], hoy: string, ahora: Date,
 ): Promise<Envio> {

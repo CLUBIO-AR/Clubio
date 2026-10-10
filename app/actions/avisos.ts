@@ -7,6 +7,7 @@ import { aliasCobroDeAlumno } from "@/lib/transferencias/alias";
 import { sendNotification, motivosCanalesInactivos } from "@/lib/notifications";
 import type { GymNotificationConfig, EmailTemplates } from "@/lib/notifications";
 import { registrarAvisoEnInbox } from "@/lib/notifications/inbox";
+import { enviarAvisoWhatsAppManual } from "@/lib/notifications/avisos-whatsapp";
 
 type ActionResult<T = undefined> =
   | { ok: true; data: T }
@@ -29,13 +30,13 @@ export async function reenviarAvisoAction(
 
   const [{ data: cuota }, { data: gym }, { data: gymConfig }] = await Promise.all([
     admin.from("cuotas")
-      .select("id, alumno_id, mes, anio, monto_total, estado, fecha_vencimiento, alumnos!inner(nombre, email, telefono), actividades(nombre)")
+      .select("id, alumno_id, mes, anio, monto_total, monto_base, estado, fecha_vencimiento, alumnos!inner(nombre, email, telefono), actividades(nombre, recargo_1_porcentaje)")
       .eq("id", cuotaId)
       .eq("gym_id", ctx.gymId)
       .single(),
     admin.from("gyms").select("nombre, logo_url").eq("id", ctx.gymId).single(),
     admin.from("gym_config")
-      .select("email_activo, email_remitente_nombre, email_remitente_address, email_templates, email_color_acento, avisos_email_activo, whatsapp_activo, avisos_whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, whatsapp_template_aviso, whatsapp_template_confirmacion, whatsapp_template_transferencia, email_modo, transferencia_alias")
+      .select("email_activo, email_remitente_nombre, email_remitente_address, email_templates, email_color_acento, avisos_email_activo, whatsapp_activo, avisos_whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, whatsapp_template_aviso, whatsapp_template_confirmacion, whatsapp_template_transferencia, email_modo, transferencia_alias, transferencia_titular, transferencia_cbu, recargo_1_porcentaje")
       .eq("gym_id", ctx.gymId)
       .single(),
   ]);
@@ -44,7 +45,7 @@ export async function reenviarAvisoAction(
   if (!gym || !gymConfig) return { ok: false, error: "Gym no encontrado" };
 
   const alumno = cuota.alumnos as unknown as { nombre: string; email: string | null; telefono: string | null };
-  const actividad = cuota.actividades as unknown as { nombre: string | null } | null;
+  const actividad = cuota.actividades as unknown as { nombre: string | null; recargo_1_porcentaje: number | null } | null;
   if (!alumno?.email && !alumno?.telefono) return { ok: false, error: "El alumno no tiene email ni teléfono cargado" };
 
   const canal = opciones?.canal;
@@ -78,7 +79,8 @@ export async function reenviarAvisoAction(
     email_remitente_nombre:    gymConfig.email_remitente_nombre,
     email_remitente_address:   gymConfig.email_remitente_address,
     email_templates:           (gymConfig.email_templates as EmailTemplates | null) ?? null,
-    whatsapp_activo:           whatsappActivo,
+    // WhatsApp no va por sendNotification: se arma igual que el cron (ver más abajo).
+    whatsapp_activo:           false,
     whatsapp_phone_number_id:  gymConfig.whatsapp_phone_number_id,
     whatsapp_access_token:     gymConfig.whatsapp_access_token,
     whatsapp_template_aviso:         gymConfig.whatsapp_template_aviso,
@@ -104,12 +106,37 @@ export async function reenviarAvisoAction(
     gym: { nombre: gym.nombre, logo_url: gym.logo_url, color_acento: gymConfig.email_color_acento },
   } as const;
 
-  const resultados = await sendNotification(notifConfig, payload);
+  const resultados = emailActivo && alumno.email ? await sendNotification(notifConfig, payload) : [];
+
+  if (whatsappActivo && alumno.telefono) {
+    const envio = await enviarAvisoWhatsAppManual(admin, {
+      gymId: ctx.gymId,
+      config: {
+        ...notifConfig,
+        whatsapp_activo: true,
+        gymNombre: gym.nombre,
+        gymLogoUrl: gym.logo_url,
+        colorAcento: gymConfig.email_color_acento,
+        recargoPctGym: Number(gymConfig.recargo_1_porcentaje ?? 0),
+        transferencia_titular: gymConfig.transferencia_titular,
+        transferencia_cbu: gymConfig.transferencia_cbu,
+      },
+      alumno: { id: cuota.alumno_id, nombre: alumno.nombre, telefono: alumno.telefono },
+      cuota: {
+        id: cuota.id, mes: cuota.mes, anio: cuota.anio,
+        monto_total: cuota.monto_total, monto_base: cuota.monto_base,
+        fecha_vencimiento: cuota.fecha_vencimiento,
+        actividad: actividad?.nombre ?? null,
+        recargoPct: actividad?.recargo_1_porcentaje ?? null,
+      },
+    });
+    resultados.push({ canal: "whatsapp", ok: envio.ok, provider_id: envio.waMessageId, error: envio.error });
+  }
 
   // Ningún canal se intentó siquiera (config incompleta) — pasa antes de llegar a
   // Meta/Resend, así que no hay nada que loguear, pero sí podemos decir por qué.
   if (resultados.length === 0) {
-    const motivos = motivosCanalesInactivos(notifConfig, payload);
+    const motivos = motivosCanalesInactivos({ ...notifConfig, whatsapp_activo: whatsappActivo }, payload);
     return { ok: false, error: `No hay ningún canal configurado para enviar. ${motivos.join(" · ")}` };
   }
 

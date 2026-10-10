@@ -133,6 +133,7 @@ export default async function ConfiguracionPage({
           <ConfigAvisos
             emailActivo={config?.email_activo ?? true}
             avisosWhatsappActivo={config?.avisos_whatsapp_activo ?? true}
+            avisosEmailActivo={config?.avisos_email_activo ?? true}
             emailRemitenteNombre={config?.email_remitente_nombre ?? ""}
             emailRemitenteAddress={config?.email_remitente_address ?? ""}
             diasAvisoAntes={config?.dias_aviso_antes ?? [7, 3, 1]}

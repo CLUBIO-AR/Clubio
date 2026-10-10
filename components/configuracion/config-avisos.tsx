@@ -9,6 +9,7 @@ import { T } from "@/lib/theme";
 interface Props {
   emailActivo: boolean;
   avisosWhatsappActivo: boolean;
+  avisosEmailActivo: boolean;
   emailRemitenteNombre: string;
   emailRemitenteAddress: string;
   diasAvisoAntes: number[];
@@ -27,8 +28,10 @@ type Canal = "email" | "whatsapp" | "ambos";
 
 function canalInicial(p: Props): Canal {
   if (!p.whatsappConectado) return "email";
-  if (p.emailActivo && p.avisosWhatsappActivo) return "ambos";
-  return p.avisosWhatsappActivo ? "whatsapp" : "email";
+  const email = p.emailActivo && p.avisosEmailActivo;
+  if (email && p.avisosWhatsappActivo) return "ambos";
+  if (!email && p.avisosWhatsappActivo) return "whatsapp";
+  return "email";
 }
 
 // Avisos a alumnos: un único calendario (vale para email y WhatsApp) + por dónde salen.
@@ -66,8 +69,10 @@ export function ConfigAvisos(props: Props) {
         max_avisos_post: parseInt(form.maxPost) || 0,
         dia_ultimo_aviso: ultimoAvisoDisponible && form.ultimoAvisoActivo && form.diaUltimoAviso
           ? parseInt(form.diaUltimoAviso) : null,
-        // Sin WhatsApp conectado, los avisos solo pueden salir por email.
-        email_activo: !props.whatsappConectado || form.canal !== "whatsapp",
+        // El email queda prendido siempre: la confirmación de pago sale por email aunque
+        // los avisos de cuota vayan solo por WhatsApp. Sin WhatsApp, los avisos van por email.
+        email_activo: true,
+        avisos_email_activo: !props.whatsappConectado || form.canal !== "whatsapp",
         ...(props.whatsappConectado ? { avisos_whatsapp_activo: form.canal !== "email" } : {}),
         email_remitente_nombre: form.remNombre || null,
         email_remitente_address: form.remEmail || null,
@@ -176,28 +181,26 @@ export function ConfigAvisos(props: Props) {
         </div>
         <Hint>
           {props.whatsappConectado
-            ? "Vale para los avisos automáticos. Desde cada cuota igual podés mandar el aviso a mano por el canal que quieras."
+            ? "Vale para los avisos automáticos de cuota. La confirmación de pago siempre sale por email. Desde cada cuota igual podés mandar el aviso a mano por el canal que quieras."
             : <>WhatsApp no está conectado, así que los avisos salen por email.{" "}
                 <Link href="/dashboard/configuracion?tab=whatsapp" className="font-semibold hover:opacity-70" style={{ color: T.accent }}>
                   Configurar WhatsApp
                 </Link></>}
         </Hint>
-        {form.canal !== "whatsapp" && (
-          <div className="pt-3 border-t space-y-3" style={{ borderColor: T.borderSub }}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Nombre del remitente">
-                <Input value={form.remNombre} onChange={set("remNombre")} placeholder="Mi Gym" />
-              </Field>
-              <Field label="Email remitente (opcional)">
-                <Input type="email" value={form.remEmail} onChange={set("remEmail")} placeholder="avisos@clubio.com.ar" />
-              </Field>
-            </div>
-            <Hint>
-              Dejá el email vacío para enviar desde CLUBIO. Usar uno propio requiere que tu dominio esté verificado
-              con nosotros; si no, los mails no salen.
-            </Hint>
+        <div className="pt-3 border-t space-y-3" style={{ borderColor: T.borderSub }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Nombre del remitente">
+              <Input value={form.remNombre} onChange={set("remNombre")} placeholder="Mi Gym" />
+            </Field>
+            <Field label="Email remitente (opcional)">
+              <Input type="email" value={form.remEmail} onChange={set("remEmail")} placeholder="avisos@clubio.com.ar" />
+            </Field>
           </div>
-        )}
+          <Hint>
+            Dejá el email vacío para enviar desde CLUBIO. Usar uno propio requiere que tu dominio esté verificado
+            con nosotros; si no, los mails no salen.
+          </Hint>
+        </div>
       </SubBlock>
     </ConfigSection>
   );

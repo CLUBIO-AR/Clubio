@@ -35,7 +35,7 @@ export async function reenviarAvisoAction(
       .single(),
     admin.from("gyms").select("nombre, logo_url").eq("id", ctx.gymId).single(),
     admin.from("gym_config")
-      .select("email_activo, email_remitente_nombre, email_remitente_address, email_templates, email_color_acento, whatsapp_activo, avisos_whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, whatsapp_template_aviso, whatsapp_template_confirmacion, whatsapp_template_transferencia, email_modo, transferencia_alias")
+      .select("email_activo, email_remitente_nombre, email_remitente_address, email_templates, email_color_acento, avisos_email_activo, whatsapp_activo, avisos_whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, whatsapp_template_aviso, whatsapp_template_confirmacion, whatsapp_template_transferencia, email_modo, transferencia_alias")
       .eq("gym_id", ctx.gymId)
       .single(),
   ]);
@@ -55,7 +55,7 @@ export async function reenviarAvisoAction(
   // Pedido explícito de un canal: va solo por ese, aunque los avisos automáticos usen otro.
   const emailActivo = canal === "email" ? true
     : canal === "whatsapp" ? false
-    : (gymConfig.email_activo ?? true);
+    : (gymConfig.email_activo ?? true) && (gymConfig.avisos_email_activo ?? true);
   const whatsappActivo = canal === "whatsapp" ? true
     : canal === "email" ? false
     : (gymConfig.whatsapp_activo ?? false) && (gymConfig.avisos_whatsapp_activo ?? true);

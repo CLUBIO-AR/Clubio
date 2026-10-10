@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   // Config del gym
   const { data: gymConfig } = await admin
     .from("gym_config")
-    .select("email_activo, whatsapp_activo, avisos_whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, whatsapp_template_aviso, whatsapp_template_confirmacion, whatsapp_template_transferencia, email_color_acento, email_templates, email_remitente_nombre, email_remitente_address, dias_aviso_fijos, dia_vencimiento_mensual, dia_ultimo_aviso, recargo_1_porcentaje, email_modo, transferencia_alias, transferencia_titular, transferencia_banco, transferencia_cbu, dias_aviso_antes, aviso_post_vencimiento_dias, max_avisos_post")
+    .select("email_activo, avisos_email_activo, whatsapp_activo, avisos_whatsapp_activo, whatsapp_phone_number_id, whatsapp_access_token, whatsapp_template_aviso, whatsapp_template_confirmacion, whatsapp_template_transferencia, email_color_acento, email_templates, email_remitente_nombre, email_remitente_address, dias_aviso_fijos, dia_vencimiento_mensual, dia_ultimo_aviso, recargo_1_porcentaje, email_modo, transferencia_alias, transferencia_titular, transferencia_banco, transferencia_cbu, dias_aviso_antes, aviso_post_vencimiento_dias, max_avisos_post")
     .eq("gym_id", gym_id)
     .single();
 
@@ -80,7 +80,8 @@ export async function POST(request: Request) {
   }
 
   const notifConfig: GymNotificationConfig = {
-    email_activo:              gymConfig.email_activo ?? true,
+    // Avisos de cuota por email: el gym usa email Y eligió avisar por ese canal.
+    email_activo:              (gymConfig.email_activo ?? true) && (gymConfig.avisos_email_activo ?? true),
     email_remitente_nombre:    gymConfig.email_remitente_nombre ?? null,
     email_remitente_address:   gymConfig.email_remitente_address ?? null,
     email_templates:           (gymConfig.email_templates as EmailTemplates | null) ?? null,
@@ -262,6 +263,7 @@ async function enviarAvisosFechaFija(params: {
   gym: { nombre: string; logo_url: string | null };
   gymConfig: {
     email_activo: boolean | null;
+    avisos_email_activo: boolean | null;
     whatsapp_activo: boolean | null;
     whatsapp_phone_number_id: string | null;
     whatsapp_access_token: string | null;
@@ -323,7 +325,8 @@ async function enviarAvisosFechaFija(params: {
   }
 
   const notifConfig: GymNotificationConfig = {
-    email_activo:              gymConfig.email_activo ?? true,
+    // Avisos de cuota por email: el gym usa email Y eligió avisar por ese canal.
+    email_activo:              (gymConfig.email_activo ?? true) && (gymConfig.avisos_email_activo ?? true),
     email_remitente_nombre:    gymConfig.email_remitente_nombre,
     email_remitente_address:   gymConfig.email_remitente_address,
     email_templates:           (gymConfig.email_templates as EmailTemplates | null) ?? null,
@@ -451,6 +454,7 @@ async function enviarUltimoAviso(params: {
   gym: { nombre: string; logo_url: string | null };
   gymConfig: {
     email_activo: boolean | null;
+    avisos_email_activo: boolean | null;
     email_color_acento: string | null;
     email_remitente_nombre: string | null;
     email_remitente_address: string | null;

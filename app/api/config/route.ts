@@ -15,7 +15,7 @@ export async function GET() {
       "recargo_1_dias, recargo_1_porcentaje, recargo_2_dias, recargo_2_porcentaje, " +
       "email_activo, dias_aviso_antes, dias_aviso_fijos, dia_ultimo_aviso, aviso_post_vencimiento_dias, max_avisos_post, " +
       "email_remitente_nombre, email_remitente_address, email_color_acento, email_templates, " +
-      "mp_public_key, mp_solo_dinero_cuenta, whatsapp_activo, avisos_whatsapp_activo, whatsapp_phone_number_id, " +
+      "mp_public_key, mp_solo_dinero_cuenta, whatsapp_activo, avisos_whatsapp_activo, avisos_email_activo, whatsapp_phone_number_id, " +
       "whatsapp_bot_activo, whatsapp_bot_bienvenida, whatsapp_bot_info, whatsapp_bot_recomendaciones, whatsapp_bot_latitud, whatsapp_bot_longitud, whatsapp_template_recordatorio_prueba, " +
       "generar_cuota_al_alta, cuota_alta_proporcional, dias_minimos_para_cuota_alta, " +
       "dias_mora_desactivacion, mora_desactivar_mes_siguiente, " +
@@ -49,6 +49,7 @@ const PatchSchema = z.object({
   // Config: notificaciones
   email_activo: z.boolean().optional(),
   avisos_whatsapp_activo: z.boolean().optional(),
+  avisos_email_activo: z.boolean().optional(),
   dias_aviso_antes: z.array(z.number().int().min(0)).optional(),
   dias_aviso_fijos: z.array(z.number().int().min(1).max(28)).nullable().optional(),
   dia_ultimo_aviso: z.number().int().min(1).max(28).nullable().optional(),
@@ -143,6 +144,7 @@ export async function PATCH(request: Request) {
     mora_desactivar_mes_siguiente: boolean;
     email_activo: boolean;
     avisos_whatsapp_activo: boolean;
+    avisos_email_activo: boolean;
     dias_aviso_antes: number[];
     dias_aviso_fijos: number[] | null;
     dia_ultimo_aviso: number | null;
@@ -183,7 +185,7 @@ export async function PATCH(request: Request) {
     "monto_base_defecto", "dia_vencimiento_mensual", "dias_gracia",
     "recargo_1_dias", "recargo_1_porcentaje", "recargo_2_dias", "recargo_2_porcentaje",
     "dias_mora_desactivacion", "mora_desactivar_mes_siguiente",
-    "email_activo", "avisos_whatsapp_activo", "dias_aviso_antes", "dias_aviso_fijos", "dia_ultimo_aviso", "aviso_post_vencimiento_dias", "max_avisos_post",
+    "email_activo", "avisos_whatsapp_activo", "avisos_email_activo", "dias_aviso_antes", "dias_aviso_fijos", "dia_ultimo_aviso", "aviso_post_vencimiento_dias", "max_avisos_post",
     "email_remitente_nombre", "email_remitente_address",
     "email_modo", "transferencia_alias", "transferencia_titular", "transferencia_banco", "transferencia_cbu",
     "email_color_acento", "email_templates",

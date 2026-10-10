@@ -82,7 +82,7 @@ export function AlumnoForm({ sucursales, mode, alumno, onCreated }: AlumnoFormPr
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="rounded-xl p-5" style={{ background: T.bg, border: `1px solid ${T.border}` }}>
         <SectionTitle>Datos personales</SectionTitle>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5"><Label style={labelStyle}>Nombre *</Label><Input name="nombre" required value={form.nombre} onChange={handleChange} placeholder="Juan" style={inp} className="placeholder:opacity-20" /></div>
           <div className="space-y-1.5"><Label style={labelStyle}>Apellido *</Label><Input name="apellido" required value={form.apellido} onChange={handleChange} placeholder="Pérez" style={inp} className="placeholder:opacity-20" /></div>
           <div className="space-y-1.5"><Label style={labelStyle}>DNI</Label><Input name="dni" value={form.dni} onChange={handleChange} placeholder="30123456 (opcional)" style={inp} className="placeholder:opacity-20 font-mono" /></div>
@@ -94,7 +94,7 @@ export function AlumnoForm({ sucursales, mode, alumno, onCreated }: AlumnoFormPr
 
       <div className="rounded-xl p-5" style={{ background: T.bg, border: `1px solid ${T.border}` }}>
         <SectionTitle>Configuración</SectionTitle>
-        <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           {sucursales.length > 1 && (
             <div className="space-y-1.5">
               <Label style={labelStyle}>Sucursal</Label>

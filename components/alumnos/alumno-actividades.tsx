@@ -113,7 +113,7 @@ export function AlumnoActividades({ alumnoId, inscripciones: inicial, actividade
         {/* Formulario agregar */}
         {agregando && (
           <div className="p-3 rounded-xl space-y-3" style={{ background: T.bgDeep, border: `1px solid ${T.accentBorder}` }}>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div className="space-y-1">
                 <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textOnDarkDim, fontFamily: "var(--font-fredoka)" }}>Actividad</label>
                 <select

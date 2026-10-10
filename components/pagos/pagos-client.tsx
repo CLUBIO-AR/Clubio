@@ -128,13 +128,13 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
       {/* Filtros */}
       <div className="flex flex-wrap gap-2 items-end">
         {/* Búsqueda local por alumno */}
-        <div className="relative">
+        <div className="relative w-full sm:w-[200px]">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: T.textDim }} />
           <input
             placeholder="Buscar alumno o DNI…"
             value={localSearch}
             onChange={(e) => { setLocalSearch(e.target.value); setPage(1); }}
-            style={{ ...inp, paddingLeft: "2rem", width: 200 }}
+            style={{ ...inp, paddingLeft: "2rem", width: "100%" }}
           />
         </div>
 
@@ -170,7 +170,7 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
         </div>
 
         {/* Quick actions */}
-        <div className="flex gap-1.5 items-center self-end mb-0.5">
+        <div className="flex flex-wrap gap-1.5 items-center self-end mb-0.5">
           <button onClick={setEsteMes} style={btnSm()}>Este mes</button>
           <button onClick={setMesAnterior} style={btnSm()}>Mes anterior</button>
           <button onClick={() => applyFilters({ desde: "", hasta: "", metodo: "", actividad: "" })} style={btnSm()}>Limpiar</button>
@@ -179,7 +179,7 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
         {/* Export */}
         <button
           onClick={exportCSV}
-          className="flex items-center gap-1.5 h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-opacity hover:opacity-80 ml-auto"
+          className="flex w-full sm:w-auto justify-center items-center gap-1.5 h-10 sm:h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-opacity hover:opacity-80 sm:ml-auto"
           style={{ fontFamily: "var(--font-fredoka)", background: `${T.accent}15`, color: T.accent, border: `1px solid ${T.accentBorder}` }}
         >
           <Download className="w-3.5 h-3.5" /> Exportar XLSX
@@ -199,9 +199,9 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
       {/* Tabla */}
       <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${T.border}` }}>
        <div className="overflow-x-auto">
-        <div className="min-w-[640px]">
-        <div className="px-5 py-3 grid gap-4 border-b"
-          style={{ background: T.bgDeep, borderColor: T.borderOnDark, gridTemplateColumns: "minmax(0,2fr) minmax(0,1.2fr) minmax(0,1fr) 130px 110px" }}>
+        <div className="md:min-w-[640px]">
+        <div className="hidden md:grid md:grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_minmax(0,1fr)_130px_110px] px-5 py-3 gap-4 border-b"
+          style={{ background: T.bgDeep, borderColor: T.borderOnDark }}>
           {[
             { label: "Alumno", cls: "" },
             { label: "Período", cls: "" },
@@ -240,9 +240,10 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
           const actividad = cuota?.actividades ?? null;
 
           return (
-            <div key={p.id} className="px-5 py-3 grid gap-4 items-center border-b last:border-b-0"
-              style={{ borderColor: T.borderSub, background: T.card, gridTemplateColumns: "minmax(0,2fr) minmax(0,1.2fr) minmax(0,1fr) 130px 110px" }}>
-              <div className="min-w-0">
+            <div key={p.id} className="px-4 md:px-5 py-3 grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_minmax(0,1fr)_130px_110px] gap-x-4 gap-y-1.5 md:gap-4 items-center border-b last:border-b-0"
+              style={{ borderColor: T.borderSub, background: T.card }}>
+              {/* En celular: alumno | monto, período | método, actividad */}
+              <div className="min-w-0 order-1 md:order-none">
                 <p className="text-sm font-semibold truncate" style={{ color: T.text }}>
                   {alumno ? `${alumno.apellido}, ${alumno.nombre}` : "—"}
                 </p>
@@ -250,13 +251,13 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
                   {new Date(p.created_at).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit" })}
                 </p>
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 order-3 md:order-none">
                 <p className="text-sm truncate" style={{ color: T.text }}>{periodo}</p>
                 {cuota?.tipo !== "mensual" && cuota?.tipo && (
                   <p className="text-xs capitalize" style={{ color: T.textDim }}>{cuota.tipo.replace("_", " ")}</p>
                 )}
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 order-5 md:order-none">
                 {actividad ? (
                   <div className="flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-full shrink-0" style={{ background: actividad.color }} />
@@ -266,13 +267,13 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
                   <span className="text-xs" style={{ color: T.textDim }}>General</span>
                 )}
               </div>
-              <div>
+              <div className="order-4 md:order-none justify-self-end md:justify-self-auto">
                 <span className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider whitespace-nowrap"
                   style={{ fontFamily: "var(--font-fredoka)", background: metodoBg, color: metodoText, border: `1px solid ${metodoColor}30` }}>
                   {METODO_LABEL[p.metodo] ?? p.metodo}
                 </span>
               </div>
-              <p className="text-sm font-bold font-mono text-right" style={{ color: T.text }}>
+              <p className="order-2 md:order-none text-sm font-bold font-mono text-right" style={{ color: T.text }}>
                 ${p.monto.toLocaleString("es-AR")}
               </p>
             </div>
@@ -292,7 +293,7 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="w-8 h-8 rounded-lg flex items-center justify-center disabled:opacity-30 hover:opacity-70 transition-opacity"
+              className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center disabled:opacity-30 hover:opacity-70 transition-opacity"
               style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text }}
             >
               <ChevronLeft className="w-4 h-4" />
@@ -301,7 +302,7 @@ export function PagosClient({ pagos, desde, hasta, metodo, actividad, actividade
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="w-8 h-8 rounded-lg flex items-center justify-center disabled:opacity-30 hover:opacity-70 transition-opacity"
+              className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center disabled:opacity-30 hover:opacity-70 transition-opacity"
               style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text }}
             >
               <ChevronRight className="w-4 h-4" />

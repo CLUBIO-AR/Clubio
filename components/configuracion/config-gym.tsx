@@ -37,7 +37,7 @@ export function ConfigGym({ nombre, emailContacto, telefono, direccion }: Props)
       <Field label="Email de contacto">
         <Input type="email" value={form.emailContacto} onChange={set("emailContacto")} placeholder="contacto@migym.com" />
       </Field>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Teléfono">
           <Input value={form.telefono} onChange={set("telefono")} placeholder="+54 11..." />
         </Field>

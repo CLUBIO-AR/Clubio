@@ -86,7 +86,7 @@ function ActividadForm({
 
   return (
     <form onSubmit={submit} className="space-y-3 p-4 rounded-xl" style={{ background: T.bgDeep, border: `1px solid ${T.accentBorder}` }}>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <div className="space-y-1">
           <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textOnDarkDim, fontFamily: "var(--font-fredoka)" }}>Nombre</label>
           <input required value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))} placeholder="ej: Funcional" style={inputBase} />
@@ -98,7 +98,7 @@ function ActividadForm({
       </div>
 
       {/* Recargo propio */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <div className="space-y-1">
           <label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textOnDarkDim, fontFamily: "var(--font-fredoka)" }}>Mora: días</label>
           <input type="number" min={0} value={form.r1dias} onChange={e => setForm(f => ({ ...f, r1dias: e.target.value }))} placeholder="(gym por defecto)" style={inputBase} />

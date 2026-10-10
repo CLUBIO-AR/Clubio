@@ -114,7 +114,7 @@ export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, 
         <select
           value={filtros.estado}
           onChange={(e) => setFiltro("estado", e.target.value)}
-          className="h-9 px-3 rounded-lg text-sm"
+          className="h-10 sm:h-9 px-3 rounded-lg text-sm flex-1 min-w-[8.5rem] sm:flex-none"
           style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" }}
         >
           <option value="">Todos los estados</option>
@@ -126,7 +126,7 @@ export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, 
         <select
           value={filtros.mes}
           onChange={(e) => setFiltro("mes", e.target.value)}
-          className="h-9 px-3 rounded-lg text-sm"
+          className="h-10 sm:h-9 px-3 rounded-lg text-sm flex-1 min-w-[8.5rem] sm:flex-none"
           style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" }}
         >
           <option value="">Todos los meses</option>
@@ -138,20 +138,20 @@ export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, 
         <select
           value={filtros.anio}
           onChange={(e) => setFiltro("anio", e.target.value)}
-          className="h-9 px-3 rounded-lg text-sm"
+          className="h-10 sm:h-9 px-3 rounded-lg text-sm flex-1 min-w-[8.5rem] sm:flex-none"
           style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text, fontFamily: "var(--font-fredoka)" }}
         >
           <option value="">Todos los años</option>
           {años.map((a) => <option key={a} value={a}>{a}</option>)}
         </select>
 
-        <span className="text-xs ml-auto" style={{ color: T.textDim }}>{total} cuota{total !== 1 ? "s" : ""}</span>
+        <span className="text-xs sm:ml-auto" style={{ color: T.textDim }}>{total} cuota{total !== 1 ? "s" : ""}</span>
 
         {nonPaidIds.length >= 2 && (
           <button
             onClick={pagarTodo}
             disabled={loadingLote}
-            className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-opacity hover:opacity-80 disabled:opacity-40"
+            className="flex w-full sm:w-auto items-center justify-center gap-2 min-h-10 sm:min-h-9 py-2 px-4 rounded-lg text-sm font-bold uppercase tracking-wider transition-opacity hover:opacity-80 disabled:opacity-40"
             style={{ fontFamily: "var(--font-fredoka)", background: T.accentBg, color: T.accent, border: `1px solid ${T.accentBorder}` }}
           >
             <CreditCard className="w-3.5 h-3.5" />
@@ -160,8 +160,57 @@ export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, 
         )}
       </div>
 
-      {/* Tabla */}
-      <div className="rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+      {/* Celular: una card por cuota */}
+      {cuotas.length > 0 && (
+        <ul className="md:hidden flex flex-col gap-2">
+          {cuotas.map((c) => {
+            const s = ESTADO_STYLES[c.estado] ?? ESTADO_STYLES.pendiente;
+            const label = `${MESES_LARGO[c.mes]} ${c.anio}`;
+            const unpaid = c.estado !== "pagada" && c.estado !== "condonada";
+            return (
+              <li key={c.id} {...filaProps(`/dashboard/cuotas/${c.id}`)}
+                className="rounded-xl p-3 flex flex-col gap-3 cursor-pointer active:opacity-80 focus-visible:outline focus-visible:outline-2"
+                style={{ background: T.card, border: `1px solid ${T.border}` }}>
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg flex flex-col items-center justify-center shrink-0" style={{ background: T.bg, border: `1px solid ${T.border}` }}>
+                    <span className="text-xs font-bold leading-none" style={{ color: T.text, fontFamily: "var(--font-fredoka)" }}>{MESES_CORTO[c.mes]}</span>
+                    <span className="text-xs leading-none mt-0.5" style={{ color: T.textDim }}>{c.anio}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold font-mono" style={{ color: T.text }}>${c.monto_total?.toLocaleString("es-AR") ?? "—"}</p>
+                    <p className="text-xs truncate mt-0.5" style={{ color: T.textDim }}>
+                      {[c.actividades?.nombre, c.descripcion].filter(Boolean).join(" · ") || "Cuota"}
+                    </p>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider shrink-0"
+                    style={{ fontFamily: "var(--font-fredoka)", background: s.bg, color: s.color, border: `1px solid ${s.color}30` }}>
+                    {c.estado.replace("_", " ")}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs" style={{ color: T.textDim }}>
+                    Vence {c.fecha_vencimiento ? new Date(`${c.fecha_vencimiento}T00:00:00`).toLocaleDateString("es-AR") : "—"}
+                  </span>
+                  {unpaid && (
+                    <button
+                      onClick={() => generarLink(c.id, label)}
+                      disabled={loadingId === c.id}
+                      className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-bold uppercase tracking-wider transition-opacity hover:opacity-70 disabled:opacity-40"
+                      style={{ fontFamily: "var(--font-fredoka)", color: T.accent, background: T.accentBg, border: `1px solid ${T.accentBorder}` }}
+                    >
+                      <Link2 className="w-3.5 h-3.5" />
+                      {loadingId === c.id ? "..." : "Link pago"}
+                    </button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {/* Desde tablet: tabla */}
+      <div className={`${cuotas.length > 0 ? "hidden md:block" : ""} rounded-xl overflow-x-auto`} style={{ background: T.card, border: `1px solid ${T.border}` }}>
         {cuotas.length === 0 ? (
           <p className="p-8 text-center text-sm" style={{ color: T.textDim }}>Sin cuotas para los filtros aplicados</p>
         ) : (
@@ -251,7 +300,7 @@ export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, 
           <div className="flex items-center gap-1">
             <a
               href={hrefPage(Math.max(1, page - 1))}
-              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-opacity ${page === 1 ? "opacity-30 pointer-events-none" : "hover:opacity-70"}`}
+              className={`w-10 h-10 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-opacity ${page === 1 ? "opacity-30 pointer-events-none" : "hover:opacity-70"}`}
               style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text }}
             >
               <ChevronLeft className="w-4 h-4" />
@@ -259,7 +308,7 @@ export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, 
             <span className="text-xs px-3 font-mono" style={{ color: T.textDim }}>{page} / {totalPages}</span>
             <a
               href={hrefPage(Math.min(totalPages, page + 1))}
-              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-opacity ${page === totalPages ? "opacity-30 pointer-events-none" : "hover:opacity-70"}`}
+              className={`w-10 h-10 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-opacity ${page === totalPages ? "opacity-30 pointer-events-none" : "hover:opacity-70"}`}
               style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text }}
             >
               <ChevronRight className="w-4 h-4" />
@@ -286,10 +335,10 @@ export function AlumnoCuotasClient({ cuotas, total, page, totalPages, alumnoId, 
             <p className="text-xs break-all rounded-lg px-3 py-2.5" style={{ background: T.bg, color: T.textMuted, border: `1px solid ${T.borderSub}`, fontFamily: "monospace" }}>
               {linkModal.url}
             </p>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => copiar(linkModal.url)}
-                className="flex-1 flex items-center justify-center gap-2 h-9 rounded-lg text-sm font-bold uppercase tracking-wider transition-opacity hover:opacity-80"
+                className="flex-1 min-w-[7rem] flex items-center justify-center gap-2 h-10 sm:h-9 rounded-lg text-sm font-bold uppercase tracking-wider transition-opacity hover:opacity-80"
                 style={{ fontFamily: "var(--font-fredoka)", background: T.accentBg, color: T.accent, border: `1px solid ${T.accentBorder}` }}
               >
                 <Copy className="w-3.5 h-3.5" />

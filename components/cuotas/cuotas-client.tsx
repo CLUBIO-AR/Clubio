@@ -115,42 +115,86 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
     { label: "Cobrado",    value: `$${stats.totalCobrado.toLocaleString("es-AR")}`, color: T.accent },
   ];
 
+  function acciones(c: (typeof paginadas)[number]) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          aria-label="Acciones"
+          className="inline-flex items-center justify-center w-10 h-10 md:w-8 md:h-8 rounded-md hover:opacity-75 transition-opacity outline-none"
+          style={{ color: T.textDim }}
+        >
+          <MoreHorizontal className="w-4 h-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+          <DropdownMenuItem onClick={() => router.push(`/dashboard/cuotas/${c.id}`)}>
+            <Eye className="w-3.5 h-3.5" /> Ver detalle
+          </DropdownMenuItem>
+          {(c.estado === "pendiente" || c.estado === "vencida") && (
+            <DropdownMenuItem onClick={() => router.push(`/dashboard/cuotas/${c.id}?accion=pagar`)}>
+              <CheckCircle className="w-3.5 h-3.5" /> Registrar pago
+            </DropdownMenuItem>
+          )}
+          {c.alumno_id && c.alumnos && (
+            <DropdownMenuItem onClick={() => setModalAlumno({ id: c.alumno_id!, nombre: `${c.alumnos!.apellido}, ${c.alumnos!.nombre}` })}>
+              <Plus className="w-3.5 h-3.5" /> Nueva cuota especial
+            </DropdownMenuItem>
+          )}
+          {c.estado !== "pagada" && c.estado !== "condonada" && (
+            <DropdownMenuItem disabled={enviandoAviso === c.id} onClick={() => reenviarAviso(c.id)}>
+              {enviandoAviso === c.id
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : <Bell className="w-3.5 h-3.5" />} Reenviar aviso (mail/WhatsApp)
+            </DropdownMenuItem>
+          )}
+          {c.estado !== "pagada" && c.estado !== "condonada" && (
+            <>
+              <DropdownMenuSeparator style={{ background: T.border }} />
+              <DropdownMenuItem variant="destructive" onClick={() => router.push(`/dashboard/cuotas/${c.id}?accion=condonar`)}>
+                <XCircle className="w-3.5 h-3.5" /> Condonar
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-4xl leading-none" style={{ fontFamily: "var(--font-fredoka)", fontWeight: 900, color: T.text }}>CUOTAS</h1>
           <p className="text-sm mt-1" style={{ color: T.textDim }}>{cuotas.length} cuota{cuotas.length !== 1 ? "s" : ""} en vista</p>
           {totalPages > 1 && <p className="text-xs" style={{ color: T.textDim }}>Página {page} de {totalPages}</p>}
         </div>
         {/* Mes selector */}
-        <div className="flex items-center gap-2">
-          <button onClick={prevMes} disabled={isPending} className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:opacity-75" style={{ background: T.card, border: `1px solid ${T.border}`, color: T.textMuted }}>
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+          <button onClick={prevMes} disabled={isPending} className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-colors hover:opacity-75" style={{ background: T.card, border: `1px solid ${T.border}`, color: T.textMuted }}>
             <ChevronLeft className="w-4 h-4" />
           </button>
           <span className="font-bold uppercase tracking-widest text-sm min-w-36 text-center" style={{ fontFamily: "var(--font-fredoka)", color: T.text }}>
             {MESES_LARGO[curMes]} {curAnio}
           </span>
-          <button onClick={nextMes} disabled={isPending} className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:opacity-75" style={{ background: T.card, border: `1px solid ${T.border}`, color: T.textMuted }}>
+          <button onClick={nextMes} disabled={isPending} className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-colors hover:opacity-75" style={{ background: T.card, border: `1px solid ${T.border}`, color: T.textMuted }}>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {STAT_CARDS.map((s) => (
           <div key={s.label} className="rounded-xl px-4 py-3" style={{ background: T.card, border: `1px solid ${T.border}` }}>
             <p className="text-xs uppercase tracking-widest mb-1" style={{ color: T.textDim, fontFamily: "var(--font-fredoka)" }}>{s.label}</p>
-            <p className="text-2xl font-black" style={{ fontFamily: "var(--font-fredoka)", color: s.color }}>{s.value}</p>
+            <p className="text-xl sm:text-2xl font-black truncate" style={{ fontFamily: "var(--font-fredoka)", color: s.color }}>{s.value}</p>
           </div>
         ))}
       </div>
 
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative flex-1 max-w-xs">
+        <div className="relative flex-1 min-w-0 sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: T.textDim }} />
           <Input
             placeholder="Buscar alumno o DNI..."
@@ -162,17 +206,17 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
           />
         </div>
         <button onClick={() => navigate(curMes, curAnio, estado, search)} disabled={isPending}
-          className="h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider hover:opacity-80 transition-all"
+          className="h-10 sm:h-9 px-4 rounded-lg text-sm font-bold uppercase tracking-wider hover:opacity-80 transition-all"
           style={{ fontFamily: "var(--font-fredoka)", background: T.card, border: `1px solid ${T.border}`, color: T.accent }}>
           {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Buscar"}
         </button>
 
         {/* Estado tabs */}
-        <div className="flex items-center gap-0.5 rounded-lg p-1" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+        <div className="flex items-center gap-0.5 rounded-lg p-1 w-full sm:w-auto overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
           {TABS.map((tab) => (
             <button key={tab.value}
               onClick={() => { setEstado(tab.value); navigate(curMes, curAnio, tab.value, search); }}
-              className="px-3 py-1.5 text-xs rounded-md font-bold uppercase tracking-widest transition-all"
+              className="flex-1 sm:flex-none whitespace-nowrap px-3 py-2 sm:py-1.5 text-xs rounded-md font-bold uppercase tracking-widest transition-all"
               style={{ fontFamily: "var(--font-fredoka)", background: estado === tab.value ? T.accent : "transparent", color: estado === tab.value ? T.accentText : T.textMuted }}>
               {tab.label}
             </button>
@@ -184,7 +228,7 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
           <select
             value={actividad}
             onChange={(e) => { setActividad(e.target.value); navigate(curMes, curAnio, estado, search, e.target.value); }}
-            className="h-9 px-3 rounded-lg text-xs font-bold uppercase tracking-wider"
+            className="h-10 sm:h-9 px-3 rounded-lg text-xs font-bold uppercase tracking-wider w-full sm:w-auto"
             style={{ fontFamily: "var(--font-fredoka)", background: actividad ? T.accentBg : T.card, border: `1px solid ${actividad ? T.accentBorder : T.border}`, color: actividad ? T.accent : T.textMuted }}
           >
             <option value="">Todas las actividades</option>
@@ -197,7 +241,53 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
 
       {/* Table */}
       {cuotas.length === 0 ? <EmptyState /> : (
-        <div className="rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
+        <>
+        {/* Celular: una card por cuota */}
+        <ul className="md:hidden flex flex-col gap-2">
+          {paginadas.map((c) => {
+            const est = ESTADO_CONFIG[c.estado] ?? ESTADO_CONFIG.pendiente;
+            const a = c.alumnos;
+            const vencida = new Date(c.fecha_vencimiento) < new Date() && c.estado === "vencida";
+            const act = c.actividades as { nombre: string; color: string } | null;
+            return (
+              <li key={c.id} {...filaProps(`/dashboard/cuotas/${c.id}`)}
+                className="rounded-xl p-3 flex flex-col gap-3 cursor-pointer active:opacity-80 focus-visible:outline focus-visible:outline-2"
+                style={{ background: T.card, border: `1px solid ${T.border}` }}>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
+                    style={{ background: T.accentBg, border: `1px solid ${T.accentBorder}`, color: T.accent, fontFamily: "var(--font-fredoka)" }}>
+                    {(a?.nombre?.[0] ?? "")}{(a?.apellido?.[0] ?? "")}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate" style={{ color: T.text }}>{a?.apellido}, {a?.nombre}</p>
+                    <p className="text-xs truncate mt-0.5" style={{ color: T.textDim }}>
+                      {MESES_LARGO[c.mes]?.slice(0, 3).toUpperCase()} {c.anio} · {act?.nombre ?? "General"}
+                    </p>
+                  </div>
+                  {acciones(c)}
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="font-bold font-mono text-sm" style={{ color: T.text }}>${c.monto_total?.toLocaleString("es-AR")}</span>
+                    {c.monto_recargo > 0 && (
+                      <span className="ml-1.5 text-xs" style={{ color: T.danger }}>+${c.monto_recargo.toLocaleString("es-AR")} recargo</span>
+                    )}
+                    <p className="text-xs mt-0.5" style={{ color: vencida ? T.danger : T.textDim }}>
+                      Vence {new Date(c.fecha_vencimiento).toLocaleDateString("es-AR")}
+                    </p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider"
+                    style={{ fontFamily: "var(--font-fredoka)", background: est.bg, color: est.color, border: `1px solid ${est.color}25` }}>
+                    {est.label}
+                  </span>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+
+        {/* Desde tablet: tabla */}
+        <div className="hidden md:block rounded-xl overflow-x-auto" style={{ background: T.card, border: `1px solid ${T.border}` }}>
           <Table>
             <TableHeader>
               <TableRow style={{ background: T.bg, borderColor: T.border }}>
@@ -261,44 +351,7 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
                       </span>
                     </TableCell>
                     <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:opacity-75 transition-opacity outline-none"
-                          style={{ color: T.textDim }}
-                        >
-                          <MoreHorizontal className="w-4 h-4" />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48" style={{ background: T.card, border: `1px solid ${T.border}` }}>
-                          <DropdownMenuItem onClick={() => router.push(`/dashboard/cuotas/${c.id}`)}>
-                            <Eye className="w-3.5 h-3.5" /> Ver detalle
-                          </DropdownMenuItem>
-                          {(c.estado === "pendiente" || c.estado === "vencida") && (
-                            <DropdownMenuItem onClick={() => router.push(`/dashboard/cuotas/${c.id}?accion=pagar`)}>
-                              <CheckCircle className="w-3.5 h-3.5" /> Registrar pago
-                            </DropdownMenuItem>
-                          )}
-                          {c.alumno_id && c.alumnos && (
-                            <DropdownMenuItem onClick={() => setModalAlumno({ id: c.alumno_id!, nombre: `${c.alumnos!.apellido}, ${c.alumnos!.nombre}` })}>
-                              <Plus className="w-3.5 h-3.5" /> Nueva cuota especial
-                            </DropdownMenuItem>
-                          )}
-                          {c.estado !== "pagada" && c.estado !== "condonada" && (
-                            <DropdownMenuItem disabled={enviandoAviso === c.id} onClick={() => reenviarAviso(c.id)}>
-                              {enviandoAviso === c.id
-                                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                : <Bell className="w-3.5 h-3.5" />} Reenviar aviso (mail/WhatsApp)
-                            </DropdownMenuItem>
-                          )}
-                          {c.estado !== "pagada" && c.estado !== "condonada" && (
-                            <>
-                              <DropdownMenuSeparator style={{ background: T.border }} />
-                              <DropdownMenuItem variant="destructive" onClick={() => router.push(`/dashboard/cuotas/${c.id}?accion=condonar`)}>
-                                <XCircle className="w-3.5 h-3.5" /> Condonar
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {acciones(c)}
                     </TableCell>
                   </TableRow>
                 );
@@ -306,6 +359,7 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
             </TableBody>
           </Table>
         </div>
+        </>
       )}
 
       {/* Paginación */}
@@ -318,7 +372,7 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="w-8 h-8 rounded-lg flex items-center justify-center disabled:opacity-30 hover:opacity-70 transition-opacity"
+              className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center disabled:opacity-30 hover:opacity-70 transition-opacity"
               style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text }}
             >
               <ChevronLeft className="w-4 h-4" />
@@ -327,7 +381,7 @@ export function CuotasClient({ cuotas, mes, anio, estadoDefault, searchDefault, 
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="w-8 h-8 rounded-lg flex items-center justify-center disabled:opacity-30 hover:opacity-70 transition-opacity"
+              className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center disabled:opacity-30 hover:opacity-70 transition-opacity"
               style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text }}
             >
               <ChevronRight className="w-4 h-4" />
